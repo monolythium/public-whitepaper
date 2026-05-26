@@ -329,7 +329,6 @@ body {
   .wp-footer { display: none; }
   .app { max-width: none; padding: 0; margin: 0; }
 
-  /* doctitle string is set from the document body — see <body data-doctitle="..."> */
   body { string-set: doctitle attr(data-doctitle); }
 
   .cover {
@@ -368,7 +367,6 @@ body {
     string-set: chapter content();
     font-size: 16pt; margin: 0 0 6mm;
   }
-  /* h2 immediately following a part-heading continues on same page */
   .wp-body h1.part-heading + h2 {
     page-break-before: auto; margin-top: 4mm;
   }
