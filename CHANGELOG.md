@@ -6,6 +6,8 @@ Release history of the Monolythium public whitepaper.
 
 First public-facing release.
 
+A condensed lightpaper companion (`monolythium-lightpaper-v5.0.md`, ~7,000 words) accompanies the whitepaper, covering the thesis, the first commercial wedge, composition with the major agent-payment standards, the five refusals, the six design positions, the eight agent-commerce primitives, tokenomics, threat model, and honest limitations.
+
 ### Thesis and positioning
 
 - Settlement-layer thesis for the autonomous economy.

@@ -8,6 +8,10 @@ The public-facing whitepaper for Monolythium — a Layer 1 blockchain designed a
 
 Settlement Layer for the Autonomous Economy. Rust/RISC-V execution, post-quantum accounts, native MRC asset and market modules, cluster-marketplace operations with distributed validator technology, bifurcated public/private denomination, and the eight agent-commerce primitives. ~110 pages.
 
+**[Monolythium Lightpaper v5.0 — May 2026](2026/may/monolythium-lightpaper-v5.0.md)**
+
+A condensed, ten-minute read of the whitepaper. Covers the thesis, the first commercial wedge, composition with the major agent-payment standards, the five refusals, the six design positions, the eight agent-commerce primitives, tokenomics, threat model, and limitations. ~7,000 words.
+
 ## Structure
 
 ```text
@@ -17,7 +21,8 @@ public-whitepaper/
 ├── CHANGELOG.md         — release history
 └── 2026/
     └── may/
-        └── monolythium-whitepaper-v5.0.md
+        ├── monolythium-whitepaper-v5.0.md
+        └── monolythium-lightpaper-v5.0.md
 ```
 
 Each release is dated and lives under its own folder. The newest release is linked above.
