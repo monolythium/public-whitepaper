@@ -914,7 +914,7 @@ The 100,000,000 LYTH initial supply is allocated across seven categories at gene
 
 **Category 4 — core contributors.** Held in vested allocations to the engineering, design, research, and operations contributors who built the chain. Standard vesting includes a 12-month cliff and a 48-month linear vest. The published team and contributor list is the canonical record.
 
-**Category 5 — public sale & community access programs.** The Genesis Liquidity Program and successor community-access offerings are funded from this category. Sale prices, vesting schedules, and KYC requirements are published at the time of each offering on the canonical project surfaces.
+**Category 5 — public sale & community access programs.** The Genesis Liquidity Program and successor community-access offerings are funded from this category. Sale prices, vesting schedules, and KYC requirements are published at the time of each offering on the canonical project surfaces. Proceeds from these offerings, denominated in stablecoins and fiat, fund engineering payroll, infrastructure, market-maker arrangements, and external security audits across the consensus, signing, bridge, escrow, agent-commerce, and private-denomination surfaces.
 
 **Category 6 — operator incentives & community programs.** Operator onboarding rewards, cluster-bootstrap incentives, community airdrops to historical ecosystem participants, and similar programs draw from this category. Programs are published at the time of activation.
 
