@@ -111,7 +111,7 @@ Spot markets, yes. Perpetual futures, on-chain leverage, and margin trading, no 
 
 Monolythium is **not EVM-compatible at execution**. EVM bytecode does not run on the chain; Solidity is not the default developer model; ERC conventions are not the protocol standards.
 
-The chain is **EVM-connected at the liquidity edge** — value moves in and out through IBC, light-client and zero-knowledge bridges, cross-chain swaps, and issuer-supported integrations. Once value arrives, it settles through Mono-native standards on a Rust/RISC-V execution layer.
+The chain is **EVM-connected at the liquidity edge** — value moves in and out through light-client and zero-knowledge bridges, cross-chain swaps, and issuer-supported integrations. Once value arrives, it settles through Mono-native standards on a Rust/RISC-V execution layer.
 
 ### 4.4 No fungibility between public and private money
 
@@ -383,12 +383,11 @@ Delegation is enforced at the protocol layer; day-to-day delegation happens in t
 
 ## 11. Bridges and the Liquidity Edge
 
-Monolythium needs liquidity but does not need EVM execution to get it. The liquidity strategy has four layers:
+Monolythium needs liquidity but does not need EVM execution to get it. The liquidity strategy has three layers:
 
-1. **IBC routes** for interchain assets where light-client verification is available.
-2. **Zero-knowledge or light-client bridges** for major external assets where proof-bound verification is feasible.
-3. **Cross-chain swaps** where proof-bound settlement is better than a full bridge route.
-4. **Issuer-supported native assets** where the network earns enough adoption to justify direct issuer integrations.
+1. **Zero-knowledge or light-client bridges** for major external assets where proof-bound verification is feasible.
+2. **Cross-chain swaps** where proof-bound settlement is better than a full bridge route.
+3. **Issuer-supported native assets** where the network earns enough adoption to justify direct issuer integrations.
 
 **Wrapped assets are labeled honestly.** A bridged stablecoin is not the same as a native issuer-minted stablecoin. Wallets and explorers show the route, trust model, cooldown, proof status, drain caps, circuit-breaker state, and risk metadata.
 
@@ -463,7 +462,7 @@ Monolythium does not have a perfect mirror competitor. Its differentiated combin
 - Rust/RISC-V-native execution from the base layer;
 - post-quantum accounts as default, not optional;
 - native MRC token, NFT, market, and agent-commerce modules;
-- IBC and zero-knowledge bridge liquidity rather than EVM execution compatibility;
+- zero-knowledge and light-client bridge liquidity rather than EVM execution compatibility;
 - no on-chain governance;
 - no mainnet perpetuals;
 - structurally non-fungible public/private denomination;
@@ -517,7 +516,7 @@ A network that scores well on these is a network that has delivered what the des
 
 Monolythium is a deliberate break from the default Layer-1 playbook.
 
-It does not try to win by becoming a slightly faster EVM chain. It chooses Rust on a deterministic RISC-V target, post-quantum accounts as default, native asset standards, native markets, native agent-commerce primitives, IBC and zero-knowledge bridge liquidity, focused use of zero-knowledge proofs at the highest-value boundaries, a structurally non-fungible privacy denomination, a public cluster marketplace, and a smaller protocol surface.
+It does not try to win by becoming a slightly faster EVM chain. It chooses Rust on a deterministic RISC-V target, post-quantum accounts as default, native asset standards, native markets, native agent-commerce primitives, zero-knowledge and light-client bridge liquidity, focused use of zero-knowledge proofs at the highest-value boundaries, a structurally non-fungible privacy denomination, a public cluster marketplace, and a smaller protocol surface.
 
 It composes underneath the major agent-payment standards rather than fighting them, providing the chain-anchored policy, escrow, identity, and reputation layer those rails leave open.
 

@@ -33,7 +33,7 @@ The public position is:
 
 > *Monolythium is not EVM-compatible at execution. It is EVM-connected at the liquidity edge. And it is composable underneath every major agent-payment standard at the settlement edge.*
 
-Assets move in through IBC routes, light-client and zero-knowledge bridges, cross-chain swaps, and issuer-supported integrations. Agent payments flow in through the major payment standards. Once value arrives, it settles through Mono-native standards, native markets, Rust/RISC-V contracts, and the eight agent-commerce primitives.
+Assets move in through light-client and zero-knowledge bridges, cross-chain swaps, and issuer-supported integrations. Agent payments flow in through the major payment standards. Once value arrives, it settles through Mono-native standards, native markets, Rust/RISC-V contracts, and the eight agent-commerce primitives.
 
 This document has three parts.
 
@@ -276,7 +276,7 @@ This refusal also reduces the audit surface dramatically. A perpetuals venue is 
 
 Monolythium is **not EVM-compatible at execution**. Existing EVM bytecode does not run on the chain. Solidity is not the default developer model. The token, NFT, and account-abstraction conventions from the Ethereum ecosystem are not the chain's protocol standards.
 
-This is a deliberate position. The chain is **EVM-connected at the liquidity edge** — value moves in and out through IBC, light-client and zero-knowledge bridges, cross-chain swaps, and issuer-supported integrations — but value, once it arrives, settles through Mono-native standards on a Rust/RISC-V execution layer.
+This is a deliberate position. The chain is **EVM-connected at the liquidity edge** — value moves in and out through light-client and zero-knowledge bridges, cross-chain swaps, and issuer-supported integrations — but value, once it arrives, settles through Mono-native standards on a Rust/RISC-V execution layer.
 
 The reasoning is in §9. The short version: trying to be a faster Ethereum has been tried and produces well-funded chains that nevertheless live inside Ethereum's frame. The chain optimizes for the audience that wants Rust contracts, AI-assisted developer ergonomics, post-quantum accounts, native modules for hot paths, and a smaller and cleaner protocol surface.
 
@@ -460,7 +460,7 @@ EVM compatibility is valuable because it answers many practical market questions
 
 EVM-compatibility answers those by inheriting the Ethereum tooling surface: token standards, contracts, wallets, explorers, auditors, libraries, and liquidity routers.
 
-Monolythium answers them differently. The **execution** layer stays Rust/RISC-V-native; the **liquidity** layer connects outward through IBC, zero-knowledge and light-client bridges, cross-chain swaps, and issuer-supported integrations. The chain avoids isolation while keeping the base layer smaller and cleaner.
+Monolythium answers them differently. The **execution** layer stays Rust/RISC-V-native; the **liquidity** layer connects outward through zero-knowledge and light-client bridges, cross-chain swaps, and issuer-supported integrations. The chain avoids isolation while keeping the base layer smaller and cleaner.
 
 ### What Monolythium gives up by not being EVM-compatible
 
@@ -494,7 +494,6 @@ Monolythium does not have a perfect mirror competitor.
 
 - Ethereum and EVM-compatible chains compete on liquidity and developer familiarity.
 - High-performance non-EVM chains compete on throughput and consumer applications.
-- IBC-native chains compete on sovereign interoperability.
 - High-performance trading chains compete for low-latency derivatives flow.
 - Open agent-payment standards (x402, AP2, ACP, MCP) compete for the payment handshake — Monolythium composes underneath them rather than against them (§3).
 
@@ -504,7 +503,7 @@ Monolythium's differentiated combination is:
 - Rust/RISC-V-native execution from the base layer;
 - post-quantum accounts as default, not optional;
 - native MRC token, NFT, market, and agent-commerce modules;
-- IBC and zero-knowledge bridge liquidity rather than EVM execution compatibility;
+- zero-knowledge and light-client bridge liquidity rather than EVM execution compatibility;
 - no on-chain governance;
 - no mainnet perpetuals;
 - structurally non-fungible public/private denomination;
@@ -769,7 +768,7 @@ The execution environment is a **Rust/RISC-V-native smart contract runtime**. Th
 2. **Rust/RISC-V contracts** for application-specific programmable logic.
 3. **zkVM-proven computation** for bridge proofs, cross-chain swaps, zkML, and high-cost off-chain verification.
 
-The goal is not "EVM, but faster." The goal is a smaller, safer programmable settlement layer with first-class support for post-quantum accounts, AI-agent workflows, IBC liquidity, and verifiable cross-chain settlement.
+The goal is not "EVM, but faster." The goal is a smaller, safer programmable settlement layer with first-class support for post-quantum accounts, AI-agent workflows, and verifiable cross-chain settlement.
 
 ### 14.1 Contract artifact
 
@@ -1257,12 +1256,11 @@ Wallets render the two denominations distinctly. A user moving LYTH from public 
 
 ## 20. Bridges and the Liquidity Edge
 
-Monolythium needs liquidity but does not need to inherit EVM execution to get it. The liquidity strategy has four layers.
+Monolythium needs liquidity but does not need to inherit EVM execution to get it. The liquidity strategy has three layers.
 
-1. **IBC routes** for interchain assets where light-client verification is available.
-2. **Zero-knowledge or light-client bridges** for major external assets where proof-bound verification is feasible.
-3. **Cross-chain swaps** where proof-bound settlement is better than a full bridge route.
-4. **Issuer-supported native assets** where the network earns enough adoption to justify direct issuer integrations.
+1. **Zero-knowledge or light-client bridges** for major external assets where proof-bound verification is feasible.
+2. **Cross-chain swaps** where proof-bound settlement is better than a full bridge route.
+3. **Issuer-supported native assets** where the network earns enough adoption to justify direct issuer integrations.
 
 Wrapped assets are labeled honestly. A bridged stablecoin is not the same as a native issuer-minted stablecoin. Wallets and explorers show the route, trust model, cooldown, proof status, and risk metadata. **The goal is not to hide bridge risk; the goal is to make bridge risk legible.**
 
@@ -1274,7 +1272,6 @@ A seven-day withdrawal window can be useful for weaker, trusted bridges because 
 
 | Route | Cooldown posture |
 |---|---|
-| IBC / interchain finality | One epoch, with potential reduction after the route is proven under load |
 | Ethereum finalized events | One epoch once finalized-event inclusion is verified |
 | Solana | One to two epochs depending on finality confidence and bridge policy |
 | Bitcoin | Two or more epochs or value-tiered limits, because finality is probabilistic |
@@ -1294,7 +1291,7 @@ Every bridge route exposes its risk model clearly:
 - **insurance or reserve information** where available;
 - **public status** for paused, degraded, or stale routes.
 
-This matters because users often treat all bridged assets as equal. They are not equal. A trusted multisig bridge, an IBC route, a zero-knowledge bridge, and a native issuer-minted asset all carry different risks. The wallet and explorer ecosystem makes those differences visible before a user signs.
+This matters because users often treat all bridged assets as equal. They are not equal. A trusted multisig bridge, a light-client-verified route, a zero-knowledge bridge, and a native issuer-minted asset all carry different risks. The wallet and explorer ecosystem makes those differences visible before a user signs.
 
 ### 20.3 Bridge proofs and swap proofs
 
@@ -1548,7 +1545,7 @@ The four-button surface gives the user a simple choice over a complex underlying
 Wallets render risk in addition to balance. Before a user signs:
 
 - the asset's denomination (public or private);
-- the asset's route (native, wrapped, bridged, IBC, light-client-verified, zero-knowledge-verified);
+- the asset's route (native, wrapped, bridged, light-client-verified, zero-knowledge-verified);
 - the bridge's drain-cap remaining and circuit-breaker status;
 - the agent sub-account's policy summary if applicable;
 - the runbook the assistant has selected, with parameters spelled out;
@@ -1618,7 +1615,7 @@ A network that scores well on these is a network that has delivered what the des
 
 Monolythium is a deliberate break from the default Layer-1 playbook.
 
-It does not try to win by becoming a slightly faster EVM chain. It chooses Rust on a deterministic RISC-V target, post-quantum accounts as default, native asset standards, native markets, native agent-commerce primitives, IBC and zero-knowledge bridge liquidity, focused use of zero-knowledge proofs at the highest-value boundaries, a structurally non-fungible privacy denomination, a public cluster marketplace, and a smaller protocol surface.
+It does not try to win by becoming a slightly faster EVM chain. It chooses Rust on a deterministic RISC-V target, post-quantum accounts as default, native asset standards, native markets, native agent-commerce primitives, zero-knowledge and light-client bridge liquidity, focused use of zero-knowledge proofs at the highest-value boundaries, a structurally non-fungible privacy denomination, a public cluster marketplace, and a smaller protocol surface.
 
 It composes underneath the major agent-payment standards rather than fighting them, providing the chain-anchored policy, escrow, identity, and reputation layer those rails leave open.
 
@@ -1641,7 +1638,6 @@ The Monolythium protocol is the product of years of design work, research, and e
 - the FROST distributed key generation family;
 - the BIP-39 wordlist and bech32m encoding conventions;
 - the FRI-based proof-system family and the broader zero-knowledge research community;
-- the IBC interchain communication protocol;
 - the BLAKE3 hash function;
 - the open agent-payment standards that the chain composes against — x402, AP2, ACP, and MCP — whose existence makes the settlement-layer wedge concrete and addressable.
 
