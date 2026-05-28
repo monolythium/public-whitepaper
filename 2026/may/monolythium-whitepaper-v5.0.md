@@ -49,42 +49,42 @@ This document has three parts.
 
 **Part 1 — Why Monolythium**
 
-1. The Thesis: Settlement Layer for the Autonomous Economy
-2. The First Wedge
-3. Composition with Agent-Payment Standards
-4. What Monolythium Refuses
-5. Bifurcated Denomination: Privacy Without Contamination
-6. Cluster Marketplace: Validator Operations as a Public Market
-7. Post-Quantum from Genesis
-8. Forking as the Exit Path
-9. Why Rust and RISC-V
-10. Market Positioning
+1. [The Thesis: Settlement Layer for the Autonomous Economy](#1-the-thesis-settlement-layer-for-the-autonomous-economy)
+2. [The First Wedge](#2-the-first-wedge)
+3. [Composition with Agent-Payment Standards](#3-composition-with-agent-payment-standards)
+4. [What Monolythium Refuses](#4-what-monolythium-refuses)
+5. [Bifurcated Denomination: Privacy Without Contamination](#5-bifurcated-denomination-privacy-without-contamination)
+6. [Cluster Marketplace: Validator Operations as a Public Market](#6-cluster-marketplace-validator-operations-as-a-public-market)
+7. [Post-Quantum from Genesis](#7-post-quantum-from-genesis)
+8. [Forking as the Exit Path](#8-forking-as-the-exit-path)
+9. [Why Rust and RISC-V](#9-why-rust-and-risc-v)
+10. [Market Positioning](#10-market-positioning)
 
 **Part 2 — How Monolythium Works**
 
-11. Consensus: Starfish-C
-12. Cryptography
-13. Identity: Addresses, Mnemonics, and Names
-14. Execution: Rust on RISC-V
-15. Native Modules and MRC Standards
-16. Tokenomics
-17. Cluster Operations: DVT, Slashing, Service Tiers
-18. Agent Commerce Primitives
-19. Privacy Cordon
-20. Bridges and the Liquidity Edge
-21. Hardware Sovereignty
-22. Threat Model
-23. Recovery and Emergency Posture
+11. [Consensus: Starfish-C](#11-consensus-starfish-c)
+12. [Cryptography](#12-cryptography)
+13. [Identity: Addresses, Mnemonics, and Names](#13-identity-addresses-mnemonics-and-names)
+14. [Execution: Rust on RISC-V](#14-execution-rust-on-risc-v)
+15. [Native Modules and MRC Standards](#15-native-modules-and-mrc-standards)
+16. [Tokenomics](#16-tokenomics)
+17. [Cluster Operations: DVT, Slashing, Service Tiers](#17-cluster-operations-dvt-slashing-service-tiers)
+18. [Agent Commerce Primitives](#18-agent-commerce-primitives)
+19. [Privacy Cordon](#19-privacy-cordon)
+20. [Bridges and the Liquidity Edge](#20-bridges-and-the-liquidity-edge)
+21. [Hardware Sovereignty](#21-hardware-sovereignty)
+22. [Threat Model](#22-threat-model)
+23. [Recovery and Emergency Posture](#23-recovery-and-emergency-posture)
 
 **Part 3 — Adoption and Outlook**
 
-24. Developer Experience
-25. User Experience
-26. Honest Limitations
-27. What Success Looks Like
-28. Closing
+24. [Developer Experience](#24-developer-experience)
+25. [User Experience](#25-user-experience)
+26. [Honest Limitations](#26-honest-limitations)
+27. [What Success Looks Like](#27-what-success-looks-like)
+28. [Closing](#28-closing)
 
-Acknowledgments · Entities · License
+[Acknowledgments](#acknowledgments) · [Entities](#entities) · [License](#license)
 
 ---
 
