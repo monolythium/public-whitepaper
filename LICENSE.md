@@ -29,7 +29,7 @@ When this whitepaper is published externally, the full canonical license text is
 
 ## Attribution string
 
-> Monolythium v2 Whitepaper v4.1, Mono Labs, licensed under CC BY-SA 4.0.
+> Monolythium Whitepaper v5.0 (May 2026), Mono Labs R&D LLC, licensed under CC BY-SA 4.0.
 
 ## Why CC BY-SA 4.0 for the text
 

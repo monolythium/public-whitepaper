@@ -532,7 +532,7 @@ body {
 <p>Spot markets, yes. Perpetual futures, on-chain leverage, and margin trading, no — not on mainnet, not as a mintable asset class, not as a planned addition. Once a chain becomes a perpetuals venue, the design pressure on every other surface bends toward the perpetuals product. The chain pays the simplification — smaller audit surface, cleaner identity — to keep the design focused on settlement.</p>
 <h3 id="43-no-evm-execution">4.3 No EVM execution</h3>
 <p>Monolythium is <strong>not EVM-compatible at execution</strong>. EVM bytecode does not run on the chain; Solidity is not the default developer model; ERC conventions are not the protocol standards.</p>
-<p>The chain is <strong>EVM-connected at the liquidity edge</strong> — value moves in and out through IBC, light-client and zero-knowledge bridges, cross-chain swaps, and issuer-supported integrations. Once value arrives, it settles through Mono-native standards on a Rust/RISC-V execution layer.</p>
+<p>The chain is <strong>EVM-connected at the liquidity edge</strong> — value moves in and out through light-client and zero-knowledge bridges, cross-chain swaps, and issuer-supported integrations. Once value arrives, it settles through Mono-native standards on a Rust/RISC-V execution layer.</p>
 <h3 id="44-no-fungibility-between-public-and-private-money">4.4 No fungibility between public and private money</h3>
 <p>LYTH has two denominations, <strong>public</strong> and <strong>private</strong>, and they are <strong>not fungible</strong>. The crossing from public to private is one-way; private LYTH cannot ever return to public. Private LYTH supports two operations only: transfer to another private address, and burn. It cannot enter a smart contract, cannot trade on the spot order book, cannot bridge, and cannot pay for any service mediated by the discovery registry. See §9.</p>
 <h3 id="45-no-bundled-ai-model">4.5 No bundled AI model</h3>
@@ -580,8 +580,8 @@ body {
 </tr>
 <tr>
 <td>Zero-knowledge verification</td>
-<td><strong>FRI/STARK-based zkVM</strong></td>
-<td>Bridge proofs, zkML attestations, sync-committee verification</td>
+<td><strong>SP1 zkVM + Groth16-BN254</strong></td>
+<td>zkML attestations, high-value off-chain computation</td>
 </tr>
 <tr>
 <td>Hash</td>
@@ -777,8 +777,8 @@ body {
 <h3 id="pqm-1-mnemonic">PQM-1 mnemonic</h3>
 <p>Wallets support two recovery formats. The default is an encrypted keystore (Argon2id over the password, XChaCha20-Poly1305 over the seed). For users who want phrase-based backup, the chain defines <strong>PQM-1</strong>: a 24-word BIP-39 phrase whose bytes are interpreted under a post-quantum scheme (algorithm tag + version + 240-bit entropy, expanded via SHAKE256, used as the ML-DSA-65 keygen seed). A typical BIP-39 → secp256k1 EVM mnemonic is <strong>not compatible</strong> — wallets warn the user explicitly before either direction is attempted.</p>
 <h3 id="lyth-name-registry">LYTH name registry</h3>
-<p>A hierarchical, on-chain name registry maps human-readable names to addresses. Lowercase ASCII letters, digits, and hyphens; no mixed case, no Unicode confusables. Five top-level categories — personal, business, agent, community, infrastructure. U-curve pricing discourages both squatting (short names cost more) and clutter (long names pay a small administrative fee). Transfer is propose-accept with a 24-hour acceptance window. Reserved prefixes prevent collisions with bech32m HRPs and <code>0x</code> strings.</p>
-<p>Agents can be addressed as <code>support-bot.agent</code>, businesses as <code>pizzeria-on-main.business</code>, clusters as <code>northstar.infrastructure</code>. The bech32m address remains the canonical underlying identifier; the name is a human-readable alias.</p>
+<p>A hierarchical, on-chain name registry maps human-readable names to addresses. Lowercase ASCII letters, digits, and hyphens; no mixed case, no Unicode confusables. Names live under the <code>.mono</code> namespace and resolve to five structural categories: a bare <code>&lt;name&gt;.mono</code> is a human/personal account, an agent registers beneath its human principal as <code>&lt;name&gt;.agent.&lt;human&gt;.mono</code>, and clusters, contracts, and protocol entities take <code>&lt;name&gt;.cluster.mono</code>, <code>&lt;name&gt;.contract.mono</code>, and <code>&lt;name&gt;.system.mono</code> (the system category is foundation-only). U-curve pricing discourages both squatting (short names cost more) and clutter (long names pay a small administrative fee). Transfer is propose-accept with a 24-hour acceptance window. Reserved prefixes prevent collisions with bech32m HRPs and <code>0x</code> strings.</p>
+<p>A person is addressed as <code>alex-rivera.mono</code>, their agent as <code>support-bot.agent.alex-rivera.mono</code>, and a cluster as <code>northstar.cluster.mono</code>. The bech32m address remains the canonical underlying identifier; the name is a human-readable alias.</p>
 <hr>
 <h2 id="8-bifurcated-denomination-privacy-without-contamination">8. Bifurcated Denomination — Privacy Without Contamination</h2>
 <p>Privacy on a public ledger has, over the last several years, been on a steady regulatory collision course. The two historical trajectories are visible:</p>
@@ -940,9 +940,8 @@ body {
 </ul>
 <hr>
 <h2 id="11-bridges-and-the-liquidity-edge">11. Bridges and the Liquidity Edge</h2>
-<p>Monolythium needs liquidity but does not need EVM execution to get it. The liquidity strategy has four layers:</p>
+<p>Monolythium needs liquidity but does not need EVM execution to get it. The liquidity strategy has three layers:</p>
 <ol>
-<li><strong>IBC routes</strong> for interchain assets where light-client verification is available.</li>
 <li><strong>Zero-knowledge or light-client bridges</strong> for major external assets where proof-bound verification is feasible.</li>
 <li><strong>Cross-chain swaps</strong> where proof-bound settlement is better than a full bridge route.</li>
 <li><strong>Issuer-supported native assets</strong> where the network earns enough adoption to justify direct issuer integrations.</li>
@@ -1034,7 +1033,7 @@ body {
 <li>Rust/RISC-V-native execution from the base layer;</li>
 <li>post-quantum accounts as default, not optional;</li>
 <li>native MRC token, NFT, market, and agent-commerce modules;</li>
-<li>IBC and zero-knowledge bridge liquidity rather than EVM execution compatibility;</li>
+<li>zero-knowledge and light-client bridge liquidity rather than EVM execution compatibility;</li>
 <li>no on-chain governance;</li>
 <li>no mainnet perpetuals;</li>
 <li>structurally non-fungible public/private denomination;</li>
@@ -1077,7 +1076,7 @@ body {
 <hr>
 <h2 id="18-closing">18. Closing</h2>
 <p>Monolythium is a deliberate break from the default Layer-1 playbook.</p>
-<p>It does not try to win by becoming a slightly faster EVM chain. It chooses Rust on a deterministic RISC-V target, post-quantum accounts as default, native asset standards, native markets, native agent-commerce primitives, IBC and zero-knowledge bridge liquidity, focused use of zero-knowledge proofs at the highest-value boundaries, a structurally non-fungible privacy denomination, a public cluster marketplace, and a smaller protocol surface.</p>
+<p>It does not try to win by becoming a slightly faster EVM chain. It chooses Rust on a deterministic RISC-V target, post-quantum accounts as default, native asset standards, native markets, native agent-commerce primitives, zero-knowledge and light-client bridge liquidity, focused use of zero-knowledge proofs at the highest-value boundaries, a structurally non-fungible privacy denomination, a public cluster marketplace, and a smaller protocol surface.</p>
 <p>It composes underneath the major agent-payment standards rather than fighting them, providing the chain-anchored policy, escrow, identity, and reputation layer those rails leave open.</p>
 <p>That choice is harder. It means more tooling, more education, and a slower path to existing Solidity liquidity. It also gives the chain a clearer identity and a stronger foundation for the workloads it expects to serve.</p>
 <p>The thesis is straightforward: the next major settlement layer will not be the chain that copies Ethereum most closely. It will be the chain that gives new economic actors — autonomous agents, organizations delegating to software, services that want neutral cross-platform rails — safer rails to transact across applications, markets, and jurisdictions.</p>

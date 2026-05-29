@@ -142,7 +142,7 @@ The cost of pure post-quantum is signature size — ML-DSA-65 signatures are ~3,
 | Key encapsulation | **ML-KEM-768** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation, mempool encapsulation |
 | Aggregate signatures | **BLS12-381** | Per-cluster threshold aggregation, VRF, distributed key generation |
 | Threshold key encapsulation | **Ferveo over BLS12-381** | Encrypted-mempool body decryption at anchor inclusion |
-| Zero-knowledge verification | **FRI/STARK-based zkVM** | Bridge proofs, zkML attestations, sync-committee verification |
+| Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | zkML attestations, high-value off-chain computation |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, address derivation |
 
 ### 5.2 Two-tier finality
@@ -261,9 +261,9 @@ Wallets support two recovery formats. The default is an encrypted keystore (Argo
 
 ### LYTH name registry
 
-A hierarchical, on-chain name registry maps human-readable names to addresses. Lowercase ASCII letters, digits, and hyphens; no mixed case, no Unicode confusables. Five top-level categories — personal, business, agent, community, infrastructure. U-curve pricing discourages both squatting (short names cost more) and clutter (long names pay a small administrative fee). Transfer is propose-accept with a 24-hour acceptance window. Reserved prefixes prevent collisions with bech32m HRPs and `0x` strings.
+A hierarchical, on-chain name registry maps human-readable names to addresses. Lowercase ASCII letters, digits, and hyphens; no mixed case, no Unicode confusables. Names live under the `.mono` namespace and resolve to five structural categories: a bare `<name>.mono` is a human/personal account, an agent registers beneath its human principal as `<name>.agent.<human>.mono`, and clusters, contracts, and protocol entities take `<name>.cluster.mono`, `<name>.contract.mono`, and `<name>.system.mono` (the system category is foundation-only). U-curve pricing discourages both squatting (short names cost more) and clutter (long names pay a small administrative fee). Transfer is propose-accept with a 24-hour acceptance window. Reserved prefixes prevent collisions with bech32m HRPs and `0x` strings.
 
-Agents can be addressed as `support-bot.agent`, businesses as `pizzeria-on-main.business`, clusters as `northstar.infrastructure`. The bech32m address remains the canonical underlying identifier; the name is a human-readable alias.
+A person is addressed as `alex-rivera.mono`, their agent as `support-bot.agent.alex-rivera.mono`, and a cluster as `northstar.cluster.mono`. The bech32m address remains the canonical underlying identifier; the name is a human-readable alias.
 
 ---
 

@@ -399,7 +399,7 @@ Cryptographic posture is end-to-end:
 | Key encapsulation | **ML-KEM** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation |
 | Aggregate signatures | **BLS12-381** | Per-cluster threshold aggregation for consensus throughput |
 | Threshold key encapsulation | **Ferveo over BLS12-381** | Encrypted-mempool body decryption at block inclusion |
-| Zero-knowledge verification | **FRI/STARK-based zkVM** | Application-layer proof verification (zkML attestations, sync-committee bridges) |
+| Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | Application-layer proof verification (zkML attestations, high-value off-chain computation) |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
 
 Three properties of this stack are worth highlighting because they reflect design choices rather than ingredient-list ticks:
@@ -601,7 +601,7 @@ This section specifies the cryptographic primitive set in implementation detail.
 | Key encapsulation | **ML-KEM-768** (FIPS 203, Module-Lattice KEM) | Peer-to-peer Noise handshakes; RPC TLS; stealth-address derivation |
 | Aggregate signatures (consensus) | **BLS12-381** | Cluster threshold aggregate, VRF, distributed key generation |
 | Threshold key encapsulation (mempool) | **Ferveo over BLS12-381** | Encrypted-mempool body decryption at anchor inclusion |
-| Zero-knowledge verification | **FRI/STARK-based zkVM** | Application-layer proof verification (zkML attestations, sync-committee bridges) |
+| Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | Application-layer proof verification (zkML attestations, high-value off-chain computation) |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
 
 There is no Ed25519 acceptance path. There is no hybrid signature mode. The protocol validates exactly one signature primitive at transaction admission: ML-DSA-65 (with SLH-DSA as the emergency-rotation alternative, never coexistent).
@@ -649,7 +649,7 @@ At anchor inclusion, the cluster's threshold-decryption coordinator collects par
 
 ### 12.6 Zero-knowledge proof systems
 
-Application-layer zero-knowledge verification is FRI-based — hash-only, quantum-secure, no pairing-based components — and not consumed by the consensus path. The chain uses zero knowledge where it reduces risk the most:
+Application-layer zero-knowledge verification uses an SP1 zkVM with an on-chain Groth16-BN254 SNARK verifier, and is not consumed by the consensus path. A future migration to a hash-only, fully post-quantum FRI/STARK verifier is a long-horizon goal, pending the proving ecosystem shipping on-chain-verifiable STARK receipts; until then, post-quantum integrity at the deep-settlement tier comes from the ML-DSA-65 quantum-attested checkpoints (§12.4), which an attacker who forges a SNARK proof still cannot bypass. The chain uses zero knowledge where it reduces risk the most:
 
 - **Bridge proofs.** A bridge can attest that an external chain finalized a specific event, state transition, burn, lock, or withdrawal condition. The chain verifies the proof before releasing assets or updating bridge state. This reduces dependence on trusted multisigs and relayer committees.
 - **Swap proofs.** A swap can verify that a batch of intents or orders was matched according to a declared policy. This supports fair ordering, batch auctions, and verified-matching markets without asking users to trust an opaque sequencer.
@@ -748,7 +748,7 @@ Bech32m addresses are unmistakable but not memorable. Monolythium ships a hierar
 Naming structure:
 
 - **Charset.** Lowercase ASCII letters, digits, and the hyphen. No mixed case, no Unicode confusables, no scripted characters at the protocol level.
-- **Hierarchy.** Five top-level categories — personal, business, agent, community, and infrastructure — each with their own naming rules and registration policy. Names are written `name.category`.
+- **Hierarchy.** Names live under the `.mono` namespace and resolve to one of five structural categories. A bare `<name>.mono` is a **human** (personal) account. An agent is registered **beneath its human principal** as `<name>.agent.<human>.mono`, so the naming hierarchy mirrors the agent-as-sub-account model directly. Clusters, deployed contracts, and protocol/system entities take `<name>.cluster.mono`, `<name>.contract.mono`, and `<name>.system.mono` respectively; the `system` category is foundation-only and closed to public registration.
 - **Pricing.** A U-curve pricing schedule discourages both squatting (short, premium names cost meaningfully more) and clutter (very long names cost a small administrative fee). The pricing curve is constitutional; it is not adjustable through any signaling mechanism.
 - **Transfer.** Names transfer through a propose-accept flow with a 24-hour acceptance window. The recipient must affirmatively accept the transfer; the sender cannot push a name to an unwilling recipient.
 - **Reserved prefixes.** The registry refuses to register names that begin with the chain's bech32m human-readable prefixes (`mono`, `monos`, `monoc`, `monok`, `monom`, `monox`, and additional reserved prefixes), or with `0x`. This prevents the registry from minting names that could be confused with raw addresses.
@@ -756,7 +756,7 @@ Naming structure:
 
 The Monolythium Foundation seeds the registry at genesis with a reserve of category-defining and protocol-relevant names. The reserve is published, not sold; reserved names are released into the open market on a schedule that is also published.
 
-The result is that an agent can be addressed as `support-bot.agent`, a business as `pizzeria-on-main.business`, a cluster as `northstar.infrastructure`, a community as `gamers-united.community`, and a person as `alex-rivera.personal`. The bech32m address is still the canonical underlying identifier; the name is a human-readable alias that resolves to it.
+The result is that a person is addressed as `alex-rivera.mono`, an agent owned by that person as `support-bot.agent.alex-rivera.mono`, a cluster as `northstar.cluster.mono`, a deployed contract as `monoswap.contract.mono`, and a protocol entity as `name-registry.system.mono`. The bech32m address is still the canonical underlying identifier; the name is a human-readable alias that resolves to it.
 
 ---
 
