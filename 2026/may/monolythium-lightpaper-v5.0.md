@@ -86,7 +86,7 @@ The composition is **one-directional**. Monolythium does not require the rails t
 2. The wallet checks the Monolythium spending policy on the agent's sub-account: category allow-listed, price under per-call cap, monthly aggregate under cap.
 3. The wallet signs a Monolythium transaction that pays the x402 invoice in stablecoin; `purpose` references the x402 payment ID; the runbook is `pay_vendor`.
 4. The protocol verifies the spending-policy constraints **at admission** and refuses if any fail.
-5. Settlement happens at anchor finality (three to five seconds). The endpoint serves the response.
+5. Settlement happens at anchor finality (four to five seconds). The endpoint serves the response.
 6. If the response is disputed, the principal opens an escrow-arbiter dispute referencing the x402 transaction.
 
 The endpoint integrates only with x402. The chain handles everything beyond the handshake. The agent does not implement any of this manually — the wallet, the runbook, and the spending policy carry the discipline.
@@ -139,20 +139,20 @@ The cost of pure post-quantum is signature size — ML-DSA-65 signatures are ~3,
 |---|---|---|
 | User signatures | **ML-DSA-65** (FIPS 204) | Every user-signed transaction |
 | Emergency backup signatures | **SLH-DSA** (FIPS 205, hash-based) | Pre-registered backup; activated under emergency rotation |
-| Key encapsulation | **ML-KEM-768** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation, mempool encapsulation |
-| Aggregate signatures | **BLS12-381** | Per-cluster threshold aggregation, VRF, distributed key generation |
-| Threshold key encapsulation | **Ferveo over BLS12-381** | Encrypted-mempool body decryption at anchor inclusion |
+| Key encapsulation | **ML-KEM-768** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation |
+| Consensus signatures | **ML-DSA-65** (FIPS 204) | Per-operator vertex signatures; cluster 7-of-10 quorum is a bitmap multisig of independent operator signatures |
+| Threshold encapsulation (mempool), *post-quantum, testnet* | **cluster-ML-KEM-768 + GF(256) Shamir + committing AEAD** (FIPS 203) | Encrypted-mempool sealing ("LythiumSeal") on the optional encrypted path; research-stage, unaudited, running on the public testnet |
+| Threshold encapsulation (mempool), *classical, feature-gated* | **Ferveo (classical)** | Prior classical encrypted-mempool body, retained behind a feature gate; not the default path |
 | Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | zkML attestations, high-value off-chain computation |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, address derivation |
 
-### 5.2 Two-tier finality
+### 5.2 Post-quantum finality
 
-The chain delivers two finality signals tuned for different use cases:
+The chain delivers a single, post-quantum finality tier, with no classical fast-path and no separate checkpoint tier:
 
-- **Anchor-level finality** (three to five seconds, BLS12-381 aggregate). Per-cluster threshold signatures compress 700 individual operator signatures per round into a single verifier check. Used for everyday transfers, application interactions, and mempool admission.
-- **Quantum-attested finality** (every ~100 anchors, ML-DSA-65 checkpoint). Operators each sign the canonical state root with their post-quantum keys. Bridges, exchange listings, and high-value cross-chain attestations bind here. A quantum attacker who can forge BLS aggregates cannot forge ML-DSA-65 — the fork dies at the next checkpoint.
+- **Anchor-level finality** (four to five seconds, ML-DSA-65). Each operator signs its cluster's vertex with its own ML-DSA-65 key; the cluster's 7-of-10 quorum certificate is a bitmap multisig of those independent operator signatures, with no BLS aggregate. Used for everyday transfers, application interactions, mempool admission, and equally for bridges, exchange listings, and high-value cross-chain attestations.
 
-Checkpoint cadence is milestone-overridable, so high-value bridge integrations can drop the interval (for example to ~24 seconds) for tighter cross-chain UX without a hard fork.
+Because every anchor is already finalized under post-quantum signatures, there is no quantum-forgeable tier to outrun: an attacker who cannot forge ML-DSA-65 cannot forge an anchor. Integrations wanting deeper economic finality wait for more confirmations, not for a separate signature tier.
 
 ### 5.3 Rust on RISC-V
 
@@ -187,7 +187,7 @@ Wallets and explorers display MRC assets as **first-class assets**, not as arbit
 
 ### 5.5 Cluster marketplace
 
-Monolythium does not have validators in the traditional single-operator sense. It has **clusters**: 7-of-10 operator-threshold groups that produce one logical validator vertex per cluster, per consensus round. At target scale, **100 clusters × 10 operators = 1,000 operator positions** (700 active + 300 standby).
+Monolythium does not have validators in the traditional single-operator sense. It has **clusters**: 7-of-10 operator-threshold groups that produce one logical cluster vertex per cluster, per consensus round. At target scale, **100 clusters × 10 operators = 1,000 operator positions** (700 active + 300 standby).
 
 Cluster membership is a **public market**. Operators publish their node attestation (hardware class, network metadata, geographic claim, uptime, service-tier capacity), and clusters compose themselves from operators offering complementary skills — a bare-metal operator in one region for throughput, a cloud operator in a second for diversity, a home operator in a third for jurisdiction, a GPU-equipped operator for the prover service tier, an archive-capable operator for RPC.
 
@@ -300,15 +300,15 @@ The pattern that history calls "the darknet marketplace" requires the simultaneo
 
 The consensus engine is **Starfish-C**, a leaderless DAG-BFT protocol with:
 
-- **Three-second deterministic finality** under partial synchrony (three to five seconds typical, ~eight seconds before view-change).
+- **Four-second deterministic finality** under partial synchrony (four to five seconds typical, ~eight seconds before view-change).
 - **Deterministic linearization** of the DAG — two honest clusters starting from the same DAG state derive byte-identical block sequences.
 - **Bounded reorg** capped by protocol parameter; an adversary cannot force a deeper reorg without controlling more than f Byzantine clusters.
-- **Threshold-VRF leader selection** with set-independent Lagrange interpolation, so an adversary cannot influence the seed by selectively withholding signatures.
+- **Deterministic round-robin leader selection**: every cluster derives the same wave leader from the wave number and active cluster set, with no random beacon, so there is no seed for an adversary to influence.
 - **100% slash + permanent operator exile** on equivocation. The slash is exemplary, not merely punitive; a protocol that destroys the equivocating operator's stake and bars them forever does not need to tolerate equivocation.
 
 The user-facing finality unit is the **anchor**. Multiple internal layers exist — vertex (cluster's signed round payload), wave (round of vertex production), anchor (deterministic linearization point), and block (preserved only for EVM-style RPC compatibility such as `eth_blockNumber`).
 
-The encrypted-mempool admission rule is binding from genesis. Every transaction enters the mempool encrypted under a per-epoch Ferveo threshold-DKE public key; the body becomes plaintext only at anchor inclusion. No single operator can decrypt; no minority can; only a 7-of-10 cluster collusion could compromise mempool privacy, and even then only within the seconds-long lifecycle between admission and inclusion.
+Mempool encryption is optional and per-transaction. A sender can submit a transaction in plaintext, or seal it so the body stays confidential until anchor inclusion. The post-quantum encrypted path is **LythiumSeal**: cluster ML-KEM-768 (FIPS-203) plus information-theoretic GF(256) Shamir secret sharing plus a committing AEAD, with each operator holding only its own ML-KEM keypair and no distributed key generation. For a sealed transaction, no single operator can decrypt and no minority of fewer than t can; only a t-of-n (7-of-10 per cluster) operator coalition could, and even then only in the seconds between admission and inclusion. A plaintext transaction, including a plaintext order, is visible before inclusion and gets no such protection. LythiumSeal runs on the public testnet and is research-stage and unaudited: standardized primitives in a novel composition that has had no independent cryptographic review. The prior classical Ferveo body is retained only behind a feature gate.
 
 ---
 
@@ -404,7 +404,7 @@ Production operators run on **Monarch OS** — an immutable substrate built on a
 - **Immutable signed image.** No package manager. No SSH. No interactive shell. The system is purpose-built for operator workloads.
 - **Verified rooted filesystem.** Every block of the filesystem is verified against a signed Merkle root at read time.
 - **TPM 2.0 measured boot.** Boot-sequence hash measurements are extended into TPM PCRs. The system can prove what it booted via TPM PCR quotes.
-- **TPM-sealed operator key shares.** A cluster's BLS share is sealed against the local TPM. Opening the chassis or modifying firmware breaks the seal and forces re-onboarding.
+- **TPM-sealed operator signing key.** An operator's ML-DSA-65 consensus signing key is sealed against the local TPM. Opening the chassis or modifying firmware breaks the seal and forces re-onboarding.
 - **No userspace foothold for kernel exploits.** A modern class of kernel local-privilege-escalation bugs requires a local non-privileged userspace foothold; Monarch OS structurally denies that foothold.
 - **Aggressively trimmed kernel.** The userspace cryptographic kernel API is disabled at kernel-config level — all crypto runs in-process via Rust libraries, not via kernel crypto sockets. The entire class of kernel-CVE attacks against userspace crypto APIs is closed off going forward.
 
@@ -450,7 +450,7 @@ Monolythium's threat model assumes some operators are Byzantine, bridges are an 
 
 ### MEV
 
-MEV is bounded structurally. The encrypted mempool forecloses front-running based on mempool visibility. Threshold-VRF leader selection forecloses leader-grinding through block-content selection. The native order book settles deterministically against the consensus order rather than against a single sequencer's discretion. The chain does not claim MEV is zero — some backrunning of public events and inter-market arbitrage exists wherever transactions are visible — but the largest extractive categories (front-running, sandwich attacks based on mempool reads) are not available on Monolythium.
+MEV is bounded structurally for the transactions a sender chooses to encrypt. The optional encrypted mempool forecloses front-running based on mempool visibility for sealed transactions; a plaintext transaction, including a plaintext order, stays visible before inclusion and gets no such protection. Deterministic round-robin leader selection forecloses leader-grinding through block-content selection. The native order book settles deterministically against the consensus order rather than against a single sequencer's discretion. The chain does not claim MEV is zero (some backrunning of public events and inter-market arbitrage exists wherever transactions are visible, and any unsealed transaction is visible), but for sealed transactions the largest extractive categories (front-running and sandwich attacks based on mempool reads) are foreclosed.
 
 ---
 
@@ -485,7 +485,7 @@ The chain's direction is a strategic bet. The risks are real and named.
 - Rust/RISC-V contract tooling must be excellent — anything less than excellent loses to a familiar EVM environment.
 - Zero-knowledge bridge circuits are complex and require serious audit work.
 - The market for agent commerce may take longer to mature than expected.
-- Post-quantum signatures are larger than classical signatures, raising storage and bandwidth costs.
+- Post-quantum signatures are larger than classical signatures, raising storage and bandwidth costs. This is most visible in consensus: each anchor's quorum certificates carry raw per-operator ML-DSA-65 signatures (3,309 bytes each, seven per 7-of-10 cluster), so a certificate grows linearly with the number of voting clusters and is materially heavier than the single ~96-byte threshold-BLS aggregate it replaced. This is a deliberate cost of post-quantum, stateless, no-DKG consensus, not an oversight.
 - Distributed validator technology has not been deployed at the chain's target scale in a leaderless DAG-BFT configuration; the operational learning is ahead, not behind.
 - The bifurcated denomination is structurally hostile to certain user expectations from existing privacy chains; users coming from those chains will find the constraints unusual.
 - The composition stance depends on the major agent-payment standards remaining open and composable. A standard that closes its integration surface would constrain the wedge for that particular rail.

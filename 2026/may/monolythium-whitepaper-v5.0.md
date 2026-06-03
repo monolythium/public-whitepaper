@@ -206,7 +206,7 @@ An assistant requests a paid API. The endpoint returns `HTTP 402` with x402 paym
 1. The wallet checks the policy. The endpoint matches the allow-listed category. The price is under the per-call cap. The aggregate spend this month is under the monthly cap.
 2. The wallet signs a Monolythium transaction that pays the x402 invoice in stablecoin. The transaction's `purpose` field references the x402 payment ID. The Monolythium runbook is `pay_vendor` with parameters typed against the x402 receipt format.
 3. The protocol verifies the spending-policy constraints at admission, refuses if any fail, includes the transaction if all pass.
-4. Settlement happens at anchor finality (three to five seconds). The endpoint receives confirmation through its x402-compatible receiver, which also fetches the on-chain receipt.
+4. Settlement happens at anchor finality (four to five seconds). The endpoint receives confirmation through its x402-compatible receiver, which also fetches the on-chain receipt.
 5. The endpoint serves the response. The chain emits a typed event the principal's dashboard reads as part of the agent's audit trail.
 6. If the response is disputed (the data was stale, the endpoint underperformed against SLA), the principal opens an escrow-arbiter dispute referencing the x402 transaction. The arbiter registry routes the dispute.
 
@@ -342,7 +342,7 @@ A common question: what happens when an institution wants to accumulate LYTH pri
 
 ## 6. Cluster Marketplace: Validator Operations as a Public Market
 
-Monolythium does not have validators in the traditional single-operator sense. It has **clusters**: 7-of-10 operator-threshold groups that produce one logical validator vertex per cluster, per consensus round. A cluster is staffed by ten independent operators, runs continuously, and tolerates up to three operator outages without missing a beat.
+Monolythium does not have validators in the traditional single-operator sense. It has **clusters**: 7-of-10 operator-threshold groups that produce one logical cluster vertex per cluster, per consensus round. A cluster is staffed by ten independent operators, runs continuously, and tolerates up to three operator outages without missing a beat.
 
 The full cluster set at the target scale is **100 clusters × 10 operators = 1,000 operator positions across the network**, with seven active and three standby positions per cluster (1,000 = 700 active operator seats + 300 standby).
 
@@ -368,9 +368,9 @@ Agents need reliable infrastructure. A chain designed for autonomous settlement 
 
 ### Standby capacity and graceful failover
 
-Each cluster has a standby of three operators in addition to its seven active members. A standby operator participates in the cluster's communications, holds the threshold key shares ceremony's transcript, and is ready to step in when an active operator goes offline or is rotated out.
+Each cluster has a standby of three operators in addition to its seven active members. Each standby operator holds its own independent ML-DSA-65 signing key, participates in the cluster's communications, and is ready to step in when an active operator goes offline or is rotated out.
 
-The standby surface is part of what makes the cluster model **operationally resilient** rather than just structurally redundant. An active operator can be removed (by the cluster, by network policy, or by their own departure) without a re-keying ceremony, because the standby slot is already provisioned. The next-eligible standby is promoted, the threshold continues to hold, and the cluster keeps producing.
+The standby surface is part of what makes the cluster model **operationally resilient** rather than just structurally redundant. An active operator can be removed (by the cluster, by network policy, or by their own departure) without a re-keying ceremony: because every operator signs with its own independent key, promotion simply adds the standby's published key to the cluster's active signing set, with no shared signing key and no distributed-key-generation step. The next-eligible standby is promoted, the 7-of-10 quorum continues to hold, and the cluster keeps producing.
 
 ### Multi-cluster operator caps
 
@@ -397,16 +397,17 @@ Cryptographic posture is end-to-end:
 | User signatures | **ML-DSA-65** (FIPS 204) | Every user-signed transaction |
 | Emergency recovery | **SLH-DSA** (FIPS 205, hash-based) | Pre-registered backup; activated under emergency rotation |
 | Key encapsulation | **ML-KEM** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation |
-| Aggregate signatures | **BLS12-381** | Per-cluster threshold aggregation for consensus throughput |
-| Threshold key encapsulation | **Ferveo over BLS12-381** | Encrypted-mempool body decryption at block inclusion |
+| Consensus signatures | **ML-DSA-65** (FIPS 204) | Per-operator vertex signatures; the cluster's 7-of-10 quorum is a bitmap multisig of independent operator signatures |
+| Threshold encapsulation (mempool), *post-quantum, testnet* | **cluster-ML-KEM-768 + GF(256) Shamir + committing AEAD** (FIPS 203) | Encrypted-mempool sealing ("LythiumSeal") on the optional encrypted path; research-stage, unaudited, running on the public testnet |
+| Threshold encapsulation (mempool), *classical, feature-gated* | **Ferveo (classical)** | Prior classical encrypted-mempool body, retained behind a feature gate for comparison; not the default path |
 | Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | Application-layer proof verification (zkML attestations, high-value off-chain computation) |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
 
 Three properties of this stack are worth highlighting because they reflect design choices rather than ingredient-list ticks:
 
 - **No hybrid signature mode.** The chain does not accept "signed with ECDSA AND ML-DSA-65"; it accepts only ML-DSA-65. The reasoning is below.
-- **Post-quantum at the deep finality tier.** Block-level aggregation uses BLS12-381 for bandwidth (BLS aggregates are tiny). Every hundred blocks, the chain commits a **quantum-attested checkpoint** signed in ML-DSA-65 by each cluster's operators. Bridges, exchanges, and high-value cross-chain attestations bind to checkpoint-level finality. A quantum attacker who forges BLS cannot forge ML-DSA-65 — the fork dies at the next checkpoint.
-- **Bounded classical residual.** The only classical primitive in the chain is the per-block BLS12-381 aggregate. Its exposure is bounded to a five-minute checkpoint cadence. The honest cost-benefit: pure ML-DSA-at-consensus would tax per-block bandwidth roughly three thousand-fold; the chain instead pays bounded residual exposure with a clearly documented migration path if the industry produces a quantum-secure aggregate signature.
+- **Post-quantum consensus signatures.** Consensus is signed in ML-DSA-65: each operator signs its vertex with its own post-quantum key, and a cluster's 7-of-10 quorum is a bitmap multisig of those independent operator signatures. Bridges, exchanges, and high-value cross-chain attestations bind to this finality.
+- **Classical residual, disclosed honestly.** The chain does not yet claim a clean sweep of classical cryptography from the protocol. The machine-checked `no_classical_in_protocol` lint is the enforcement target and is not yet fully green, so classical primitives still link in parts of the build. The encrypted mempool's optional path is now post-quantum (LythiumSeal, §12.5); the prior classical Ferveo body is retained only behind a feature gate. Where this document makes a quantum claim, it states the surface it covers rather than asserting the whole protocol is classical-free.
 
 ### Why pure post-quantum, not hybrid
 
@@ -527,9 +528,9 @@ Monolythium's value to large participants is that it provides shared settlement 
 
 ## 11. Consensus: Starfish-C
 
-Monolythium's consensus engine is **Starfish-C**, a leaderless DAG-BFT protocol derived from the Starfish family of distributed-acyclic-graph consensus designs. Starfish-C provides deterministic linearization of a directed-acyclic graph of cluster-signed vertices, **three-second deterministic finality** under the partial-synchrony assumption (three to five seconds typical, with an outer bound of about eight seconds under degraded networking before a view-change is triggered), and equivocation handling that produces succinct, on-chain proofs and a one-hundred-percent slash plus permanent operator exile on detection.
+Monolythium's consensus engine is **Starfish-C**, a leaderless DAG-BFT protocol derived from the Starfish family of distributed-acyclic-graph consensus designs. Starfish-C provides deterministic linearization of a directed-acyclic graph of cluster-signed vertices, **four-second deterministic finality** under the partial-synchrony assumption (four to five seconds typical, with an outer bound of about eight seconds under degraded networking before a view-change is triggered), and equivocation handling that produces succinct, on-chain proofs and a one-hundred-percent slash plus permanent operator exile on detection.
 
-The three-second cadence is chosen to leave headroom for cluster-marketplace geographic diversity — operators on any continent participate cleanly — and to allow encrypted-mempool threshold decryption and aggregate signature collection under load. The chain optimizes for steady performance under adversarial conditions, not racetrack speed under ideal conditions.
+The four-second cadence is chosen to leave headroom for cluster-marketplace geographic diversity (operators on any continent participate cleanly) and to allow encrypted-mempool threshold decryption and per-operator signature collection under load. The chain optimizes for steady performance under adversarial conditions, not racetrack speed under ideal conditions.
 
 ### Safety
 
@@ -547,9 +548,9 @@ Liveness holds under partial synchrony — the standard BFT assumption that mess
 
 ### Leader selection
 
-Wave leadership is selected by a **threshold-VRF** seed derived from the previous wave's cluster aggregate signature. The aggregate is a canonical-form threshold BLS signature with set-independent Lagrange interpolation: for any 2f+1 honest set, the aggregate evaluates to the same constant, so the seed is independent of which 2f+1 honest partials are combined. This guarantees that an adversary cannot influence the seed by selectively withholding their partial signature.
+Wave leadership is assigned by **deterministic round-robin** over the cluster set: every cluster computes the same leader for a given wave directly from the wave number and the active cluster set, with no random beacon and no leader-selection signature. Because the assignment is a pure function of public, agreed-upon state, an adversary has no seed to influence and no signature to withhold; leadership cannot be ground.
 
-The seed feeds a VRF native module that produces the next wave's leader assignment. Anti-grinding is structural — the seed is produced **after** wave vertices are gossiped, so clusters cannot influence future leadership through block content selection.
+Anti-grinding is therefore structural by construction. There is no seed for block content to bias, so clusters cannot influence future leadership through what they include.
 
 ### Anti-equivocation
 
@@ -599,8 +600,9 @@ This section specifies the cryptographic primitive set in implementation detail.
 | User signatures | **ML-DSA-65** (FIPS 204, Dilithium Level 3) | Every user-signed transaction |
 | Emergency backup signatures | **SLH-DSA** (FIPS 205, hash-based) | Pre-registered backup; activated under emergency rotation |
 | Key encapsulation | **ML-KEM-768** (FIPS 203, Module-Lattice KEM) | Peer-to-peer Noise handshakes; RPC TLS; stealth-address derivation |
-| Aggregate signatures (consensus) | **BLS12-381** | Cluster threshold aggregate, VRF, distributed key generation |
-| Threshold key encapsulation (mempool) | **Ferveo over BLS12-381** | Encrypted-mempool body decryption at anchor inclusion |
+| Consensus signatures | **ML-DSA-65** (FIPS 204, Dilithium Level 3) | Per-operator vertex signatures; cluster 7-of-10 quorum is a bitmap multisig of independent operator signatures |
+| Threshold encapsulation (mempool), *post-quantum, testnet* | **cluster-ML-KEM-768 + GF(256) Shamir + committing AEAD** (FIPS 203) | Encrypted-mempool sealing ("LythiumSeal") on the optional encrypted path; research-stage, unaudited, running on the public testnet |
+| Threshold encapsulation (mempool), *classical, feature-gated* | **Ferveo (classical)** | Prior classical encrypted-mempool body, retained behind a feature gate for comparison; not the default path |
 | Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | Application-layer proof verification (zkML attestations, high-value off-chain computation) |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
 
@@ -623,33 +625,44 @@ ML-KEM-768 is used wherever a key encapsulation is needed:
 - **Peer-to-peer Noise handshakes.** Operator-to-operator connections use ML-KEM-768 for the Noise XX handshake, replacing the classical X25519 default.
 - **RPC TLS.** Public RPC endpoints serve TLS certificates with ML-KEM-encapsulated session keys. Wallet, indexer, and explorer connections to nodes use post-quantum TLS.
 - **Stealth addresses.** The privacy denomination's stealth-address scheme uses ML-KEM end-to-end for one-time-address derivation.
-- **Mempool encapsulation.** The encrypted mempool wraps each transaction body in an ML-KEM-768 encapsulation under a per-epoch threshold-DKG public key.
+- **Encrypted-mempool sealing.** The optional encrypted-mempool path ("LythiumSeal", §12.5) seals each transaction body to a cluster's operators with cluster ML-KEM-768, where each operator holds its own independent keypair and the per-transaction body key is split t-of-n with Shamir secret sharing.
 
-### 12.4 Two-tier finality
+LythiumSeal runs on the public testnet and is research-stage and unaudited; the prior classical Ferveo mempool body is retained only behind a feature gate.
 
-Consensus delivers **two levels** of finality, calibrated for different use cases.
+### 12.4 Finality
 
-**Anchor-level finality (BLS12-381 aggregate).** Each operator in a 7-of-10 cluster threshold-signs the cluster's vertex with their BLS share; the cluster aggregate compresses 700 individual operator signatures per round into a single verifier check. Anchor-level finality settles in three to five seconds (one wave). Use cases: everyday user transfers, application interactions, mempool admission.
+Consensus delivers a **single, post-quantum finality tier**. There is no classical fast-path tier and no separate checkpoint tier: every consensus signature is ML-DSA-65 from the wave that produces the anchor.
 
-**Quantum-attested finality (ML-DSA-65 checkpoint).** Every hundred anchors, operators each sign the canonical state root with their ML-DSA-65 keys. The result is a **post-quantum checkpoint** that bridges, exchange listings, and high-value cross-chain attestations bind to. Use cases: bridge unlocks, exchange deposits, large cross-chain transfers.
+**Anchor-level finality (ML-DSA-65).** Each operator in a 7-of-10 cluster signs the cluster's vertex with its own ML-DSA-65 key; the cluster's quorum certificate is a bitmap multisig of those independent operator signatures, verified against the operators' published keys. There is no BLS aggregate, no FROST distributed key generation, and no Lagrange threshold combination. Verification is stateless: check the cluster bitmap, then check each set operator's ML-DSA-65 signature against that operator's published roster key. Anchor-level finality settles in four to five seconds (one wave) and is the finality everything binds to: everyday user transfers, application interactions, mempool admission, and equally bridge unlocks, exchange deposits, and large cross-chain transfers.
 
-The checkpoint cadence is **milestone-overridable**, so high-value bridge integrations can drop the interval (for example to ~24 seconds) for tighter cross-chain UX without a hard fork, or raise it for bandwidth conservation.
+Because the signing path is already post-quantum at the per-anchor level, there is no quantum-forgeable fast tier to outrun: a quantum attacker who cannot forge ML-DSA-65 cannot forge an anchor at all. High-value integrations that want deeper economic finality wait for additional confirmations, not for a separate signature tier.
 
-The two tiers compose: anchor-level finality is the fast everyday signal; quantum-attested finality is the deep settlement signal that resists quantum forgery. A quantum attacker who can forge BLS aggregates cannot also forge ML-DSA-65 — checkpoints require honest clusters' post-quantum signatures, so an attacker fork dies at the next checkpoint regardless of how many BLS aggregates they fabricate between checkpoints.
+**The bandwidth cost is real, and we state it plainly.** Each operator signature is a full 3,309-byte ML-DSA-65 signature. A cluster's 7-of-10 quorum certificate therefore carries seven raw signatures (roughly 23 KB per cluster vote) with no threshold aggregation to shrink it. A quorum certificate then collects one such cluster vote per voting cluster, so its size grows linearly with the number of voting clusters:
 
-The bandwidth cost is negligible. At 100 operators per checkpoint, ~330 KB every five minutes is roughly one kilobyte per second on average; even at the tight 24-second override, the cost remains well within the chain's normal traffic budget.
+| Quorum certificate scope | Approx. encoded size |
+|---|---|
+| One 7-of-10 cluster vote | ~23.2 KB |
+| Current testnet (1 voting cluster) | ~23.3 KB |
+| 2f+1 of a 100-cluster network (67 clusters) | ~1.5 MiB |
+| All 100 clusters voting | ~2.2 MiB |
 
-### 12.5 Threshold-DKE encrypted mempool
+Each anchor carries three such certificates (a round certificate, a leader certificate, and a data-availability certificate), so the on-the-wire consensus-signature load per anchor is roughly three times the figures above. At a 100-cluster network and the four-second cadence, that is on the order of single-digit MiB per second of consensus-signature bandwidth at full quorum participation. This is materially larger than the classical alternative it replaced: a single threshold-BLS aggregate was about 96 bytes regardless of signer count, so a single quorum certificate at 100-cluster scale is roughly four orders of magnitude larger than that aggregate would have been.
 
-The encrypted-mempool admission rule is binding from genesis: every transaction enters the mempool encrypted; the body becomes plaintext only at anchor inclusion. Decryption is a Ferveo threshold-DKE ceremony over BLS12-381.
+This is a **deliberate cost**, paid in exchange for three properties the classical aggregate could not give: every consensus signature is post-quantum end-to-end; verification is stateless and needs no shared signing key; and there is no distributed-key-generation ceremony or threshold-share custody to operate, re-key, or audit. Structural signature compression and certificate pruning keep historical storage bounded, but the live per-anchor certificate is large by design, and the chain budgets operator bandwidth accordingly rather than pretending the cost away.
 
-Each cluster operates a per-epoch threshold-decryption ceremony: operators run distributed key generation to produce a shared decryption key, and each operator holds one share. A threshold (7-of-10 per cluster) is required to decrypt any individual mempool ciphertext. No single operator can decrypt; no minority can. The mempool's privacy property holds against everyone except a 7-of-10 cluster collusion.
+### 12.5 Encrypted mempool: LythiumSeal
 
-At anchor inclusion, the cluster's threshold-decryption coordinator collects partial decryptions, combines them via Lagrange interpolation, and emits the plaintext bodies into the executor. Every step is deterministic and auditable. Confidentiality is lifecycle-bounded — transactions become plaintext at inclusion, seconds after entering the mempool — so the harvest-now-decrypt-later threat that classical encryption faces does not apply.
+Mempool encryption is **optional, not mandatory**. A sender chooses, per transaction, between two admission paths: a plaintext path (the transaction body is visible in the mempool, as on any ordinary chain) and an encrypted path (the body is sealed and becomes plaintext only at anchor inclusion). Encryption buys pre-inclusion confidentiality and front-running resistance; the plaintext path is cheaper and is what an integrator uses when confidentiality is not needed. The protocol does not force every transaction through encryption, and it does not make encryption free: senders who want the protection ask for it.
+
+The post-quantum encrypted path is **LythiumSeal**, the chain's cluster-threshold sealing scheme. It seals a transaction body to a cluster's operators with **cluster ML-KEM-768 (FIPS-203) plus information-theoretic GF(256) Shamir secret sharing plus a committing AEAD (ChaCha20-Poly1305 with an explicit key commitment)**. There is no distributed key generation, no shared cluster key, and no trusted dealer of keys: each operator mints its own independent ML-KEM-768 keypair, the per-transaction body key is split t-of-n with Shamir, and each operator can unwrap only its own share. Any t of the n operators must cooperate to reconstruct the body key and decrypt; for a sealed transaction, **no single operator can decrypt, and no minority of fewer than t can**. The privacy property of a sealed transaction holds against everyone except a t-of-n (7-of-10 per cluster) operator coalition. A transaction sent on the plaintext path gets none of this: a plaintext CLOB order, like any plaintext transaction, is visible before inclusion and carries no mempool-level front-running protection. That is the explicit trade the sender makes by not sealing.
+
+At anchor inclusion, each operator decapsulates its own ML-KEM ciphertext, derives its share, and a collector reconstructs the body key from any t shares and opens the committing body. Every step is deterministic and auditable, and the committing AEAD lets the collector tell a correct key from a wrong one. Confidentiality is lifecycle-bounded: a sealed body becomes plaintext at inclusion, seconds after entering the mempool, so there is no long-lived ciphertext at rest and the harvest-now-decrypt-later threat does not apply.
+
+LythiumSeal runs on the Monolythium public testnet and is **research-stage and unaudited**. Its primitives are standardized and individually well-analyzed (ML-KEM-768 is FIPS-203, Shamir secret sharing is information-theoretic, ChaCha20-Poly1305 and SHAKE256 are standard symmetric constructions); what is novel and has had **no independent cryptographic review** is the composition and the threshold-reveal protocol. It is the first post-quantum encrypted-mempool implementation of this shape, running on a value-less public testnet, not a production deployment. The classical Ferveo threshold-DKE body it replaces is retained behind a feature gate for comparison and is not the default path. (The chain's broader classical-residual accounting is not complete: a machine-checked `no_classical_in_protocol` lint is the enforcement target, and it is not yet fully green, so this whitepaper does not claim every classical primitive has been removed from the protocol.)
 
 ### 12.6 Zero-knowledge proof systems
 
-Application-layer zero-knowledge verification uses an SP1 zkVM with an on-chain Groth16-BN254 SNARK verifier, and is not consumed by the consensus path. A future migration to a hash-only, fully post-quantum FRI/STARK verifier is a long-horizon goal, pending the proving ecosystem shipping on-chain-verifiable STARK receipts; until then, post-quantum integrity at the deep-settlement tier comes from the ML-DSA-65 quantum-attested checkpoints (§12.4), which an attacker who forges a SNARK proof still cannot bypass. The chain uses zero knowledge where it reduces risk the most:
+Application-layer zero-knowledge verification uses an SP1 zkVM with an on-chain Groth16-BN254 SNARK verifier (both classical, and gated as a forward-looking application surface), and is not consumed by the consensus path. A future migration to a hash-only, fully post-quantum FRI/STARK verifier is a long-horizon goal, pending the proving ecosystem shipping on-chain-verifiable STARK receipts; until then, post-quantum integrity at the settlement layer comes from per-anchor ML-DSA-65 finality (§12.4), which an attacker who forges a SNARK proof still cannot bypass. A forged proof cannot finalize without an ML-DSA-65 quorum the attacker cannot produce. The chain uses zero knowledge where it reduces risk the most:
 
 - **Bridge proofs.** A bridge can attest that an external chain finalized a specific event, state transition, burn, lock, or withdrawal condition. The chain verifies the proof before releasing assets or updating bridge state. This reduces dependence on trusted multisigs and relayer committees.
 - **Swap proofs.** A swap can verify that a batch of intents or orders was matched according to a declared policy. This supports fair ordering, batch auctions, and verified-matching markets without asking users to trust an opaque sequencer.
@@ -1052,7 +1065,7 @@ Two limitations are documented honestly.
 
 ### 17.1 Distributed validator technology
 
-A cluster is a **distributed validator** in the strict sense: ten independent operators run a coordinated key-share ceremony, produce a shared signing key, and threshold-sign the cluster's vertex with a 7-of-10 threshold. The cluster signs one vertex per round. Up to three operators can be offline without halting the cluster's participation.
+A cluster is a **distributed validator** in the strict sense: ten independent operators each hold their own ML-DSA-65 signing key, and a cluster vertex is valid when at least 7 of the 10 have signed it. The quorum certificate is a bitmap multisig of those independent signatures, not a shared aggregate key. The cluster signs one vertex per round. Up to three operators can be offline without halting the cluster's participation.
 
 Distributed validator technology gives the chain three properties single-operator validators cannot:
 
@@ -1062,9 +1075,9 @@ Distributed validator technology gives the chain three properties single-operato
 
 ### 17.2 Standby capacity
 
-Each cluster has a **standby of three operators** in addition to its seven active members. Standbys participate in the cluster's communications, hold the threshold key-shares ceremony's transcript, and are ready to step in when an active operator goes offline, is rotated out, or departs.
+Each cluster has a **standby of three operators** in addition to its seven active members. Each standby already holds its own independent ML-DSA-65 signing key and participates in the cluster's communications, ready to step in when an active operator goes offline, is rotated out, or departs.
 
-This is what makes the cluster operationally — not just structurally — resilient. An active operator can be replaced without a re-keying ceremony; the next-eligible standby is promoted, the threshold continues to hold, and the cluster keeps producing.
+This is what makes the cluster operationally, not just structurally, resilient. Because every operator signs with its own independent key, promotion is simply a matter of adding the standby's published key to the cluster's active signing set: there is no shared signing key, no distributed-key-generation ceremony, and no re-keying of the surviving operators. The next-eligible standby is promoted, the 7-of-10 quorum continues to hold over the new active set, and the cluster keeps producing.
 
 ### 17.3 Service tiers
 
@@ -1078,7 +1091,7 @@ Service-tier revenue is **direct to the operator** providing the service, not sp
 
 ### 17.4 The GPU service tier separation
 
-A cluster's GPU prover capacity is a **service tier**, not a consensus dependency. A cluster's consensus participation depends on its 7-of-10 BLS threshold over CPU-bound operators; GPU is required only for off-chain proof generation. A GPU operator going offline costs the cluster its prover service revenue but **does not affect the cluster's consensus participation or the chain's Byzantine fault threshold**.
+A cluster's GPU prover capacity is a **service tier**, not a consensus dependency. A cluster's consensus participation depends on its 7-of-10 ML-DSA-65 quorum over CPU-bound operators; GPU is required only for off-chain proof generation. A GPU operator going offline costs the cluster its prover service revenue but **does not affect the cluster's consensus participation or the chain's Byzantine fault threshold**.
 
 The GPU-as-service-tier choice is deliberate. Enforcing GPU on every operator would create hardware-cost moats that smaller operators cannot cross, producing operator monopolies and hardware-class centralisation. The chain's design lets operators specialize: clusters that want strong GPU service hire GPU-equipped operators; clusters that don't earn the consensus base reward and avoid the GPU capital cost. The market prices the difference; the consensus layer remains commodity-CPU and accessible.
 
@@ -1310,7 +1323,7 @@ Production operators run on **Monarch OS** — an immutable substrate built on a
 - **Immutable image.** Monarch OS is delivered as a single signed image. There is no package manager, no SSH, no interactive shell. The system is not a general-purpose Linux distribution; it is a purpose-built operator substrate.
 - **Verified rooted filesystem.** Every block of the filesystem is verified against a signed Merkle root at read time. Tampering with the filesystem is mathematically impossible without breaking the boot.
 - **TPM 2.0 measured boot.** The boot sequence's hash measurements are extended into the TPM's Platform Configuration Registers. The system can prove what it booted via TPM PCR quotes.
-- **TPM-sealed operator key shares.** A cluster's BLS share is sealed against the local TPM. If the chassis is opened or the firmware is modified, the seal breaks and the operator can no longer sign with the BLS share until they re-onboard with a fresh ceremony.
+- **TPM-sealed operator signing key.** An operator's ML-DSA-65 consensus signing key is sealed against the local TPM. If the chassis is opened or the firmware is modified, the seal breaks and the operator can no longer sign with that key until they re-onboard with a fresh key.
 - **No transitive dependency surface.** A conventional Linux distribution inherits a vast supply-chain attack surface through transitive dependencies. Monarch OS has no transitive-dep mechanism. An operator never installs a transitive dependency, so it cannot inherit one.
 - **No userspace foothold for kernel exploits.** A modern class of kernel local-privilege-escalation bugs requires the attacker to first execute code as a local non-privileged user. Monarch OS structurally denies that foothold: no SSH, no interactive shell, no multi-user system, no package manager, no cron, no general-purpose userspace daemons. The only userspace process of consequence is the node binary itself.
 
@@ -1318,7 +1331,7 @@ Production operators run on **Monarch OS** — an immutable substrate built on a
 
 Beyond the absence of a userspace foothold, Monarch OS ships with an aggressively trimmed kernel configuration: features the operator node does not need are not compiled in or are compiled out of autoload.
 
-- The userspace cryptographic kernel API is disabled at kernel-config level. The node binary performs all cryptographic work in-process via Rust libraries (ML-DSA-65, ML-KEM, BLAKE3, BLS12-381, SLH-DSA), not via kernel crypto sockets. The entire class of kernel-CVE attacks against userspace crypto APIs is closed off going forward.
+- The userspace cryptographic kernel API is disabled at kernel-config level. The node binary performs all cryptographic work in-process via Rust libraries (ML-DSA-65, ML-KEM, BLAKE3, SLH-DSA), not via kernel crypto sockets. The entire class of kernel-CVE attacks against userspace crypto APIs is closed off going forward.
 - Unused kernel subsystems are disabled: virtualization (operators do not host VMs), audio and video, Bluetooth, wireless drivers (operators are wired-network-only), legacy filesystems, and other categories irrelevant to a server-grade operator workload. The smaller the kernel surface, the smaller the future-CVE exposure.
 
 The crypto-on-OS / crypto-in-app distinction is structural. A chain that signs blocks via system-level cryptographic invocations has a fundamentally different exposure profile than one that signs blocks via in-process Rust libraries. Monolythium chose the latter from genesis. Kernel-CVE classes that target userspace crypto APIs do not affect the operator's signing path at all.
@@ -1401,11 +1414,11 @@ Honesty about limits is part of the threat model. A chain that claims invulnerab
 
 MEV — value extracted by privileged actors who can reorder, insert, or censor transactions — is bounded structurally by the chain's design.
 
-- **Encrypted mempool.** Transactions are encrypted until anchor inclusion. An operator cannot read pending transactions and front-run them; a quorum collusion would be required to decrypt early.
-- **Threshold leader selection.** Wave leadership is determined by a threshold-VRF seed that operators cannot influence through block-content selection.
+- **Optional encrypted mempool.** A sender can seal a transaction so its body stays confidential until anchor inclusion; for a sealed transaction, an operator cannot read it pending and front-run it, and a t-of-n quorum collusion would be required to decrypt early. Encryption is opt-in per transaction, so the protection applies to the transactions a sender chooses to seal. A plaintext transaction, including a plaintext CLOB order, is visible before inclusion and gets no mempool-level front-running protection; that is the trade the sender makes by not sealing.
+- **Deterministic leader selection.** Wave leadership is assigned by deterministic round-robin over the cluster set, with no random seed for operators to influence through block-content selection.
 - **Native order book.** The native CLOB settles orders deterministically. Sequencer-style MEV games against an order book are bounded by the consensus order, which is determined by the DAG linearization rather than by a single sequencer's discretion.
 
-MEV is not zero, and the chain does not claim it is. Some MEV — backrunning of public events, arbitrage between markets, latency-based capture — exists wherever transactions are visible. The chain's design forecloses the largest extractive categories (front-running, sandwich attacks based on mempool visibility) and leaves the remainder as a competitive market that benefits ordinary users through tight spreads.
+MEV is not zero, and the chain does not claim it is. Some MEV (backrunning of public events, arbitrage between markets, latency-based capture) exists wherever transactions are visible, and any transaction a sender leaves unsealed is visible. The chain's design forecloses the largest extractive categories (front-running and sandwich attacks based on mempool visibility) for the transactions senders choose to seal, and leaves the remainder as a competitive market that benefits ordinary users through tight spreads.
 
 ---
 
@@ -1550,7 +1563,7 @@ Wallets render risk in addition to balance. Before a user signs:
 - the agent sub-account's policy summary if applicable;
 - the runbook the assistant has selected, with parameters spelled out;
 - the recipient's name (if registered) and the recipient's bech32m address;
-- the finality posture (anchor-level or quantum-attested checkpoint) the receiving party expects.
+- the number of anchor confirmations the receiving party expects before treating the transfer as settled.
 
 Users can decline. Users can approve once, approve once with caps, or approve a long-running policy. The wallet preserves the user's authority.
 
@@ -1633,9 +1646,9 @@ The Monolythium protocol is the product of years of design work, research, and e
 
 - the Dilithium, Kyber, and SPHINCS+ post-quantum primitives standardized by NIST as ML-DSA, ML-KEM, and SLH-DSA;
 - the Starfish family of leaderless DAG-BFT consensus protocols;
-- the BLS12-381 pairing-friendly curve and associated threshold-signature literature;
-- the Ferveo threshold-DKE construction for encrypted mempool decryption;
-- the FROST distributed key generation family;
+- the BLS12-381 pairing-friendly curve and the threshold-signature literature;
+- the Ferveo threshold-DKE construction, which informed the chain's classical encrypted-mempool body (now feature-gated behind the post-quantum LythiumSeal path);
+- Shamir secret sharing and the lattice-KEM literature, which the post-quantum LythiumSeal encrypted-mempool sealing scheme composes;
 - the BIP-39 wordlist and bech32m encoding conventions;
 - the FRI-based proof-system family and the broader zero-knowledge research community;
 - the BLAKE3 hash function;
