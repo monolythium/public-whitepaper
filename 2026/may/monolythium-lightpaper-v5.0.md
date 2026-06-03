@@ -303,7 +303,8 @@ The consensus engine is **Starfish-C**, a leaderless DAG-BFT protocol with:
 - **Four-second deterministic finality** under partial synchrony (four to five seconds typical, ~eight seconds before view-change).
 - **Deterministic linearization** of the DAG — two honest clusters starting from the same DAG state derive byte-identical block sequences.
 - **Bounded reorg** capped by protocol parameter; an adversary cannot force a deeper reorg without controlling more than f Byzantine clusters.
-- **Deterministic round-robin leader selection**: every cluster derives the same wave leader from the wave number and active cluster set, with no random beacon, so there is no seed for an adversary to influence.
+<!-- PUBLISH-GATE: TARGET architecture. The post-quantum quorum-cert-hash leader-seed replacing the legacy threshold-BLS beacon deploys via a re-genesis and is NOT yet live; the running chain still uses the legacy classical threshold-BLS beacon. Do not publish as shipped state until the BLS-beacon removal deploys. -->
+- **Post-quantum leader-seed beacon**: wave leadership derives from a domain-separated, chain-id-bound hash of the ML-DSA-65 quorum certificate that already finalizes each anchor, so every cluster derives the same leader and an adversary cannot grind it (the certificate is post-quantum and agreed before the next leader is known). This replaces the legacy threshold-BLS beacon, which is being removed.
 - **100% slash + permanent operator exile** on equivocation. The slash is exemplary, not merely punitive; a protocol that destroys the equivocating operator's stake and bars them forever does not need to tolerate equivocation.
 
 The user-facing finality unit is the **anchor**. Multiple internal layers exist — vertex (cluster's signed round payload), wave (round of vertex production), anchor (deterministic linearization point), and block (preserved only for EVM-style RPC compatibility such as `eth_blockNumber`).
@@ -441,7 +442,7 @@ Monolythium's threat model assumes some operators are Byzantine, bridges are an 
 | Consensus | Cluster threshold + equivocation slash + DAG-BFT mathematics | Halts safety; protocol rejects equivocating operators and degrades gracefully |
 | User signatures | ML-DSA-65 + emergency-key registry + algorithm rotation | Primitive break triggers rotation; users with backup keys survive; users without are frozen, not drained |
 | Bridges | Light-client / zero-knowledge proof verification + drain caps + circuit breakers + per-route cooldown | Bridge failure bounded to route's drain cap; consensus and accounts elsewhere unaffected |
-| Mempool | Threshold-DKE encryption + lifecycle-bounded confidentiality | Exposure bounded to seconds between admission and inclusion |
+| Mempool | Optional LythiumSeal post-quantum sealing (cluster ML-KEM-768 + Shamir t-of-n + committing AEAD) + lifecycle-bounded confidentiality | For a sealed transaction, exposure bounded to seconds between admission and inclusion; a plaintext transaction is visible before inclusion |
 | Application contracts | Audit + native modules + sandbox boundaries | Contract bug damages the contract's users; native modules and consensus layer insulated |
 | Hardware | TPM PCR attestation + immutable substrate + diversity scoring | Compromised operator detectable through PCR drift; concentrated hosting class detectable through diversity scoring |
 | Recovery | Emergency-key registry + frozen-account claim flow | Primitive break or coordinated attack does not allow draining; affected accounts are recoverable |
@@ -450,7 +451,7 @@ Monolythium's threat model assumes some operators are Byzantine, bridges are an 
 
 ### MEV
 
-MEV is bounded structurally for the transactions a sender chooses to encrypt. The optional encrypted mempool forecloses front-running based on mempool visibility for sealed transactions; a plaintext transaction, including a plaintext order, stays visible before inclusion and gets no such protection. Deterministic round-robin leader selection forecloses leader-grinding through block-content selection. The native order book settles deterministically against the consensus order rather than against a single sequencer's discretion. The chain does not claim MEV is zero (some backrunning of public events and inter-market arbitrage exists wherever transactions are visible, and any unsealed transaction is visible), but for sealed transactions the largest extractive categories (front-running and sandwich attacks based on mempool reads) are foreclosed.
+MEV is bounded structurally for the transactions a sender chooses to encrypt. The optional encrypted mempool forecloses front-running based on mempool visibility for sealed transactions; a plaintext transaction, including a plaintext order, stays visible before inclusion and gets no such protection. A post-quantum leader-seed beacon, derived from a hash of the ML-DSA-65 quorum certificate the quorum already committed before the next leader is known, forecloses leader-grinding through block-content selection. The native order book settles deterministically against the consensus order rather than against a single sequencer's discretion. The chain does not claim MEV is zero (some backrunning of public events and inter-market arbitrage exists wherever transactions are visible, and any unsealed transaction is visible), but for sealed transactions the largest extractive categories (front-running and sandwich attacks based on mempool reads) are foreclosed.
 
 ---
 

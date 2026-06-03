@@ -546,11 +546,12 @@ Safety is guaranteed through **deterministic linearization** of the DAG. Three p
 
 Liveness holds under partial synchrony — the standard BFT assumption that messages are eventually delivered within an unknown but finite bound. Starfish-C achieves liveness through wave-based progression: time is divided into waves, each wave selects a leader whose committed vertex anchors the linearization of its causal cone, and if a wave leader fails to be committed within its timeout, the linearizer executes a skip round and the next successful leader's commit covers the skipped wave. Malicious subsets cannot stall the network as long as a quorum (2f+1) of honest clusters is active.
 
+<!-- PUBLISH-GATE: this section describes the TARGET post-quantum leader-seed architecture (the design). The ML-DSA-65 quorum-cert-hash beacon replacing the legacy threshold-BLS beacon deploys via a re-genesis and is NOT yet live; the running chain still derives the wave leader from the legacy classical threshold-BLS beacon. Do not publish this section as already-shipped state until the BLS-beacon removal deploys. -->
 ### Leader selection
 
-Wave leadership is assigned by **deterministic round-robin** over the cluster set: every cluster computes the same leader for a given wave directly from the wave number and the active cluster set, with no random beacon and no leader-selection signature. Because the assignment is a pure function of public, agreed-upon state, an adversary has no seed to influence and no signature to withhold; leadership cannot be ground.
+Wave leadership is assigned by a **post-quantum leader-seed beacon**: a domain-separated, chain-id-bound hash of the ML-DSA-65 quorum certificate that already finalizes each anchor. Every cluster derives the same wave leader by hashing that certificate together with the wave number and the active cluster set, so the seed is a pure function of public, post-quantum-agreed state. The certificate forms before the leader for the next wave is known, and an adversary cannot forge or grind it because it is a post-quantum signature object the quorum already committed; there is no separate seed to influence and no separate leader-selection signature to withhold. This post-quantum quorum-cert-hash beacon replaces the legacy threshold-BLS12-381 leader beacon, which is being removed.
 
-Anti-grinding is therefore structural by construction. There is no seed for block content to bias, so clusters cannot influence future leadership through what they include.
+Anti-grinding is therefore structural by construction. The seed is bound to a certificate the quorum agreed on before the next leader is known, so clusters cannot influence future leadership through what they include.
 
 ### Anti-equivocation
 
@@ -1391,7 +1392,7 @@ The chain's defensive posture is **separation of blast radius**. Different surfa
 | Consensus | Cluster threshold + equivocation slash + DAG-BFT mathematics | A failure here halts safety; the protocol must reject equivocating operators and degrade gracefully |
 | Cryptography (user signatures) | ML-DSA-65 + emergency-key registry + algorithm rotation | A primitive break triggers rotation; users with backup keys survive; users without are frozen, not drained |
 | Bridges | Light-client / zero-knowledge proof verification + drain caps + circuit breakers + per-route cooldown | A bridge failure is bounded to the bridge route's drain cap; consensus and accounts elsewhere are unaffected |
-| Mempool | Threshold-DKE encryption + lifecycle-bounded confidentiality | Mempool exposure is bounded to the period between admission and inclusion (seconds) |
+| Mempool | Optional LythiumSeal post-quantum sealing (cluster ML-KEM-768 + GF(256) Shamir t-of-n + committing AEAD) + lifecycle-bounded confidentiality | For a sealed transaction, mempool exposure is bounded to the period between admission and inclusion (seconds); a plaintext transaction is visible before inclusion |
 | Application contracts | Audit + native modules + sandbox boundaries | A contract bug damages the contract's users; native modules and the consensus layer are insulated |
 | Hardware | TPM PCR attestation + immutable substrate + network/geographic diversity scoring | A compromised operator is detectable through PCR drift; a compromised hosting class is detectable through diversity scoring |
 | Recovery | Emergency-key registry + frozen-account claim flow | A primitive break or coordinated attack does not allow draining; affected accounts are recoverable |
@@ -1415,7 +1416,7 @@ Honesty about limits is part of the threat model. A chain that claims invulnerab
 MEV — value extracted by privileged actors who can reorder, insert, or censor transactions — is bounded structurally by the chain's design.
 
 - **Optional encrypted mempool.** A sender can seal a transaction so its body stays confidential until anchor inclusion; for a sealed transaction, an operator cannot read it pending and front-run it, and a t-of-n quorum collusion would be required to decrypt early. Encryption is opt-in per transaction, so the protection applies to the transactions a sender chooses to seal. A plaintext transaction, including a plaintext CLOB order, is visible before inclusion and gets no mempool-level front-running protection; that is the trade the sender makes by not sealing.
-- **Deterministic leader selection.** Wave leadership is assigned by deterministic round-robin over the cluster set, with no random seed for operators to influence through block-content selection.
+- **Unbiasable leader selection.** Wave leadership derives from a post-quantum leader-seed beacon, a domain-separated hash of the ML-DSA-65 quorum certificate the quorum already committed before the next leader is known, so operators cannot grind leadership through block-content selection. (This post-quantum beacon replaces the legacy threshold-BLS beacon and deploys via re-genesis; see §11.)
 - **Native order book.** The native CLOB settles orders deterministically. Sequencer-style MEV games against an order book are bounded by the consensus order, which is determined by the DAG linearization rather than by a single sequencer's discretion.
 
 MEV is not zero, and the chain does not claim it is. Some MEV (backrunning of public events, arbitrage between markets, latency-based capture) exists wherever transactions are visible, and any transaction a sender leaves unsealed is visible. The chain's design forecloses the largest extractive categories (front-running and sandwich attacks based on mempool visibility) for the transactions senders choose to seal, and leaves the remainder as a competitive market that benefits ordinary users through tight spreads.
@@ -1581,7 +1582,7 @@ The chain's direction is a strategic bet. The risks are real and named.
 - Zero-knowledge bridge circuits are complex and require serious audit work.
 - Bridge prover infrastructure adds operational burden.
 - The market for agent commerce may take longer to mature than expected.
-- Post-quantum signatures are larger than classical signatures, raising storage and bandwidth costs.
+- Post-quantum signatures are larger than classical signatures, raising storage and bandwidth costs. The per-operator ML-DSA-65 quorum certificate carries one full 3,309-byte signature per signing operator with no threshold aggregation, so a quorum certificate at large network scale is several orders of magnitude larger on the wire than the classical threshold-BLS aggregate it replaces; the chain budgets operator bandwidth for this deliberately (§12.4) rather than pretending the cost away.
 - Distributed validator technology has not been deployed at the chain's target scale in a leaderless DAG-BFT configuration; the operational learning is ahead, not behind.
 - The bifurcated denomination is structurally hostile to certain user expectations from existing privacy chains; users coming from those chains will find the constraints unusual.
 - The composition stance with the major agent-payment standards (§3) depends on those standards remaining open and composable. A standard that closes off the integration surface would constrain the wedge for that particular rail; the chain's bet is that most of them stay open, because their open status is part of their adoption story.

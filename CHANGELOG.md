@@ -30,9 +30,9 @@ Whitepaper PDF: 81 pages. Lightpaper PDF: 34 pages.
 
 ### Cryptography and identity
 
-- Post-quantum cryptography end-to-end: ML-DSA-65 user signatures, ML-KEM-768 key encapsulation, SLH-DSA emergency backup, Ferveo threshold-DKE encrypted mempool, FRI/STARK-based zero-knowledge proofs.
-- Two-tier finality: anchor-level (3–5s) via BLS12-381 aggregate; quantum-attested checkpoint every 100 anchors via ML-DSA-65.
-- Starfish-C consensus — leaderless DAG-BFT with deterministic linearization, succinct equivocation proofs, and threshold-VRF leader selection.
+- Post-quantum cryptography: ML-DSA-65 user and consensus signatures, ML-KEM-768 key encapsulation, SLH-DSA emergency backup, and an optional LythiumSeal post-quantum encrypted-mempool sealing path (cluster ML-KEM-768 + GF(256) Shamir t-of-n + committing AEAD), research-stage and unaudited, with the prior classical Ferveo body feature-gated. Zero-knowledge proofs use SP1 zkVM + Groth16-BN254 on the gated application surface (classical; FRI/STARK is the long-horizon goal, not the shipped verifier). The chain does not yet claim a classical-free protocol: the no_classical_in_protocol lint is not yet green, so quantum claims state the surface they cover.
+- Single-tier post-quantum finality: a per-operator ML-DSA-65 bitmap-multisig quorum certificate (no BLS aggregate, no FROST distributed key generation), with four-to-five-second anchor finality.
+- Starfish-C consensus: leaderless DAG-BFT with deterministic linearization, succinct equivocation proofs, and a post-quantum leader-seed beacon (a hash of the ML-DSA-65 quorum certificate) that replaces the legacy threshold-BLS beacon. PUBLISH-GATE: the leader-seed beacon swap deploys via a re-genesis and is not yet live; the running chain still uses the legacy classical threshold-BLS beacon.
 - Identity primitives: 20-byte BLAKE3-derived addresses, bech32m display with per-type human-readable prefix discriminator, PQM-1 24-word mnemonic backup, hierarchical on-chain name registry.
 
 ### Execution and economics
@@ -53,7 +53,7 @@ Whitepaper PDF: 81 pages. Lightpaper PDF: 34 pages.
 
 - Bridges and the liquidity edge — zero-knowledge and light-client bridges, cross-chain swaps, route-specific cooldowns and drain caps.
 - Hardware sovereignty — Monarch OS substrate with TPM-measured boot, immutable image, kernel-attack-surface hardening, continuous on-chain PCR attestation, network and geographic diversity scoring.
-- Threat model — surface-by-surface blast-radius separation, including encrypted-mempool and threshold-VRF MEV bounds.
+- Threat model: surface-by-surface blast-radius separation, including optional-encrypted-mempool and post-quantum-leader-seed-beacon MEV bounds.
 - Recovery posture — emergency-key registry with SLH-DSA backup, scoped and time-bounded emergency-freeze mechanism, multisig treasury, recovery runbooks.
 
 License: CC BY-SA 4.0 on the whitepaper text.
