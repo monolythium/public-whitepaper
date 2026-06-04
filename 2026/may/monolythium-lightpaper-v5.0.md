@@ -86,7 +86,7 @@ The composition is **one-directional**. Monolythium does not require the rails t
 2. The wallet checks the Monolythium spending policy on the agent's sub-account: category allow-listed, price under per-call cap, monthly aggregate under cap.
 3. The wallet signs a Monolythium transaction that pays the x402 invoice in stablecoin; `purpose` references the x402 payment ID; the runbook is `pay_vendor`.
 4. The protocol verifies the spending-policy constraints **at admission** and refuses if any fail.
-5. Settlement happens at anchor finality (four to five seconds). The endpoint serves the response.
+5. Settlement happens at anchor finality (three to five seconds). The endpoint serves the response.
 6. If the response is disputed, the principal opens an escrow-arbiter dispute referencing the x402 transaction.
 
 The endpoint integrates only with x402. The chain handles everything beyond the handshake. The agent does not implement any of this manually — the wallet, the runbook, and the spending policy carry the discipline.
@@ -142,7 +142,7 @@ The cost of pure post-quantum is signature size — ML-DSA-65 signatures are ~3,
 | Key encapsulation | **ML-KEM-768** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation |
 | Consensus signatures | **ML-DSA-65** (FIPS 204) | Per-operator vertex signatures; cluster 7-of-10 quorum is a bitmap multisig of independent operator signatures |
 | Threshold encapsulation (mempool), *post-quantum, testnet* | **cluster-ML-KEM-768 + GF(256) Shamir + committing AEAD** (FIPS 203) | Encrypted-mempool sealing ("LythiumSeal") on the optional encrypted path; research-stage, unaudited, running on the public testnet |
-| Threshold encapsulation (mempool), *classical, feature-gated* | **Ferveo (classical)** | Prior classical encrypted-mempool body, retained behind a feature gate; not the default path |
+| Threshold encapsulation (mempool), classical, feature-gated | **Ferveo over BLS12-381** | Prior classical encrypted-mempool body, retained behind a feature gate; not the default path |
 | Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | zkML attestations, high-value off-chain computation |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, address derivation |
 
@@ -150,7 +150,7 @@ The cost of pure post-quantum is signature size — ML-DSA-65 signatures are ~3,
 
 The chain delivers a single, post-quantum finality tier, with no classical fast-path and no separate checkpoint tier:
 
-- **Anchor-level finality** (four to five seconds, ML-DSA-65). Each operator signs its cluster's vertex with its own ML-DSA-65 key; the cluster's 7-of-10 quorum certificate is a bitmap multisig of those independent operator signatures, with no BLS aggregate. Used for everyday transfers, application interactions, mempool admission, and equally for bridges, exchange listings, and high-value cross-chain attestations.
+- **Anchor-level finality** (roughly four to eight seconds, ML-DSA-65). Each operator signs its cluster's vertex with its own ML-DSA-65 key; the cluster's 7-of-10 quorum certificate is a bitmap multisig of those independent operator signatures, with no BLS aggregate. Used for everyday transfers, application interactions, mempool admission, and equally for bridges, exchange listings, and high-value cross-chain attestations.
 
 Because every anchor is already finalized under post-quantum signatures, there is no quantum-forgeable tier to outrun: an attacker who cannot forge ML-DSA-65 cannot forge an anchor. Integrations wanting deeper economic finality wait for more confirmations, not for a separate signature tier.
 
@@ -298,9 +298,9 @@ The pattern that history calls "the darknet marketplace" requires the simultaneo
 
 ## 9. Consensus — Starfish-C
 
-The consensus engine is **Starfish-C**, a leaderless DAG-BFT protocol with:
+The consensus engine is **Starfish-C**, a DAG-BFT protocol with:
 
-- **Four-second deterministic finality** under partial synchrony (four to five seconds typical, ~eight seconds before view-change).
+- **Four-second deterministic finality** under partial synchrony (four to eight seconds typical, with an outer bound of about twelve seconds under degraded networking before view-change).
 - **Deterministic linearization** of the DAG — two honest clusters starting from the same DAG state derive byte-identical block sequences.
 - **Bounded reorg** capped by protocol parameter; an adversary cannot force a deeper reorg without controlling more than f Byzantine clusters.
 <!-- PUBLISH-GATE: TARGET architecture. The post-quantum quorum-cert-hash leader-seed replacing the legacy threshold-BLS beacon deploys via a re-genesis and is NOT yet live; the running chain still uses the legacy classical threshold-BLS beacon. Do not publish as shipped state until the BLS-beacon removal deploys. -->
