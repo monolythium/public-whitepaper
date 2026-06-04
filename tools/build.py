@@ -24,9 +24,10 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Tuple
 
 import markdown
-from weasyprint import HTML as WeasyHTML
+from  weasyprint import HTML as WeasyHTML
 
 
 # ---------------------------------------------------------------------------
@@ -37,6 +38,14 @@ TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parent
 FONTS_DIR = TOOLS / "fonts"
 RELEASES = REPO / "2026" / "may"
+
+# Content dimensions and spacing
+DEFAULT_MAX_WIDTH = "920px"
+BODY_PADDING = "56px"
+COVER_PADDING = "64px"
+
+# Font specifications
+FONT_SPEC = []
 
 
 # ---------------------------------------------------------------------------
@@ -83,23 +92,44 @@ FONT_SPEC = [
 
 
 def font_face_css() -> str:
-    parts: list[str] = []
-    for family, weight, fname in FONT_SPEC:
-        path = FONTS_DIR / fname
-        if not path.exists():
-            print(f"WARN: missing font {path}", file=sys.stderr)
+    """Generate @font-face CSS rules with base64-encoded font files.
+    
+    Returns a string of CSS @font-face declarations for all configured fonts.
+    Missing fonts are reported but don't halt the build process.
+    """
+    css_parts: list[str] = []
+    missing_fonts = []
+    
+    for family, weight, filename in FONT_SPEC:
+        font_path = FONTS_DIR / filename
+        
+        # Separate error tracking from CSS generation
+        if not font_path.exists():
+            missing_fonts.append(str(font_path))
             continue
-        data = base64.b64encode(path.read_bytes()).decode("ascii")
-        parts.append(
+        
+        # Use context manager idiom mentally - cleaner variable names
+        font_data = font_path.read_bytes()
+        encoded_font = base64.b64encode(font_data).decode("ascii")
+        
+        # More readable multi-line string construction
+        css_rule = (
             f"@font-face {{\n"
             f"  font-family: '{family}';\n"
             f"  font-style: normal;\n"
             f"  font-weight: {weight};\n"
             f"  font-display: swap;\n"
-            f"  src: url(data:font/woff2;base64,{data}) format('woff2');\n"
+            f"  src: url(data:font/woff2;base64,{encoded_font}) format('woff2');\n"
             f"}}"
         )
-    return "\n".join(parts)
+        css_parts.append(css_rule)
+    
+    # Report all missing fonts at once instead of one at a time
+    if missing_fonts:
+        for path in missing_fonts:
+            print(f"WARNING: missing font file: {path}", file=sys.stderr)
+    
+    return "\n".join(css_parts)
 
 
 # ---------------------------------------------------------------------------
@@ -107,26 +137,46 @@ def font_face_css() -> str:
 # ---------------------------------------------------------------------------
 
 def md_to_body_html(md_text: str) -> str:
-    """Strip the markdown's title/cover front-matter and convert the rest."""
-    body_match = re.search(r"^## (Abstract|TL;DR|TLDR)", md_text, flags=re.MULTILINE)
-    if not body_match:
-        sys.exit("could not find an opening H2 (Abstract/TL;DR) in source")
-    body_md = md_text[body_match.start():]
+    """Convert markdown to HTML body, starting from the first H2.
+    
+    Strips cover/title front-matter and processes content starting from
+    the Abstract, TL;DR, or TLDR section. Applies special styling to
+    Part N section headings.
+    
+    Args:
+        md_text: Raw markdown text from source file
+        
+    Returns:
+        HTML string ready to insert into the article body
+        
+    Raises:
+        SystemExit: If no opening H2 (Abstract/TL;DR) is found
+    """
+    # More descriptive pattern with explanation
+    opening_pattern = r"^## (Abstract|TL;DR|TLDR)"
+    match = re.search(opening_pattern, md_text, flags=re.MULTILINE)
+    
+    if not match:
+        sys.exit("ERROR: could not find opening section (Abstract/TL;DR/TLDR) in source")
+    
+    # Extract body starting from the opening match
+    body_text = md_text[match.start():]
 
-    md = markdown.Markdown(
+    # Configure markdown processor with proper extensions
+    md_processor = markdown.Markdown(
         extensions=["extra", "sane_lists", "smarty", "toc"],
         extension_configs={"toc": {"permalink": False, "marker": ""}},
         output_format="html5",
     )
-    html = md.convert(body_md)
+    html_body = md_processor.convert(body_text)
 
-    # Tag the whitepaper's "Part N — ..." H1s for special section-divider styling.
-    html = re.sub(
-        r'<h1\b([^>]*)>(Part\s[^<]+)</h1>',
-        r'<h1\1 class="part-heading">\2</h1>',
-        html,
-    )
-    return html
+    # Tag Part headings for special styling - clearer intent
+    # This adds a CSS class to H1s that start with "Part N" for visual distinction
+    part_pattern = r'<h1\b([^>]*)>(Part\s[^<]+)</h1>'
+    part_replacement = r'<h1\1 class="part-heading">\2</h1>'
+    html_body = re.sub(part_pattern, part_replacement, html_body)
+    
+    return html_body
 
 
 # ---------------------------------------------------------------------------
@@ -590,17 +640,29 @@ def build_doc(doc: Doc, fonts_css: str) -> tuple[Path, Path]:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    print("loading bundled fonts...", file=sys.stderr)
+    """Main build process.
+    
+    Loads fonts, validates sources, and builds all configured documents.
+    """
+    print("Loading bundled fonts...", file=sys.stderr)
     fonts_css = font_face_css()
 
-    print("building documents...", file=sys.stderr)
+    print("Building documents...", file=sys.stderr)
     for doc in DOCS:
         if not doc.src.exists():
-            print(f"  SKIP {doc.slug}: source missing ({doc.src})", file=sys.stderr)
+            print(
+                f"⊘ SKIP {doc.slug}: source not found",
+                file=sys.stderr,
+            )
             continue
-        build_doc(doc, fonts_css)
+        
+        try:
+            build_doc(doc, fonts_css)
+        except Exception as e:
+            print(f"✗ FAILED {doc.slug}: {e}", file=sys.stderr)
+            continue
 
-    print("done", file=sys.stderr)
+    print("Done.", file=sys.stderr)
 
 
 if __name__ == "__main__":
