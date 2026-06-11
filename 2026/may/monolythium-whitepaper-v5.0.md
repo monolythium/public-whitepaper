@@ -1,6 +1,6 @@
 # Monolythium Whitepaper
 
-## v5.0 — May 2026
+## v5.1 — June 2026
 
 **Settlement Layer for the Autonomous Economy**
 
@@ -1015,25 +1015,45 @@ Tightening is triggered by sustained network conditions — number of independen
 The cap does not, and cannot, eliminate the underlying constraint that a sufficiently wealthy actor can route their capped percentage to any single cluster of their choice. That constraint is a function of capital, not of wallet count, and is unavoidable for any per-wallet cap. Three structural defenses combine to bound the practical concentration outcome:
 
 - the per-wallet cap (this section),
-- the quadratic reward curve (§16.8),
+- the service-weighted reward model (§16.8), under which delegated stake does not earn the staker a larger reward share — only proven service does;
 - the per-operator multi-cluster cap (§6 and §17).
 
-The combined effect is that even an actor with substantial capital cannot replicate single-validator dominance: their per-wallet cap limits their delegation to any one cluster, the quadratic reward curve makes oversaturating that cluster unprofitable for them, and the per-operator cap prevents them from operating the cluster across many of its positions.
+The combined effect is that even an actor with substantial capital cannot replicate single-validator dominance: their per-wallet cap limits their delegation to any one cluster, oversaturating that cluster with stake earns no extra reward share because the cluster pool is weighted by proven service rather than by stake (§16.8), and the per-operator cap prevents them from operating the cluster across many of its positions.
 
-**Stake division, not multiplication.** A delegator with one hundred LYTH diversifying across ten clusters at the 10% cap delegates ten LYTH per cluster — total credited weight one hundred LYTH, not one thousand. Total credited weight is conserved. There is no economic gradient pushing voters toward cartel slates over independent diversification — cartel formation has cost but no incremental yield.
+**Stake division, not multiplication.** A delegator with one hundred LYTH diversifying across ten clusters at the 10% cap delegates ten LYTH per cluster — total credited admission weight one hundred LYTH, not one thousand. Total credited weight is conserved. There is no economic gradient pushing voters toward cartel slates over independent diversification — cartel formation has cost but no incremental yield, and because the cluster reward pool is weighted by proven service rather than by stake (§16.8), routing more stake to a single cluster never increases the reward share that cluster earns.
 
 ### 16.8 Reward distribution
 
-The cluster reward pool, sized within the 8% annual inflation cap, distributes to clusters using a **quadratic curve** that introduces diminishing returns as a cluster's delegated stake grows. Doubling a cluster's stake does not double its reward share. Combined with the per-wallet cap, this creates a layered economic disincentive against cluster concentration:
+Inflation-funded rewards are distributed through **three independent streams**, none of which is weighted by stake:
 
-- the per-wallet cap is the hard ceiling at the protocol layer;
-- the quadratic reward curve is the soft economic gradient at the reward layer.
+1. **Base block reward** — an equal share to every active operator, on a round-robin schedule. Every active operator earns the same base reward regardless of its cluster's stake or service profile. This pays for showing up and participating in consensus.
+2. **Proposer bonus** — paid to the round's proposer on the same round-robin rotation, so the bonus is shared evenly across operators over time rather than captured by any one cluster.
+3. **Cluster pool** — sized within the 8% annual inflation cap and split across clusters by a **proved-service contribution score**, described below.
 
-Even within the cap, oversaturated clusters yield diminishing per-stake returns, so honest delegators are nudged toward under-served clusters by their own self-interest. **Decentralization is the highest-yield strategy at every margin, not just at the boundary.**
+**The cluster pool is service-weighted, not stake-weighted.** A cluster's share of the cluster pool is determined by the **proven useful services it provides to the network** — not by how much stake is delegated to it. Each epoch, the protocol computes a per-cluster **service score** as the sum of proof-gated contribution terms:
 
-The curve shape is a design commitment of the protocol; calibration parameters are adjustable only through hard-fork protocol updates.
+- **base consensus participation** — a floor credited to every active cluster that participates in consensus;
+- **archive service** — the heaviest single term, credited to a cluster that runs and serves full historical chain state;
+- **GPU prover service** — credited for proofs the cluster's operators generate and settle through the on-chain prover market;
+- **public RPC service** — credited for serving wallet and application RPC traffic;
+- **indexer service** — credited for serving indexed query traffic;
+- **geographic and client diversity** — credited for distributing the cluster's operators across regions, networks, and implementations.
 
-Within a cluster, the consensus reward pool distributes equally among its operators. Service-tier revenue (RPC, archive, prover, oracle) is per-operator direct rather than pool-split; an operator with a strong service offering captures the direct revenue from that service.
+Every term is **earned only when proven**, and contributes **zero** when no proof is present. A cluster does not earn the archive term by declaring itself an archive node; it earns it by answering a reconstruction challenge from committed historical state. It does not earn the prover term by claiming GPU capacity; it earns it by settling verified proofs on-chain. Stake is never an input to this score.
+
+**Stake is an admission gate, not a reward weight.** A cluster's stake — operator self-bond plus delegated stake — does exactly one thing: it sets the cluster's **rank for the top-100 active-set selection** (§17). Once a cluster is in the active set, its stake no longer influences anything. Active clusters vote with **equal weight** (consensus quorum is by count, with a round-robin leader, §12), and they earn from the cluster pool strictly in proportion to their **proved service**, not their stake. Two clusters with identical stake but different proven service earn different shares; two clusters with identical proven service but different stake earn the same share.
+
+This makes decentralization the highest-yield strategy on the contribution axis rather than the capital axis: the way to earn more is to **serve more** — run the archive, generate proofs, serve RPC and indexer traffic, diversify across regions — not to accumulate delegated stake.
+
+**Honesty about proofs.** The service terms differ in how trustlessly they are proven, and this is stated plainly rather than overclaimed:
+
+- **prover** is **cryptographically proven** — the proof either verifies on-chain or it does not;
+- **archive** is proven by a **reconstruction challenge** — the cluster must produce historical data that hashes to a root it committed at registration, or it earns zero for the term and is liable to slashing;
+- **RPC, indexer, and diversity** are, in the first release, **attested and bonded**: a rotatable foundation probe authority attests reachability on-chain, diversity inputs are self-declared but bonded with an anti-multiplicity cap, and no purely self-declared claim mints reward. These attested terms harden toward **trustless challenge-response** over time; the first release does not claim they are already trustless.
+
+**Constitutional framing.** The service-contribution model — that the cluster pool is split by **proven service, not by stake** — is the **design commitment of the protocol**. The per-service weights and the proof parameters (which services count, the floor and caps, the archive challenge frequency, the attestation window) are the **calibration**, adjustable **only through hard-fork protocol updates**. There is no on-chain governance to retune them. The commitment is constitutional precisely because, if the weighting rule were vote-tunable, a large capital holder could vote to reintroduce stake-weighting and recapture the reward layer; putting both the rule and its calibration behind a hard fork keeps it constitutional.
+
+Within a cluster, the consensus reward pool distributes equally among its operators. Service-tier revenue (RPC, archive, prover, oracle) is per-operator direct rather than pool-split; an operator with a strong service offering captures the direct revenue from that service. Delegators continue to earn **pro-rata of their own delegated stake** from the cluster's delegator share (the charter below), so a delegator's return tracks the stake they personally contributed even though stake does not weight the cluster's pool share.
 
 **Cluster charters.** The intra-cluster split is a default, not a constant. A cluster formed without a charter distributes its operator-side pool equally among its members and routes 50% of its cluster reward pot to its delegators. At formation, the members may instead bind a **charter** into the signed formation consent: a per-member share table for the operator-side pool, the cluster's delegator share — bounded below by a 20% protocol floor — and a consent expiry. The charter is part of the consent digest every member signs, so each operator signs the exact economic terms of the cluster being formed; no member can be bound to terms they did not sign. Clusters formed without a charter retain the defaults above.
 
@@ -1449,7 +1469,7 @@ In the case of a coordinated systemic event — a discovered cryptographic break
 **What the freeze is not for**:
 
 - routine protocol upgrades — those happen through operator software rollout, not through the freeze mechanism;
-- parameter changes — the constitutional parameters (supply cap, inflation cap, delegation cap schedule, reward curve shape) require a coordinated hard fork, not a freeze;
+- parameter changes — the constitutional parameters (supply cap, inflation cap, delegation cap schedule, service-weighted reward model and its per-service weights) require a coordinated hard fork, not a freeze;
 - protocol-direction decisions — direction is set by maintainers and operators in public, not through the emergency mechanism;
 - asset confiscation — the freeze pauses transaction admission; it does not move user funds and cannot rewrite balances;
 - ongoing supervision — the freeze is time-bounded by the ratification rules and cannot be sustained as a normal operating mode;
@@ -1680,10 +1700,10 @@ The full license text is available at: https://creativecommons.org/licenses/by-s
 
 Attribution string:
 
-> *Monolythium Whitepaper, v5.0 (May 2026), Mono Labs R&D LLC, licensed under CC BY-SA 4.0.*
+> *Monolythium Whitepaper, v5.1 (June 2026), Mono Labs R&D LLC, licensed under CC BY-SA 4.0.*
 
 This license applies to the **whitepaper text** in this document. The Monolythium protocol source code is licensed separately under the Business Source License 1.1, with a four-year commercial restriction window before automatic conversion to a permissive license. Selected execution crates ship under MIT.
 
 ---
 
-*End of Monolythium Whitepaper v5.0.*
+*End of Monolythium Whitepaper v5.1.*
