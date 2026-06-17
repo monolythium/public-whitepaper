@@ -40,4 +40,4 @@ Both are written against the v5.1 text currently in
   of block/call metadata exposed to ported app logic, never bytecode-level
   compatibility.
 - No activation height is stated. Downstream learns activation through the
-  `lyth_capabilities` capability `mrv_app_contract_parity`.
+  `lyth_capabilities` `runtimeFeatures` gate `mrv_app_contract_parity`.
