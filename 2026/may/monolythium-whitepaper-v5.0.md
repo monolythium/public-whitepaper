@@ -10,6 +10,21 @@
 
 ---
 
+> **Erratum — v2 (LythiumDAG-BFT) testnet status.** Two constructions described in this v5.1 text
+> have changed with the Monolythium v2 re-genesis, and the running chain no longer matches those
+> sections. A full v6 edition will re-scope the text; this note is the interim factual correction.
+>
+> 1. **The encrypted mempool ("LythiumSeal", §12.5; the "Mempool" rows of the protocol-stack tables;
+>    the encrypted-mempool front-running discussion in §22) has been removed.** v2 runs a plaintext
+>    mempool; transaction-ordering fairness is addressed at the DAG-consensus layer. The LythiumSeal
+>    sealing scheme and its cluster ML-KEM / Shamir / threshold-reveal machinery are no longer part
+>    of the protocol.
+> 2. **The application-layer Groth16-BN254 zero-knowledge verifier (§12.6; the "Zero-knowledge
+>    verification" table rows) is disabled at genesis.** The direction is a post-quantum recursive-STARK
+>    verifier (the "keystone"), which ships gated off until it is ready; until then no Groth16 verifier
+>    is reachable on the value path. As stated in §12.4, consensus finality remains pure ML-DSA-65 and
+>    was never dependent on the application-layer verifier.
+
 > *"Sovereignty is not given; it is verified by the silicon and the math."*
 
 ---

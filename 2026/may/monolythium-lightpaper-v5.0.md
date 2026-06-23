@@ -12,6 +12,16 @@
 
 ---
 
+> **Erratum — v2 (LythiumDAG-BFT) testnet status.** Two constructions in this text have changed
+> with the Monolythium v2 re-genesis. (1) **The encrypted mempool ("LythiumSeal") has been removed** —
+> v2 runs a plaintext mempool and addresses ordering fairness at the DAG-consensus layer; the cluster
+> ML-KEM / Shamir / threshold-reveal sealing scheme is no longer part of the protocol, and the
+> mempool-sealing rows + the encrypted-mempool MEV claims below no longer describe the running chain.
+> (2) **The Groth16-BN254 zero-knowledge verifier is disabled at genesis** — the direction is a
+> post-quantum recursive-STARK verifier that ships gated off until ready; until then no Groth16
+> verifier is reachable on the value path. Consensus finality remains pure ML-DSA-65 and never
+> depended on it. A full v6 edition will re-scope the text; this is the interim correction.
+
 ## TL;DR
 
 Monolythium is a Layer 1 blockchain designed as the **settlement layer for the autonomous economy** — a future in which humans, companies, AI agents, machines, and software services transact directly on open rails.
