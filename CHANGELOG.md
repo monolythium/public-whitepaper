@@ -2,6 +2,16 @@
 
 Release history of the Monolythium public whitepaper.
 
+> **Erratum — v2 (LythiumDAG-BFT) testnet status.** Two constructions noted in the v5.0/v5.1 entries
+> below have changed with the Monolythium v2 re-genesis and no longer describe the running chain.
+> (1) **The encrypted mempool ("LythiumSeal", including the classical Ferveo body) has been removed** —
+> v2 runs a plaintext mempool and addresses ordering fairness at the DAG-consensus layer; the cluster
+> ML-KEM / Shamir / threshold-reveal sealing scheme is no longer part of the protocol. (2) **The
+> application-layer Groth16-BN254 zero-knowledge verifier is disabled at genesis** — the direction is a
+> post-quantum recursive-STARK verifier that ships gated off until ready. Consensus finality remains
+> pure ML-DSA-65 and never depended on either. See the erratum at the head of the whitepaper and
+> lightpaper; a full v6 edition will re-scope the text.
+
 ## v5.0 — May 2026
 
 First public-facing release.
