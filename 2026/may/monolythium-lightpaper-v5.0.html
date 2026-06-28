@@ -579,11 +579,6 @@ body {
 <td>Encrypted-mempool sealing (&ldquo;LythiumSeal&rdquo;) on the optional encrypted path; research-stage, unaudited, running on the public testnet</td>
 </tr>
 <tr>
-<td>Threshold encapsulation (mempool), classical, feature-gated</td>
-<td><strong>Ferveo over BLS12-381</strong></td>
-<td>Prior classical encrypted-mempool body, retained behind a feature gate; not the default path</td>
-</tr>
-<tr>
 <td>Zero-knowledge verification</td>
 <td><strong>SP1 zkVM + Groth16-BN254</strong></td>
 <td>zkML attestations, high-value off-chain computation</td>
@@ -816,7 +811,7 @@ body {
 <li><strong>100% slash + permanent operator exile</strong> on equivocation. The slash is exemplary, not merely punitive; a protocol that destroys the equivocating operator&rsquo;s stake and bars them forever does not need to tolerate equivocation.</li>
 </ul>
 <p>The user-facing finality unit is the <strong>anchor</strong>. Multiple internal layers exist — vertex (cluster&rsquo;s signed round payload), wave (round of vertex production), anchor (deterministic linearization point), and block (preserved only for EVM-style RPC compatibility such as <code>eth_blockNumber</code>).</p>
-<p>Mempool encryption is optional and per-transaction. A sender can submit a transaction in plaintext, or seal it so the body stays confidential until anchor inclusion. The post-quantum encrypted path is <strong>LythiumSeal</strong>: cluster ML-KEM-768 (FIPS-203) plus information-theoretic GF(256) Shamir secret sharing plus a committing AEAD, with each operator holding only its own ML-KEM keypair and no distributed key generation. For a sealed transaction, no single operator can decrypt and no minority of fewer than t can; only a t-of-n (7-of-10 per cluster) operator coalition could, and even then only in the seconds between admission and inclusion. A plaintext transaction, including a plaintext order, is visible before inclusion and gets no such protection. LythiumSeal runs on the public testnet and is research-stage and unaudited: standardized primitives in a novel composition that has had no independent cryptographic review. The prior classical Ferveo body is retained only behind a feature gate.</p>
+<p>Mempool encryption is optional and per-transaction. A sender can submit a transaction in plaintext, or seal it so the body stays confidential until anchor inclusion. The post-quantum encrypted path is <strong>LythiumSeal</strong>: cluster ML-KEM-768 (FIPS-203) plus information-theoretic GF(256) Shamir secret sharing plus a committing AEAD, with each operator holding only its own ML-KEM keypair and nothing held jointly across the cluster. For a sealed transaction, no single operator can decrypt and no minority of fewer than t can; only a t-of-n (7-of-10 per cluster) operator coalition could, and even then only in the seconds between admission and inclusion. A plaintext transaction, including a plaintext order, is visible before inclusion and gets no such protection. LythiumSeal runs on the public testnet and is research-stage and unaudited: standardized primitives in a novel composition that has had no independent cryptographic review.</p>
 <hr>
 <h2 id="10-tokenomics">10. Tokenomics</h2>
 <h3 id="101-supply">10.1 Supply</h3>
@@ -1060,7 +1055,7 @@ body {
 <li>Rust/RISC-V contract tooling must be excellent — anything less than excellent loses to a familiar EVM environment.</li>
 <li>Zero-knowledge bridge circuits are complex and require serious audit work.</li>
 <li>The market for agent commerce may take longer to mature than expected.</li>
-<li>Post-quantum signatures are larger than classical signatures, raising storage and bandwidth costs. This is most visible in consensus: each anchor&rsquo;s quorum certificates carry raw per-operator ML-DSA-65 signatures (3,309 bytes each, seven per 7-of-10 cluster), so a certificate grows linearly with the number of voting clusters and is materially heavier than the single ~96-byte threshold-BLS aggregate it replaced. This is a deliberate cost of post-quantum, stateless, no-DKG consensus, not an oversight.</li>
+<li>Post-quantum signatures are larger than classical signatures, raising storage and bandwidth costs. This is most visible in consensus: each anchor&rsquo;s quorum certificates carry raw per-operator ML-DSA-65 signatures (3,309 bytes each, seven per 7-of-10 cluster), so a certificate grows linearly with the number of voting clusters and is materially heavier than the single ~96-byte threshold-BLS aggregate it replaced. This is a deliberate cost of post-quantum, stateless consensus, not an oversight.</li>
 <li>Distributed validator technology has not been deployed at the chain&rsquo;s target scale in a leaderless DAG-BFT configuration; the operational learning is ahead, not behind.</li>
 <li>The bifurcated denomination is structurally hostile to certain user expectations from existing privacy chains; users coming from those chains will find the constraints unusual.</li>
 <li>The composition stance depends on the major agent-payment standards remaining open and composable. A standard that closes its integration surface would constrain the wedge for that particular rail.</li>
@@ -1089,7 +1084,7 @@ body {
 <p>The thesis is straightforward: the next major settlement layer will not be the chain that copies Ethereum most closely. It will be the chain that gives new economic actors — autonomous agents, organizations delegating to software, services that want neutral cross-platform rails — safer rails to transact across applications, markets, and jurisdictions.</p>
 <hr>
 <h2 id="read-further">Read Further</h2>
-<p>This lightpaper distils the <a href="monolythium-whitepaper-v5.0.md">Monolythium Whitepaper v5.0</a>. For implementation detail, full threat model, cryptographic specifications, the consensus mathematics, the cluster ceremony, the recovery runbook, and complete citations, the whitepaper is the canonical reference (~110 pages).</p>
+<p>This lightpaper distils the <a href="monolythium-whitepaper-v5.0.md">Monolythium Whitepaper v5.0</a>. For implementation detail, full threat model, cryptographic specifications, the consensus mathematics, the cluster operations model, the recovery runbook, and complete citations, the whitepaper is the canonical reference (~110 pages).</p>
 <hr>
 <h2 id="entities">Entities</h2>
 <p>Monolythium is operated and stewarded by two entities:</p>

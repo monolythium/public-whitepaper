@@ -152,7 +152,6 @@ The cost of pure post-quantum is signature size — ML-DSA-65 signatures are ~3,
 | Key encapsulation | **ML-KEM-768** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation |
 | Consensus signatures | **ML-DSA-65** (FIPS 204) | Per-operator vertex signatures; cluster 7-of-10 quorum is a bitmap multisig of independent operator signatures |
 | Threshold encapsulation (mempool), *post-quantum, testnet* | **cluster-ML-KEM-768 + GF(256) Shamir + committing AEAD** (FIPS 203) | Encrypted-mempool sealing ("LythiumSeal") on the optional encrypted path; research-stage, unaudited, running on the public testnet |
-| Threshold encapsulation (mempool), classical, feature-gated | **Ferveo over BLS12-381** | Prior classical encrypted-mempool body, retained behind a feature gate; not the default path |
 | Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | zkML attestations, high-value off-chain computation |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, address derivation |
 
@@ -319,7 +318,7 @@ The consensus engine is **Starfish-C**, a DAG-BFT protocol with:
 
 The user-facing finality unit is the **anchor**. Multiple internal layers exist — vertex (cluster's signed round payload), wave (round of vertex production), anchor (deterministic linearization point), and block (preserved only for EVM-style RPC compatibility such as `eth_blockNumber`).
 
-Mempool encryption is optional and per-transaction. A sender can submit a transaction in plaintext, or seal it so the body stays confidential until anchor inclusion. The post-quantum encrypted path is **LythiumSeal**: cluster ML-KEM-768 (FIPS-203) plus information-theoretic GF(256) Shamir secret sharing plus a committing AEAD, with each operator holding only its own ML-KEM keypair and no distributed key generation. For a sealed transaction, no single operator can decrypt and no minority of fewer than t can; only a t-of-n (7-of-10 per cluster) operator coalition could, and even then only in the seconds between admission and inclusion. A plaintext transaction, including a plaintext order, is visible before inclusion and gets no such protection. LythiumSeal runs on the public testnet and is research-stage and unaudited: standardized primitives in a novel composition that has had no independent cryptographic review. The prior classical Ferveo body is retained only behind a feature gate.
+Mempool encryption is optional and per-transaction. A sender can submit a transaction in plaintext, or seal it so the body stays confidential until anchor inclusion. The post-quantum encrypted path is **LythiumSeal**: cluster ML-KEM-768 (FIPS-203) plus information-theoretic GF(256) Shamir secret sharing plus a committing AEAD, with each operator holding only its own ML-KEM keypair and nothing held jointly across the cluster. For a sealed transaction, no single operator can decrypt and no minority of fewer than t can; only a t-of-n (7-of-10 per cluster) operator coalition could, and even then only in the seconds between admission and inclusion. A plaintext transaction, including a plaintext order, is visible before inclusion and gets no such protection. LythiumSeal runs on the public testnet and is research-stage and unaudited: standardized primitives in a novel composition that has had no independent cryptographic review.
 
 ---
 
@@ -496,7 +495,7 @@ The chain's direction is a strategic bet. The risks are real and named.
 - Rust/RISC-V contract tooling must be excellent — anything less than excellent loses to a familiar EVM environment.
 - Zero-knowledge bridge circuits are complex and require serious audit work.
 - The market for agent commerce may take longer to mature than expected.
-- Post-quantum signatures are larger than classical signatures, raising storage and bandwidth costs. This is most visible in consensus: each anchor's quorum certificates carry raw per-operator ML-DSA-65 signatures (3,309 bytes each, seven per 7-of-10 cluster), so a certificate grows linearly with the number of voting clusters and is materially heavier than the single ~96-byte threshold-BLS aggregate it replaced. This is a deliberate cost of post-quantum, stateless, no-DKG consensus, not an oversight.
+- Post-quantum signatures are larger than classical signatures, raising storage and bandwidth costs. This is most visible in consensus: each anchor's quorum certificates carry raw per-operator ML-DSA-65 signatures (3,309 bytes each, seven per 7-of-10 cluster), so a certificate grows linearly with the number of voting clusters and is materially heavier than the single ~96-byte threshold-BLS aggregate it replaced. This is a deliberate cost of post-quantum, stateless consensus, not an oversight.
 - Distributed validator technology has not been deployed at the chain's target scale in a leaderless DAG-BFT configuration; the operational learning is ahead, not behind.
 - The bifurcated denomination is structurally hostile to certain user expectations from existing privacy chains; users coming from those chains will find the constraints unusual.
 - The composition stance depends on the major agent-payment standards remaining open and composable. A standard that closes its integration surface would constrain the wedge for that particular rail.
@@ -539,7 +538,7 @@ The thesis is straightforward: the next major settlement layer will not be the c
 
 ## Read Further
 
-This lightpaper distils the [Monolythium Whitepaper v5.0](monolythium-whitepaper-v5.0.md). For implementation detail, full threat model, cryptographic specifications, the consensus mathematics, the cluster ceremony, the recovery runbook, and complete citations, the whitepaper is the canonical reference (~110 pages).
+This lightpaper distils the [Monolythium Whitepaper v5.0](monolythium-whitepaper-v5.0.md). For implementation detail, full threat model, cryptographic specifications, the consensus mathematics, the cluster operations model, the recovery runbook, and complete citations, the whitepaper is the canonical reference (~110 pages).
 
 ---
 
