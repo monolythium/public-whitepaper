@@ -14,11 +14,9 @@
 > have changed with the Monolythium v2 re-genesis, and the running chain no longer matches those
 > sections. A full v6 edition will re-scope the text; this note is the interim factual correction.
 >
-> 1. **The encrypted mempool ("LythiumSeal", §12.5; the "Mempool" rows of the protocol-stack tables;
->    the encrypted-mempool front-running discussion in §22) has been removed.** v2 runs a plaintext
+> 1. **The encrypted mempool ("LythiumSeal", §12.5) has been removed.** v2 runs a plaintext
 >    mempool; transaction-ordering fairness is addressed at the DAG-consensus layer. The LythiumSeal
->    sealing scheme and its cluster ML-KEM / Shamir / threshold-reveal machinery are no longer part
->    of the protocol.
+>    sealing scheme is no longer part of the protocol.
 > 2. **The application-layer Groth16-BN254 zero-knowledge verifier (§12.6; the "Zero-knowledge
 >    verification" table rows) is disabled at genesis.** The direction is a post-quantum recursive-STARK
 >    verifier (the "keystone"), which ships gated off until it is ready; until then no Groth16 verifier
@@ -427,18 +425,17 @@ Cryptographic posture is end-to-end:
 | Layer | Primitive | Use |
 |---|---|---|
 | User signatures | **ML-DSA-65** (FIPS 204) | Every user-signed transaction |
-| Consensus signatures | **ML-DSA-65** (FIPS 204) | Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig (no BLS aggregation) |
+| Consensus signatures | **ML-DSA-65** (FIPS 204) | Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig of independent operator signatures |
 | Emergency recovery | **SLH-DSA** (FIPS 205, hash-based) | Pre-registered backup; activated under emergency rotation |
 | Key encapsulation | **ML-KEM** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation |
-| Threshold encapsulation (mempool), post-quantum, testnet | **cluster-ML-KEM-768 + GF(256) Shamir + committing AEAD** (FIPS 203) | Encrypted-mempool sealing ("LythiumSeal") on the optional encrypted path; research-stage, unaudited, on the public testnet |
 | Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | Application-layer proof verification (zkML attestations, high-value off-chain computation) |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
 
 Three properties of this stack are worth highlighting because they reflect design choices rather than ingredient-list ticks:
 
 - **No hybrid signature mode.** The chain does not accept "signed with ECDSA AND ML-DSA-65"; it accepts only ML-DSA-65. The reasoning is below.
-- **Post-quantum at consensus, not just at the user layer.** Every anchor is finalized by post-quantum signatures. Each operator in a cluster signs the cluster's vertex with its own ML-DSA-65 key, and an anchor is final once a 7-of-10 quorum of those per-operator signatures is present, gathered across a 2f+1 stake-weighted set of clusters. There is no classical aggregate anywhere in the consensus path; the BLS12-381 threshold aggregate that earlier designs used at the anchor layer has been removed. The consensus layer is single-tier and fully post-quantum.
-- **The honest cost of post-quantum consensus.** ML-DSA-65 signatures do not aggregate the way a pairing-based threshold scheme does. A cluster's 7-of-10 quorum is a bundle of seven raw 3,309-byte signatures (about 23 KB per cluster), and an anchor certificate concatenates one such bundle per voting cluster. The result is materially larger than the tiny fixed-size aggregate a classical scheme would produce. This is a deliberate trade: the chain pays real per-anchor bandwidth in exchange for post-quantum, stateless finality with no classical signature to break. Section 12.4 states the exact byte cost.
+- **Post-quantum at consensus, not just at the user layer.** Every anchor is finalized by post-quantum signatures. Each operator in a cluster signs the cluster's vertex with its own ML-DSA-65 key, and an anchor is final once a 7-of-10 quorum of those per-operator signatures is present, gathered across a 2f+1 stake-weighted set of clusters. There is no shared key, no aggregate, and no classical signature anywhere in the consensus path. The consensus layer is single-tier and fully post-quantum.
+- **The honest cost of post-quantum consensus.** ML-DSA-65 signatures are large and do not aggregate. A cluster's 7-of-10 quorum is a bundle of seven raw 3,309-byte signatures (about 23 KB per cluster), and an anchor certificate concatenates one such bundle per voting cluster, so the certificate grows linearly with the number of voting clusters. This is a deliberate trade: the chain pays real per-anchor bandwidth in exchange for post-quantum, stateless finality with no classical signature anywhere in the consensus path. Section 12.4 states the exact byte cost.
 
 ### Why pure post-quantum, not hybrid
 
@@ -561,7 +558,7 @@ Monolythium's value to large participants is that it provides shared settlement 
 
 Monolythium's consensus engine is **Starfish-C**, a DAG-BFT protocol derived from the Starfish family of distributed-acyclic-graph consensus designs. Starfish-C provides deterministic linearization of a directed-acyclic graph of cluster-signed vertices, **four-second deterministic finality** under the partial-synchrony assumption (four to eight seconds typical, with an outer bound of about twelve seconds under degraded networking before a view-change is triggered), and equivocation handling that produces succinct, on-chain proofs and a one-hundred-percent slash plus permanent operator exile on detection.
 
-The four-second cadence is chosen to leave headroom for cluster-marketplace geographic diversity (operators on any continent participate cleanly) and to allow encrypted-mempool threshold decryption and consensus signature collection under load. The chain optimizes for steady performance under adversarial conditions, not racetrack speed under ideal conditions.
+The four-second cadence is chosen to leave headroom for cluster-marketplace geographic diversity (operators on any continent participate cleanly) and to allow consensus signature collection under load. The chain optimizes for steady performance under adversarial conditions, not racetrack speed under ideal conditions.
 
 ### Safety
 
@@ -579,10 +576,9 @@ Liveness holds under partial synchrony — the standard BFT assumption that mess
 
 ### Leader selection
 
-Wave leadership is assigned by a **post-quantum leader-seed beacon**: a domain-separated, chain-id-bound hash of the ML-DSA-65 quorum certificate that already finalizes each anchor. Every cluster derives the same wave leader by hashing that certificate together with the wave number and the active cluster set, so the seed is a pure function of public, post-quantum-agreed state and every honest cluster computes the same assignment from the same DAG state. The certificate forms before the leader for the next wave is known, and an adversary cannot forge or grind it because it is a post-quantum signature object the quorum already committed; there is no separate seed to influence and no separate leader-selection signature to withhold. This post-quantum quorum-cert-hash beacon replaces the legacy threshold-BLS12-381 leader beacon, which is being removed.
-<!-- PUBLISH-GATE: the BLS-beacon removal is decided and being implemented; it lands via a re-genesis and is not yet deployed. Until then the live chain still runs the classical BLS beacon. This spine matches the public-whitepaper SoT (which describes the protocol/design); a live-state surface must mark the swap as in progress, not shipped. -->
+Wave leadership is assigned by a **post-quantum leader-seed beacon**: a domain-separated, chain-id-bound BLAKE3 hash of the ML-DSA-65 quorum certificate that already finalizes each anchor. Every cluster derives the same wave leader by hashing that certificate together with the wave number and the active cluster set, so the seed is a pure function of public, post-quantum-agreed state and every honest cluster computes the same assignment from the same DAG state. The certificate forms before the leader for the next wave is known, and an adversary cannot forge or grind it because it is a post-quantum signature object the quorum already committed; there is no separate seed to influence and no separate leader-selection signature to withhold.
 
-This is the leader rule the Starfish family specifies, with the seed sourced from the post-quantum quorum certificate rather than a classical randomness beacon.
+This is the leader rule the Starfish family specifies, with the seed sourced from the post-quantum quorum certificate.
 
 Round-robin removes a class of grinding and seed-manipulation risk by construction: there is no seed for an adversary to bias by withholding or selectively releasing a partial signature, because there is no aggregate seed at all. Leadership is a schedule, not a lottery. If a scheduled leader fails to be committed within its timeout, the linearizer executes a skip round and the next scheduled leader's commit covers the skipped wave (see Liveness, above).
 
@@ -632,10 +628,9 @@ This section specifies the cryptographic primitive set in implementation detail.
 | Layer | Primitive | Use |
 |---|---|---|
 | User signatures | **ML-DSA-65** (FIPS 204, Dilithium Level 3) | Every user-signed transaction |
-| Consensus signatures | **ML-DSA-65** (FIPS 204, Dilithium Level 3) | Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig (no BLS aggregation) |
+| Consensus signatures | **ML-DSA-65** (FIPS 204, Dilithium Level 3) | Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig of independent operator signatures |
 | Emergency backup signatures | **SLH-DSA** (FIPS 205, hash-based) | Pre-registered backup; activated under emergency rotation |
 | Key encapsulation | **ML-KEM-768** (FIPS 203, Module-Lattice KEM) | Peer-to-peer Noise handshakes; RPC TLS; stealth-address derivation |
-| Threshold encapsulation (mempool), post-quantum, testnet | **cluster-ML-KEM-768 + GF(256) Shamir + committing AEAD** (FIPS 203) | Encrypted-mempool sealing ("LythiumSeal") on the optional encrypted path; research-stage, unaudited, on the public testnet |
 | Zero-knowledge verification | **SP1 zkVM + Groth16-BN254** | Application-layer proof verification (zkML attestations, high-value off-chain computation) |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
 
@@ -658,7 +653,6 @@ ML-KEM-768 is used wherever a key encapsulation is needed:
 - **Peer-to-peer Noise handshakes.** Operator-to-operator connections use ML-KEM-768 for the Noise XX handshake, replacing the classical X25519 default.
 - **RPC TLS.** Public RPC endpoints serve TLS certificates with ML-KEM-encapsulated session keys. Wallet, indexer, and explorer connections to nodes use post-quantum TLS.
 - **Stealth addresses.** The privacy denomination's stealth-address scheme uses ML-KEM end-to-end for one-time-address derivation.
-- **Mempool sealing.** The optional encrypted-mempool path ("LythiumSeal", §12.5) seals each transaction body to a cluster's operators with cluster ML-KEM-768, where each operator holds its own independent keypair and the per-transaction body key is split t-of-n with Shamir secret sharing. Every operator's keypair is its own, and nothing is held jointly across the cluster.
 
 ### 12.4 Single-tier post-quantum finality
 
@@ -669,21 +663,17 @@ Consensus uses a **single** finality tier, and it is fully post-quantum. There i
 **The honest bandwidth cost.** ML-DSA-65 signatures are 3,309 bytes each and do not aggregate. Concretely, on the current testnet, per cluster (ten operators, threshold seven; the live fleet runs two such clusters — see the top-of-file erratum):
 
 - A single 7-of-10 cluster vote is **23,229 bytes**: seven raw 3,309-byte signatures plus a few bytes of length framing and the operator bitmap.
-- A full anchor quorum certificate over that one cluster is **23,301 bytes**, versus the ~96 bytes a classical BLS threshold aggregate would have occupied for the same certificate.
+- A full anchor quorum certificate over that one cluster is **23,301 bytes**.
 
-This is the deliberate trade. The chain replaced a single ~96-byte BLS aggregate per certificate with a heap-allocated bundle of raw per-operator ML-DSA-65 signatures that grows linearly with the number of voting clusters. In return it gets post-quantum, stateless finality with no signature-aggregation or interactive key-setup ceremony of any kind — each operator simply signs with its own key — and no classical signature anywhere in the consensus path for a future quantum adversary to forge. The cost is real per-anchor bytes; the benefit is that there is nothing classical left to break at consensus.
+This is the deliberate trade. An anchor certificate is a bundle of raw per-operator ML-DSA-65 signatures that grows linearly with the number of voting clusters. In exchange it gets post-quantum, stateless finality with no signature aggregation, no shared key, and no interactive key-setup ceremony of any kind — each operator simply signs with its own key — and no classical signature anywhere in the consensus path for a future quantum adversary to forge. The cost is real per-anchor bytes; the benefit is that there is nothing classical left to break at consensus.
 
 **At scale.** The cost is perfectly linear: each added voting cluster contributes another ~23.2 KB to the certificate. At the whitepaper's target of roughly 100 clusters with a 2f+1 (67-of-100) quorum, one quorum certificate is about 1.5 MiB; if all 100 clusters vote, about 2.2 MiB. Each anchor carries a small fixed number of such certificates (round, leader, and data-availability quorum certificates). This bandwidth is the price of the post-quantum posture, sized honestly here so operators can provision for it; it is not hidden behind a "tiny aggregate" claim.
 
-### 12.5 Encrypted mempool: LythiumSeal
+### 12.5 Mempool
 
-Mempool encryption is optional and per-transaction. A sender chooses, per transaction, between a plaintext path (the body is visible in the mempool) and an encrypted path (the body is sealed and becomes plaintext only at anchor inclusion). Encryption buys pre-inclusion confidentiality and front-running resistance; the plaintext path is what an integrator uses when confidentiality is not needed. The protocol does not force every transaction through encryption.
+The mempool is plaintext: a transaction body is visible from the moment it enters the mempool until anchor inclusion, and the protocol does not seal or encrypt mempool contents. Transaction-ordering fairness is addressed at the DAG-consensus layer — ordering follows the deterministic DAG linearization rather than a single sequencer's discretion, so a plaintext order is sequenced by consensus rules rather than by privileged pre-inclusion reads.
 
-The post-quantum encrypted path is **LythiumSeal**: it seals a transaction body to a cluster's operators with cluster ML-KEM-768 (FIPS-203) plus information-theoretic GF(256) Shamir secret sharing plus a committing AEAD (ChaCha20-Poly1305 with an explicit key commitment). There is no trusted dealer and nothing is held jointly across the cluster: each operator mints its own independent ML-KEM-768 keypair, the per-transaction body key is split t-of-n with Shamir, and each operator can unwrap only its own share. Any t of n operators (7-of-10 per cluster) must cooperate to reconstruct the body key. For a sealed transaction, no single operator can decrypt and no minority of fewer than t can; the privacy property holds against everyone except a t-of-n operator coalition. A transaction sent on the plaintext path gets none of this: a plaintext CLOB order, like any plaintext transaction, is visible before inclusion and carries no mempool-level front-running protection.
-
-At anchor inclusion, each operator decapsulates its own ML-KEM ciphertext, derives its share, and a collector reconstructs the body key from any t shares and opens the committing body. Every step is deterministic and auditable, and the committing AEAD lets the collector distinguish a correct key from a wrong one. Confidentiality is lifecycle-bounded (a sealed body becomes plaintext at inclusion, seconds after entering the mempool), so there is no long-lived ciphertext at rest and the harvest-now-decrypt-later threat does not apply.
-
-**Maturity, stated plainly.** LythiumSeal runs on the Monolythium public testnet and is research-stage and unaudited. Its primitives are standardized and individually well-analyzed (ML-KEM-768 is FIPS-203, Shamir is information-theoretic, ChaCha20-Poly1305 and SHAKE256 are standard); what is novel and has had no independent cryptographic review is the composition and the threshold-reveal protocol. It is the first post-quantum encrypted-mempool implementation of this shape, running on a value-less testnet, not a production deployment. The machine-checked `no_classical_in_protocol` lint is green and enforced as a hard build fail: the consensus and signature/KEM protocol path carries no classical asymmetric primitive. One documented carve-out remains explicitly allow-listed and is neither a consensus signature nor a KEM — the privacy precompile's Ristretto/Pedersen group arithmetic (application-layer confidential transfers).
+The machine-checked `no_classical_in_protocol` lint is enforced as a hard build fail: the consensus and signature/KEM protocol path carries no classical asymmetric primitive. One documented carve-out remains explicitly allow-listed and is neither a consensus signature nor a KEM — the privacy precompile's Ristretto/Pedersen group arithmetic (application-layer confidential transfers).
 
 ### 12.6 Zero-knowledge proof systems
 
@@ -1444,7 +1434,7 @@ The chain's defensive posture is **separation of blast radius**. Different surfa
 | Consensus | Cluster threshold + equivocation slash + DAG-BFT mathematics | A failure here halts safety; the protocol must reject equivocating operators and degrade gracefully |
 | Cryptography (user signatures) | ML-DSA-65 + emergency-key registry + algorithm rotation | A primitive break triggers rotation; users with backup keys survive; users without are frozen, not drained |
 | Bridges | Light-client / zero-knowledge proof verification + drain caps + circuit breakers + per-route cooldown | A bridge failure is bounded to the bridge route's drain cap; consensus and accounts elsewhere are unaffected |
-| Mempool | Optional LythiumSeal post-quantum sealing (cluster ML-KEM-768 + GF(256) Shamir t-of-n + committing AEAD) + lifecycle-bounded confidentiality | For a sealed transaction, mempool exposure is bounded to the period between admission and inclusion (seconds); a plaintext transaction is visible before inclusion |
+| Mempool | Plaintext mempool; transaction-ordering fairness handled at the DAG-consensus layer | Transactions are visible before inclusion; ordering follows deterministic DAG linearization rather than a single sequencer's discretion |
 | Application contracts | Audit + native modules + sandbox boundaries | A contract bug damages the contract's users; native modules and the consensus layer are insulated |
 | Hardware | TPM PCR attestation + immutable substrate + network/geographic diversity scoring | A compromised operator is detectable through PCR drift; a compromised hosting class is detectable through diversity scoring |
 | Recovery | Emergency-key registry + frozen-account claim flow | A primitive break or coordinated attack does not allow draining; affected accounts are recoverable |
@@ -1467,11 +1457,11 @@ Honesty about limits is part of the threat model. A chain that claims invulnerab
 
 MEV — value extracted by privileged actors who can reorder, insert, or censor transactions — is bounded structurally by the chain's design.
 
-- **Optional encrypted mempool.** A sender can seal a transaction so its body stays confidential until anchor inclusion; for a sealed transaction an operator cannot read it pending and front-run it, and a t-of-n quorum collusion would be required to decrypt early. Encryption is opt-in per transaction, so the protection applies to the transactions a sender chooses to seal. A plaintext transaction, including a plaintext CLOB order, is visible before inclusion and gets no mempool-level front-running protection.
-- **Unforgeable leader selection.** Wave leadership is derived from the post-quantum leader-seed beacon (§11): a hash of the ML-DSA-65 quorum certificate the quorum already committed. Operators cannot influence the assignment through block-content selection, and there is no separate seed to grind or leader-selection signature to withhold.
+- **Plaintext mempool.** The mempool is plaintext, so a transaction body — including a CLOB order — is visible before inclusion. Mempool-visibility front-running is therefore not foreclosed at the mempool layer; it is bounded instead by deterministic DAG ordering and the native order book, below.
+- **Unforgeable leader selection.** Wave leadership is derived from the post-quantum leader-seed beacon (§11): a domain-separated, chain-id-bound BLAKE3 hash of the ML-DSA-65 quorum certificate the quorum already committed. Operators cannot influence the assignment through block-content selection, and there is no separate seed to grind or leader-selection signature to withhold.
 - **Native order book.** The native CLOB settles orders deterministically. Sequencer-style MEV games against an order book are bounded by the consensus order, which is determined by the DAG linearization rather than by a single sequencer's discretion.
 
-MEV is not zero, and the chain does not claim it is. Some MEV (backrunning of public events, arbitrage between markets, latency-based capture) exists wherever transactions are visible, and any unsealed transaction is visible. For the transactions senders choose to seal, the chain's design forecloses the largest extractive categories (front-running and sandwich attacks based on mempool visibility), and leaves the remainder as a competitive market that benefits ordinary users through tight spreads.
+MEV is not zero, and the chain does not claim it is. Some MEV (backrunning of public events, arbitrage between markets, latency-based capture) exists wherever transactions are visible, and the mempool is plaintext. The chain's design forecloses the leader-grinding and sequencer-discretion categories through the post-quantum leader-seed beacon and deterministic DAG ordering, and leaves the remainder as a competitive market that benefits ordinary users through tight spreads.
 
 ---
 
@@ -1699,8 +1689,6 @@ The Monolythium protocol is the product of years of design work, research, and e
 
 - the Dilithium, Kyber, and SPHINCS+ post-quantum primitives standardized by NIST as ML-DSA, ML-KEM, and SLH-DSA;
 - the Starfish family of leaderless DAG-BFT consensus protocols;
-- the BLS12-381 pairing-friendly curve and associated threshold-signature literature;
-- Shamir secret sharing and the lattice-KEM literature, which the post-quantum LythiumSeal encrypted-mempool sealing scheme composes;
 - the BIP-39 wordlist and bech32m encoding conventions;
 - the FRI-based proof-system family and the broader zero-knowledge research community;
 - the BLAKE3 hash function;
