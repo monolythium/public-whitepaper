@@ -24,6 +24,23 @@
 >    verifier (the "keystone"), which ships gated off until it is ready; until then no Groth16 verifier
 >    is reachable on the value path. As stated in §12.4, consensus finality remains pure ML-DSA-65 and
 >    was never dependent on the application-layer verifier.
+> 3. **Wallet recovery (§13.3) no longer uses the "PQM-1" mnemonic format.** The PQM-1 format has been
+>    dropped. Wallets and the `@monolythium/core-sdk` now use a standard 24-word BIP-39 mnemonic, with
+>    the seed re-derived for ML-DSA-65 as
+>    `mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]`.
+>    There is no algorithm-tag/version byte header, and the `"monolythium.pqm1.v1.mldsa65"` domain
+>    string and seed-layout table in §13.3 are **superseded**. The §13.3 scheme must not be used to
+>    derive addresses; a third-party wallet implementing it would compute the wrong address.
+> 4. **Testnet topology (§12.4) is no longer single-cluster.** The running testnet is a 2×10 DVT fleet
+>    (two clusters of ten operators, 7-of-10 each) plus two relays — 22 nodes total — not the single
+>    cluster of ten described in §12.4. The bandwidth figures in §12.4 are still correct *per cluster*.
+> 5. **Confidential amounts / amount-hiding (§19 and the privacy discussion in §5) are disabled at
+>    genesis.** Confidential transactions are not on the value path; stealth-address recipient privacy
+>    is retained, but amount confidentiality is not active on the live chain.
+> 6. **The on-chain prover market, GPU proof market, and service-tier oracle-feed payments
+>    (§16.3, §17.3, §17.4) are gated off at genesis** and are not reachable on the live chain.
+> 7. **The ZK / light-client bridge routes and the SP1 bridge verifier (§20.3) are draft/paused and
+>    gated off.** They should not be treated as live capabilities.
 
 > *"Sovereignty is not given; it is verified by the silicon and the math."*
 
@@ -651,7 +668,7 @@ Consensus uses a **single** finality tier, and it is fully post-quantum. There i
 
 **How an anchor is finalized.** Each operator in a cluster signs the cluster's vertex with its own ML-DSA-65 key. A cluster's quorum certificate is a **7-of-10 bitmap multisig**: a one-byte-resolution bitmap of which operators signed, followed by the raw per-operator ML-DSA-65 signatures themselves. An anchor is final once a 2f+1 stake-weighted set of clusters has each contributed a valid 7-of-10 cluster vote. Anchor-level finality settles in roughly four to eight seconds (one wave at the four-second round duration). The same certificate is the everyday-transfer signal and the deep-settlement signal that bridges, exchange deposits, and high-value cross-chain attestations bind to; there is one finality, post-quantum at every depth.
 
-**The honest bandwidth cost.** ML-DSA-65 signatures are 3,309 bytes each and do not aggregate. Concretely, on the current single-cluster testnet (one cluster of ten operators, threshold seven):
+**The honest bandwidth cost.** ML-DSA-65 signatures are 3,309 bytes each and do not aggregate. Concretely, on the current testnet, per cluster (ten operators, threshold seven; the live fleet runs two such clusters — see the top-of-file erratum):
 
 - A single 7-of-10 cluster vote is **23,229 bytes**: seven raw 3,309-byte signatures plus a few bytes of length framing and the operator bitmap.
 - A full anchor quorum certificate over that one cluster is **23,301 bytes**, versus the ~96 bytes a classical BLS threshold aggregate would have occupied for the same certificate.
@@ -723,6 +740,12 @@ Addresses use a per-type human-readable prefix discriminator so that an address'
 Additional prefixes are reserved for future account classes. A user reading the discriminator can tell whether they are about to send to a normal account, a contract, a cluster, or a bridge — a property that hex addresses cannot offer.
 
 ### 13.3 PQM-1 mnemonic — post-quantum wallet backup
+
+> **SUPERSEDED — see the top-of-file erratum (item 3).** The PQM-1 format described below has been
+> dropped. Live wallets use a standard 24-word BIP-39 mnemonic with the seed re-derived for ML-DSA-65 as
+> `mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]` via the
+> `@monolythium/core-sdk`. The `"monolythium.pqm1.v1.mldsa65"` domain string and the algorithm-tag/version
+> seed layout below must not be used to derive addresses.
 
 Wallets support two recovery formats:
 
