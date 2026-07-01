@@ -769,6 +769,12 @@ body {
 </tbody>
 </table>
 <h3 id="pqm-1-mnemonic">PQM-1 mnemonic</h3>
+<blockquote>
+<p><strong>Superseded (see erratum item 3).</strong> The PQM-1 format has been dropped. Wallets and the
+<code>@monolythium/core-sdk</code> now use a standard 24-word BIP-39 mnemonic, with the seed re-derived for
+ML-DSA-65 as <code>mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]</code>.
+The scheme below is retained for historical reference only and must not be used to derive addresses.</p>
+</blockquote>
 <p>Wallets support two recovery formats. The default is an encrypted keystore (Argon2id over the password, XChaCha20-Poly1305 over the seed). For users who want phrase-based backup, the chain defines <strong>PQM-1</strong>: a 24-word BIP-39 phrase whose bytes are interpreted under a post-quantum scheme (algorithm tag + version + 240-bit entropy, expanded via SHAKE256, used as the ML-DSA-65 keygen seed). A typical BIP-39 → secp256k1 EVM mnemonic is <strong>not compatible</strong> — wallets warn the user explicitly before either direction is attempted.</p>
 <h3 id="lyth-name-registry">LYTH name registry</h3>
 <p>A hierarchical, on-chain name registry maps human-readable names to addresses. Lowercase ASCII letters, digits, and hyphens; no mixed case, no Unicode confusables. Names live under the <code>.mono</code> namespace and resolve to five structural categories: a bare <code>&lt;name&gt;.mono</code> is a human/personal account, an agent registers beneath its human principal as <code>&lt;name&gt;.agent.&lt;human&gt;.mono</code>, and clusters, contracts, and protocol entities take <code>&lt;name&gt;.cluster.mono</code>, <code>&lt;name&gt;.contract.mono</code>, and <code>&lt;name&gt;.system.mono</code> (the system category is foundation-only). U-curve pricing discourages both squatting (short names cost more) and clutter (long names pay a small administrative fee). Transfer is propose-accept with a 24-hour acceptance window. Reserved prefixes prevent collisions with bech32m HRPs and <code>0x</code> strings.</p>

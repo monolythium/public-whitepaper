@@ -40,10 +40,10 @@ Whitepaper PDF: 81 pages. Lightpaper PDF: 34 pages.
 
 ### Cryptography and identity
 
-- Post-quantum cryptography: ML-DSA-65 user and consensus signatures, ML-KEM-768 key encapsulation, and SLH-DSA emergency backup. Zero-knowledge proofs use SP1 zkVM + Groth16-BN254 on the gated application surface (classical; FRI/STARK is the long-horizon goal, not the shipped verifier). The chain does not yet claim a classical-free protocol: the no_classical_in_protocol lint is not yet green, so quantum claims state the surface they cover.
+- Post-quantum cryptography: ML-DSA-65 user and consensus signatures, ML-KEM-768 key encapsulation, and SLH-DSA emergency backup. Zero-knowledge proofs use SP1 zkVM + Groth16-BN254 on the gated application surface (classical; FRI/STARK is the long-horizon goal, not the shipped verifier). The no_classical_in_protocol lint is green and hard-fails the build: there is no classical signature acceptance path in the protocol.
 - Single-tier post-quantum finality: a per-operator ML-DSA-65 bitmap-multisig quorum certificate (any seven of a cluster's ten operators' individual signatures form the certificate), with roughly four-to-eight-second anchor finality.
 - Starfish-C consensus: DAG-BFT with deterministic linearization, succinct equivocation proofs, and a post-quantum leader-seed beacon (a domain-separated, chain-id-bound BLAKE3 hash of the ML-DSA-65 quorum certificate that finalizes each anchor).
-- Identity primitives: 20-byte BLAKE3-derived addresses, bech32m display with per-type human-readable prefix discriminator, PQM-1 24-word mnemonic backup, hierarchical on-chain name registry.
+- Identity primitives: 20-byte BLAKE3-derived addresses, bech32m display with per-type human-readable prefix discriminator, standard 24-word BIP-39 mnemonic backup (seed re-derived for ML-DSA-65), hierarchical on-chain name registry.
 
 ### Execution and economics
 
