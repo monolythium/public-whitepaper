@@ -12,14 +12,34 @@
 
 ---
 
-> **Erratum — v2 (LythiumDAG-BFT) testnet status.** Two constructions in this text have changed
-> with the Monolythium v2 re-genesis. (1) **The encrypted mempool ("LythiumSeal") has been removed** —
-> v2 runs a plaintext mempool and addresses ordering fairness at the DAG-consensus layer; the
-> encrypted-mempool sealing scheme is no longer part of the protocol.
-> (2) **The Groth16-BN254 zero-knowledge verifier is disabled at genesis** — the direction is a
-> post-quantum recursive-STARK verifier that ships gated off until ready; until then no Groth16
-> verifier is reachable on the value path. Consensus finality remains pure ML-DSA-65 and never
-> depended on it. A full v6 edition will re-scope the text; this is the interim correction.
+> **Erratum — v2 (LythiumDAG-BFT) testnet status.** Seven constructions described in this text have
+> changed with the Monolythium v2 re-genesis, and the running chain no longer matches those sections.
+> A full v6 edition will re-scope the text; this note is the interim factual correction.
+>
+> 1. **The encrypted mempool ("LythiumSeal") has been removed.** v2 runs a plaintext mempool;
+>    transaction-ordering fairness is addressed at the DAG-consensus layer. The encrypted-mempool
+>    sealing scheme is no longer part of the protocol.
+> 2. **The Groth16-BN254 zero-knowledge verifier is disabled at genesis.** The direction is a
+>    post-quantum recursive-STARK verifier (the "keystone"), which ships gated off until it is ready;
+>    until then no Groth16 verifier is reachable on the value path. Consensus finality remains pure
+>    ML-DSA-65 and never depended on the application-layer verifier.
+> 3. **Wallet recovery no longer uses the "PQM-1" mnemonic format.** The PQM-1 format has been dropped.
+>    Wallets and the `@monolythium/core-sdk` now use a standard 24-word BIP-39 mnemonic, with the seed
+>    re-derived for ML-DSA-65 as
+>    `mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]`.
+>    There is no algorithm-tag/version byte header, and the `"PQM-1 mnemonic"` scheme described below
+>    is **superseded** and must not be used to derive addresses; a third-party wallet implementing it
+>    would compute the wrong address.
+> 4. **Testnet topology is no longer single-cluster.** The running testnet is a 2×10 DVT fleet (two
+>    clusters of ten operators, 7-of-10 each) plus two relays — 22 nodes total — not a single cluster
+>    of ten.
+> 5. **Confidential amounts / amount-hiding are disabled at genesis.** Confidential transactions are
+>    not on the value path; stealth-address recipient privacy is retained, but amount confidentiality
+>    is not active on the live chain (see the bifurcated-denomination section).
+> 6. **The on-chain prover market, GPU proof market, and service-tier oracle-feed payments are gated
+>    off at genesis** and are not reachable on the live chain (see the "Service tiers" utility bullet).
+> 7. **The ZK / light-client bridge routes and the SP1 bridge verifier are draft/paused and gated
+>    off.** They should not be treated as live capabilities.
 
 ## TL;DR
 
@@ -263,6 +283,11 @@ Per-type prefixes signal the address's role at a glance:
 | `monox1...` | Bridge account |
 
 ### PQM-1 mnemonic
+
+> **Superseded (see erratum item 3).** The PQM-1 format has been dropped. Wallets and the
+> `@monolythium/core-sdk` now use a standard 24-word BIP-39 mnemonic, with the seed re-derived for
+> ML-DSA-65 as `mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]`.
+> The scheme below is retained for historical reference only and must not be used to derive addresses.
 
 Wallets support two recovery formats. The default is an encrypted keystore (Argon2id over the password, XChaCha20-Poly1305 over the seed). For users who want phrase-based backup, the chain defines **PQM-1**: a 24-word BIP-39 phrase whose bytes are interpreted under a post-quantum scheme (algorithm tag + version + 240-bit entropy, expanded via SHAKE256, used as the ML-DSA-65 keygen seed). A typical BIP-39 → secp256k1 EVM mnemonic is **not compatible** — wallets warn the user explicitly before either direction is attempted.
 

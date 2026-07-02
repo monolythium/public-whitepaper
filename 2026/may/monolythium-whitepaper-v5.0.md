@@ -10,7 +10,7 @@
 
 ---
 
-> **Erratum — v2 (LythiumDAG-BFT) testnet status.** Two constructions described in this v5.1 text
+> **Erratum — v2 (LythiumDAG-BFT) testnet status.** Seven constructions described in this v5.1 text
 > have changed with the Monolythium v2 re-genesis, and the running chain no longer matches those
 > sections. A full v6 edition will re-scope the text; this note is the interim factual correction.
 >
