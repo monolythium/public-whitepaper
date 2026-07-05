@@ -2,15 +2,28 @@
 
 Release history of the Monolythium public whitepaper.
 
-> **Erratum — v2 (LythiumDAG-BFT) testnet status.** Two constructions noted in the v5.0/v5.1 entries
-> below have changed with the Monolythium v2 re-genesis and no longer describe the running chain.
-> (1) **The encrypted mempool ("LythiumSeal") has been removed** —
-> v2 runs a plaintext mempool and addresses ordering fairness at the DAG-consensus layer; the
-> encrypted-mempool sealing scheme is no longer part of the protocol. (2) **The
-> application-layer Groth16-BN254 zero-knowledge verifier is disabled at genesis** — the direction is a
-> post-quantum recursive-STARK verifier that ships gated off until ready. Consensus finality remains
-> pure ML-DSA-65 and never depended on either. See the erratum at the head of the whitepaper and
-> lightpaper; a full v6 edition will re-scope the text.
+> **v6 reconciliation — 2026-07-05.** The v5.0/v5.1 entries below describe several constructions that
+> have since changed with the Monolythium v2 (LythiumDAG-BFT) re-genesis. The whitepaper and lightpaper
+> texts have been corrected in place (see the "v6 reconciliation" note at the head of each); a full v6
+> edition will re-scope the surrounding narrative. In summary, relative to v5.1:
+>
+> - **Cross-chain interop is now an external-provider integration, not an in-tree bridge.** The in-tree
+>   bridge stack — on-chain bridge proof verifier, route/fee/insurance scaffolding, and build feature —
+>   was removed; the chain no longer verifies bridge proofs on-chain. Interop is delivered through an
+>   external interop provider (evaluation in progress; described vendor-neutrally).
+> - **The application-layer Groth16-BN254 / SP1 zero-knowledge verifier is disabled at genesis** — the
+>   direction is a post-quantum FRI/STARK verifier that ships gated off until ready. Consensus finality
+>   is pure ML-DSA-65 and never depended on it.
+> - **The encrypted mempool ("LythiumSeal") was removed** — v2 runs a plaintext mempool and addresses
+>   ordering fairness at the DAG-consensus layer; the threshold-decryption sealing design was dropped.
+> - **DVT uses a per-operator ML-DSA-65 multisig** (a 7-of-10 bitmap of independent operator
+>   signatures), not FROST/DKG/threshold-shared keys.
+> - **Cross-cluster finality quorum is count-based, not stake-weighted, and block rewards are
+>   service-weighted, not stake-weighted** — stake sets only top-100 admission rank.
+> - **Confidential (amount-hidden) value transfer, the on-chain prover / GPU proof market, and
+>   service-tier oracle-feed payments are gated off at genesis** and are not live; stealth-address
+>   recipient privacy and privacy policy are live.
+> - **Wallet recovery uses a standard BIP-39 → ML-DSA-65 mnemonic** (the PQM-1 format was dropped).
 
 ## v5.0 — May 2026
 
