@@ -74,7 +74,7 @@ Whitepaper PDF: 81 pages. Lightpaper PDF: 34 pages.
 
 ### Bridges, hardware, and resilience
 
-- Bridges and the liquidity edge — zero-knowledge and light-client bridges, cross-chain swaps, route-specific cooldowns and drain caps.
+- Bridges and the liquidity edge — zero-knowledge and light-client bridges, cross-chain swaps, route-specific cooldowns and drain caps. _(Superseded — the in-tree bridge stack was removed; interop is now an external-provider integration. See the v6 reconciliation note at the head of this changelog.)_
 - Hardware sovereignty — Monarch OS substrate with TPM-measured boot, immutable image, kernel-attack-surface hardening, continuous on-chain PCR attestation, network and geographic diversity scoring.
 - Threat model: surface-by-surface blast-radius separation, including post-quantum-leader-seed-beacon MEV bounds.
 - Recovery posture — emergency-key registry with SLH-DSA backup, scoped and time-bounded emergency-freeze mechanism, multisig treasury, recovery runbooks.
