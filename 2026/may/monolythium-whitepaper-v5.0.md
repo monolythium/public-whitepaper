@@ -54,6 +54,16 @@
 > 9. **The live testnet is a 2×10 DVT fleet** (two clusters of ten operators, 7-of-10 each) plus two
 >    relays — 22 nodes — not a single cluster; the per-cluster bandwidth figures in §12.4 are still
 >    correct per cluster.
+> 10. **The SLH-DSA hash-based emergency-backup key and the in-protocol emergency-key registry are
+>     removed; there is no on-chain emergency algorithm rotation at launch.** The chain is
+>     **ML-DSA-65-only**. The advertised break-glass — a pre-registered SLH-DSA (FIPS 205, hash-based)
+>     backup key, the on-chain emergency-key registry, and the algorithm-rotation event that would
+>     activate it — was found in audit to be inoperative and has been **removed** from the protocol.
+>     Post-quantum **crypto agility** (a second-family backup primitive plus an in-protocol rotation path)
+>     is now described as a **future capability to be introduced in a subsequent genesis**, not a
+>     present-tense feature; §7 ("the quantum hedge"), §12.1, §22, and §23.1 are corrected accordingly.
+>     The emergency **freeze** circuit breaker (a global, time-bounded pause, §23.2) is a separate
+>     mechanism and is unaffected.
 
 > *"Sovereignty is not given; it is verified by the silicon and the math."*
 
@@ -445,7 +455,7 @@ Cryptographic posture is end-to-end:
 |---|---|---|
 | User signatures | **ML-DSA-65** (FIPS 204) | Every user-signed transaction |
 | Consensus signatures | **ML-DSA-65** (FIPS 204) | Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig of independent operator signatures |
-| Emergency recovery | **SLH-DSA** (FIPS 205, hash-based) | Pre-registered backup; activated under emergency rotation |
+| Emergency recovery (removed) | **None at launch — ML-DSA-65-only** | The SLH-DSA hash-based backup key, the emergency-key registry, and in-protocol algorithm rotation are **removed**; a cross-family backup + rotation is a future capability for a subsequent genesis (reconciliation note, item 10) |
 | Key encapsulation | **ML-KEM** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation |
 | Zero-knowledge verification (gated off) | **Post-quantum FRI/STARK — intended direction** | Application-layer proof verification is **disabled at genesis**. The earlier SP1 zkVM + Groth16-BN254 verifier is not enabled; the direction is a post-quantum FRI/STARK verifier that ships gated off until ready. Consensus finality is pure ML-DSA-65 and never depended on it |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
@@ -474,9 +484,15 @@ The cost of pure post-quantum is signature size — ML-DSA-65 signatures are rou
 
 Post-quantum cryptography is not unconditionally future-safe. Cryptographic primitives have historically had finite useful lifetimes, and lattice-based cryptography is no different. The honest position is that ML-DSA-65 is the right choice for the foreseeable horizon, that it will likely remain a good choice for a decade or more, and that a future cryptographic break should be planned for rather than denied.
 
-The chain plans for it through a small, targeted mechanism: the **emergency-key registry**. A user can pre-register a backup key in a different cryptographic family — specifically SLH-DSA (FIPS 205, hash-based) — alongside their primary ML-DSA-65 key. Hash-based signatures rest on different mathematical assumptions than lattice-based signatures; an attack that breaks ML-DSA does not, on current understanding, break SLH-DSA, and vice versa. Registration is one-time and lives in a registry trie that does not widen the account record.
+> **Reconciliation (v6, item 10) — crypto agility is a future capability, not a live feature.** An earlier
+> design planned for a break through an in-protocol mechanism: an **emergency-key registry** in which a user
+> pre-registered a hash-based **SLH-DSA (FIPS 205)** backup key alongside their ML-DSA-65 key, plus an
+> **algorithm-rotation** event that would refuse the broken primitive at a set anchor height and move
+> registered users to their backup. That mechanism was found inoperative in audit and has been **removed**:
+> the chain is **ML-DSA-65-only**, with no second-family backup key and no in-protocol algorithm swap at
+> launch.
 
-If an emergency algorithm rotation is declared, the protocol refuses transactions signed with the broken algorithm at a specified anchor height. Users with a registered backup rotate to their hash-based key and continue transacting. Users without a registered backup are **frozen** — never drainable by the attacker, recoverable through a runbook claim process. The break-day outcome is bounded.
+The honest present-tense posture is that a future ML-DSA-65 break is planned for at the level of **process**, not an armed on-chain switch: the emergency **freeze** circuit breaker (§23.2) can pause transaction admission while a signature-primitive migration is coordinated as a maintainer-and-operator hard fork. Post-quantum **crypto agility** — reintroducing a cross-family backup primitive and an in-protocol rotation path so that a break-day migration is automatic rather than coordinated — is a capability the project intends to bring back **in a subsequent genesis**, and it is described here as future, not live. Hash-based signatures rest on different mathematical assumptions than lattice-based ones, so a cross-family backup remains the right shape for that future mechanism; what changed is that it is no longer present on the chain today.
 
 ---
 
@@ -648,12 +664,12 @@ This section specifies the cryptographic primitive set in implementation detail.
 |---|---|---|
 | User signatures | **ML-DSA-65** (FIPS 204, Dilithium Level 3) | Every user-signed transaction |
 | Consensus signatures | **ML-DSA-65** (FIPS 204, Dilithium Level 3) | Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig of independent operator signatures |
-| Emergency backup signatures | **SLH-DSA** (FIPS 205, hash-based) | Pre-registered backup; activated under emergency rotation |
+| Emergency backup signatures (removed) | **None at launch — ML-DSA-65-only** | The SLH-DSA hash-based backup and the emergency-key registry are **removed**; a cross-family backup + in-protocol rotation is a future-genesis capability (§23.1; reconciliation note item 10) |
 | Key encapsulation | **ML-KEM-768** (FIPS 203, Module-Lattice KEM) | Peer-to-peer Noise handshakes; RPC TLS; stealth-address derivation |
 | Zero-knowledge verification (gated off) | **Post-quantum FRI/STARK — intended direction** | Application-layer proof verification is **disabled at genesis**; the earlier SP1 zkVM + Groth16-BN254 verifier is not enabled (§12.6). Consensus finality is pure ML-DSA-65 and never depended on it |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
 
-There is no Ed25519 acceptance path. There is no hybrid signature mode. The protocol validates exactly one signature primitive at transaction admission: ML-DSA-65 (with SLH-DSA as the emergency-rotation alternative, never coexistent).
+There is no Ed25519 acceptance path. There is no hybrid signature mode. The protocol validates exactly one signature primitive at transaction admission: ML-DSA-65. The earlier SLH-DSA emergency-rotation alternative has been **removed** (§23.1); there is no second signature primitive on the chain today.
 
 ### 12.2 ML-DSA-65 (Dilithium Level 3)
 
@@ -1382,7 +1398,7 @@ Production operators run on **Monarch OS** — an immutable substrate built on a
 
 Beyond the absence of a userspace foothold, Monarch OS ships with an aggressively trimmed kernel configuration: features the operator node does not need are not compiled in or are compiled out of autoload.
 
-- The userspace cryptographic kernel API is disabled at kernel-config level. The node binary performs all cryptographic work in-process via Rust libraries (ML-DSA-65, ML-KEM, BLAKE3, SLH-DSA), not via kernel crypto sockets. The entire class of kernel-CVE attacks against userspace crypto APIs is closed off going forward.
+- The userspace cryptographic kernel API is disabled at kernel-config level. The node binary performs all cryptographic work in-process via Rust libraries (ML-DSA-65, ML-KEM, BLAKE3), not via kernel crypto sockets. The entire class of kernel-CVE attacks against userspace crypto APIs is closed off going forward.
 - Unused kernel subsystems are disabled: virtualization (operators do not host VMs), audio and video, Bluetooth, wireless drivers (operators are wired-network-only), legacy filesystems, and other categories irrelevant to a server-grade operator workload. The smaller the kernel surface, the smaller the future-CVE exposure.
 
 The crypto-on-OS / crypto-in-app distinction is structural. A chain that signs blocks via system-level cryptographic invocations has a fundamentally different exposure profile than one that signs blocks via in-process Rust libraries. Monolythium chose the latter from genesis. Kernel-CVE classes that target userspace crypto APIs do not affect the operator's signing path at all.
@@ -1440,12 +1456,12 @@ The chain's defensive posture is **separation of blast radius**. Different surfa
 | Surface | Primary protection | Failure scope |
 |---|---|---|
 | Consensus | Cluster threshold + equivocation slash + DAG-BFT mathematics | A failure here halts safety; the protocol must reject equivocating operators and degrade gracefully |
-| Cryptography (user signatures) | ML-DSA-65 + emergency-key registry + algorithm rotation | A primitive break triggers rotation; users with backup keys survive; users without are frozen, not drained |
+| Cryptography (user signatures) | ML-DSA-65 (only); a break-day migration is handled by process — emergency freeze (§23.2) plus a coordinated hard fork | A primitive break is a coordinated migration, not an armed on-chain rotation; the in-protocol emergency-key registry and algorithm rotation were removed and return in a future genesis (reconciliation note item 10) |
 | Interop (external provider) | Cross-chain verification and routing run with an external interop provider, outside consensus; wallets surface the provider's trust model and risk metadata | An interop failure is bounded to the external provider and the assets that transited it; Monolythium consensus and native accounts are unaffected, because the chain neither verifies nor custodies the cross-chain leg |
 | Mempool | Plaintext mempool; transaction-ordering fairness handled at the DAG-consensus layer | Transactions are visible before inclusion; ordering follows deterministic DAG linearization rather than a single sequencer's discretion |
 | Application contracts | Audit + native modules + sandbox boundaries | A contract bug damages the contract's users; native modules and the consensus layer are insulated |
 | Hardware | TPM PCR attestation + immutable substrate + network/geographic diversity scoring | A compromised operator is detectable through PCR drift; a compromised hosting class is detectable through diversity scoring |
-| Recovery | Emergency-key registry + frozen-account claim flow | A primitive break or coordinated attack does not allow draining; affected accounts are recoverable |
+| Recovery | Emergency freeze (global pause) + Foundation-signed recovery runbooks | The in-protocol emergency-key registry / frozen-account rotation was **removed** (returns in a future genesis); a break-day migration is coordinated through the freeze and a hard fork rather than an on-chain key swap |
 
 The point is that the chain does not have a single point at which "everything depends on this." Each surface has its own defense, and each defense has bounded failure consequences.
 
@@ -1456,7 +1472,7 @@ The chain does not promise:
 - that operators will not be compromised individually — instead, the cluster threshold and DVT structure bound the damage;
 - that an external interop provider will never be exploited — instead, keeping interop outside consensus bounds the damage to the provider and the assets that transited it, and wallets surface the provider's trust model before a user relies on it;
 - that smart contracts will not have bugs — instead, native modules carry the audited primitives and contracts are sandboxed;
-- that cryptography will work forever — instead, the emergency-key registry and algorithm rotation provide a planned migration path;
+- that cryptography will work forever — instead, a future ML-DSA-65 break is handled by a coordinated migration (the emergency freeze in §23.2 plus a hard fork); the earlier in-protocol emergency-key registry and algorithm rotation were removed and are a future-genesis capability, not a present-tense one;
 - that no user will lose funds to social engineering — instead, wallet UX surfaces risk and the chain's runbook + spending-policy model bounds delegated authority.
 
 Honesty about limits is part of the threat model. A chain that claims invulnerability is a chain whose users are unprepared when invulnerability fails.
@@ -1477,18 +1493,26 @@ MEV is not zero, and the chain does not claim it is. Some MEV (backrunning of pu
 
 The chain's recovery posture is designed for two scenarios that are normally underspecified in L1 protocols: a cryptographic primitive breaks, and a coordinated systemic event requires the chain to freeze in place while it is sorted out.
 
-### 23.1 Emergency-key registry
+### 23.1 Crypto agility — deferred to a future genesis
 
-A user can pre-register a backup key in a different cryptographic family (specifically SLH-DSA, FIPS 205) alongside their primary ML-DSA-65 key. The registration is one-time and lives in a registry trie that does not widen the account record.
+> **REMOVED — see the top-of-file reconciliation note (item 10).** The in-protocol **emergency-key
+> registry** and the SLH-DSA (FIPS 205) hash-based emergency-backup key described below have been **removed**
+> from the protocol. An audit found the advertised break-glass inoperative — the registered backup could not
+> actually be used to rotate — so rather than ship a non-functional recovery primitive, the chain is
+> **ML-DSA-65-only** at launch with no on-chain emergency algorithm rotation. Post-quantum crypto agility (a
+> cross-family backup primitive plus an in-protocol rotation path) is intended to return in a **subsequent
+> genesis**. The paragraphs below describe that future design, not a live feature.
 
-The backup key is **never used for normal transactions**. It is dormant unless the protocol declares an emergency algorithm rotation. At that point:
+The intended design was for a user to pre-register a backup key in a different cryptographic family (specifically SLH-DSA, FIPS 205) alongside their primary ML-DSA-65 key. The registration would be one-time and live in a registry trie that does not widen the account record.
 
-- the protocol stops accepting signatures using the broken algorithm at a specified anchor height;
-- users with a registered backup key sign with the backup key from that anchor forward;
-- the wallet UX transitions the user to the backup key transparently;
-- users without a registered backup are **frozen** — never drainable by the attacker, recoverable through a runbook-based claim process.
+The backup key would be **never used for normal transactions** — dormant unless the protocol declared an emergency algorithm rotation, at which point:
 
-The frozen-account claim process requires the principal to prove control of the account through a series of out-of-band attestations (recovery contacts, KYC linkage if it existed, hardware-bound emergency tokens). The process is documented in the recovery runbook and is designed to be slow and human-checked, so that the very attack that triggered the freeze cannot be used to drain frozen accounts through the recovery channel.
+- the protocol would stop accepting signatures using the broken algorithm at a specified anchor height;
+- users with a registered backup key would sign with the backup key from that anchor forward;
+- the wallet UX would transition the user to the backup key transparently;
+- users without a registered backup would be **frozen** — never drainable by the attacker, recoverable through a runbook-based claim process.
+
+The frozen-account claim process would require the principal to prove control of the account through a series of out-of-band attestations (recovery contacts, KYC linkage if it existed, hardware-bound emergency tokens), documented in the recovery runbook and designed to be slow and human-checked so that the very attack that triggered the freeze could not be used to drain frozen accounts through the recovery channel. Until this mechanism returns in a future genesis, a break-day migration is instead handled by the emergency **freeze** (§23.2) plus a coordinated hard fork.
 
 ### 23.2 Emergency freeze — scope and limits
 
@@ -1496,7 +1520,7 @@ In the case of a coordinated systemic event — a discovered cryptographic break
 
 **What the freeze is for** (the entire scope, exhaustively):
 
-- pausing admission of new transactions during a confirmed cryptographic-primitive break, while users transition to the emergency-key registry;
+- pausing admission of new transactions during a confirmed cryptographic-primitive break, while a signature-primitive migration is coordinated as a hard fork (the in-protocol emergency-key registry this step once fed is removed — see §23.1);
 - pausing transaction admission during a confirmed adversarial fork, until the canonical chain state is re-established.
 
 Cross-chain interop is handled by an external provider outside consensus (§20), so pausing a compromised interop route is the provider's control surface, not a Monolythium freeze action.
@@ -1696,7 +1720,7 @@ Monolythium is built for that future.
 
 The Monolythium protocol is the product of years of design work, research, and engineering by the team at Mono Labs R&D LLC, in coordination with the Monolythium Foundation. The protocol draws on a wide body of academic and open-source work, including:
 
-- the Dilithium, Kyber, and SPHINCS+ post-quantum primitives standardized by NIST as ML-DSA, ML-KEM, and SLH-DSA;
+- the Dilithium and Kyber post-quantum primitives standardized by NIST as ML-DSA and ML-KEM;
 - the Starfish family of leaderless DAG-BFT consensus protocols;
 - the BIP-39 wordlist and bech32m encoding conventions;
 - the FRI-based proof-system family and the broader zero-knowledge research community;
@@ -1712,7 +1736,7 @@ This whitepaper is a synthesis of those contributions into a specific Layer-1 ar
 Monolythium is operated and stewarded by two entities:
 
 - **Mono Labs R&D LLC** — the operating company, based in San Francisco, California. Mono Labs R&D LLC develops the Monolythium protocol, operates the reference client and SDK, and is the seller of record for the LYTH token in jurisdictions where a seller of record is required.
-- **Monolythium Foundation** — the protocol steward, based in the Cayman Islands. The Foundation operates the chain's emergency-key registry, the Foundation multisig treasury, the genesis name reserve, the emergency-freeze ratification window, and other constitutional-layer functions that require an entity rather than a company.
+- **Monolythium Foundation** — the protocol steward, based in the Cayman Islands. The Foundation operates the Foundation multisig treasury, the genesis name reserve, the emergency-freeze ratification window, and other constitutional-layer functions that require an entity rather than a company. (The emergency-key registry it would have stewarded is removed — see §23.1.)
 
 The two entities are independent, with separate governance, separate financial accounts, and separate roles in the protocol's operation.
 
