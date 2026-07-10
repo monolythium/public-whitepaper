@@ -24,6 +24,11 @@ Release history of the Monolythium public whitepaper.
 >   service-tier oracle-feed payments are gated off at genesis** and are not live; stealth-address
 >   recipient privacy and privacy policy are live.
 > - **Wallet recovery uses a standard BIP-39 → ML-DSA-65 mnemonic** (the PQM-1 format was dropped).
+> - **The SLH-DSA hash-based emergency-backup key and the in-protocol emergency-key registry / algorithm
+>   rotation were removed.** The chain is ML-DSA-65-only at launch; the advertised break-glass was audited as
+>   inoperative and taken out. Post-quantum crypto agility (a cross-family backup primitive plus an
+>   in-protocol rotation path) is deferred to a future genesis. The emergency freeze (a global, time-bounded
+>   pause) is a separate mechanism and is unaffected.
 
 ## v5.0 — May 2026
 
@@ -53,7 +58,7 @@ Whitepaper PDF: 81 pages. Lightpaper PDF: 34 pages.
 
 ### Cryptography and identity
 
-- Post-quantum cryptography: ML-DSA-65 user and consensus signatures, ML-KEM-768 key encapsulation, and SLH-DSA emergency backup. Zero-knowledge proofs use SP1 zkVM + Groth16-BN254 on the gated application surface (classical; FRI/STARK is the long-horizon goal, not the shipped verifier). The no_classical_in_protocol lint is green and hard-fails the build: there is no classical signature acceptance path in the protocol.
+- Post-quantum cryptography: ML-DSA-65 user and consensus signatures, ML-KEM-768 key encapsulation, and SLH-DSA emergency backup. Zero-knowledge proofs use SP1 zkVM + Groth16-BN254 on the gated application surface (classical; FRI/STARK is the long-horizon goal, not the shipped verifier). The no_classical_in_protocol lint is green and hard-fails the build: there is no classical signature acceptance path in the protocol. _(Superseded — the SLH-DSA emergency backup was removed; the chain is ML-DSA-65-only and crypto agility is deferred to a future genesis. See the v6 reconciliation note at the head of this changelog.)_
 - Single-tier post-quantum finality: a per-operator ML-DSA-65 bitmap-multisig quorum certificate (any seven of a cluster's ten operators' individual signatures form the certificate), with roughly four-to-eight-second anchor finality.
 - Starfish-C consensus: DAG-BFT with deterministic linearization, succinct equivocation proofs, and a post-quantum leader-seed beacon (a domain-separated, chain-id-bound BLAKE3 hash of the ML-DSA-65 quorum certificate that finalizes each anchor).
 - Identity primitives: 20-byte BLAKE3-derived addresses, bech32m display with per-type human-readable prefix discriminator, standard 24-word BIP-39 mnemonic backup (seed re-derived for ML-DSA-65), hierarchical on-chain name registry.
@@ -77,6 +82,6 @@ Whitepaper PDF: 81 pages. Lightpaper PDF: 34 pages.
 - Bridges and the liquidity edge — zero-knowledge and light-client bridges, cross-chain swaps, route-specific cooldowns and drain caps. _(Superseded — the in-tree bridge stack was removed; interop is now an external-provider integration. See the v6 reconciliation note at the head of this changelog.)_
 - Hardware sovereignty — Monarch OS substrate with TPM-measured boot, immutable image, kernel-attack-surface hardening, continuous on-chain PCR attestation, network and geographic diversity scoring.
 - Threat model: surface-by-surface blast-radius separation, including post-quantum-leader-seed-beacon MEV bounds.
-- Recovery posture — emergency-key registry with SLH-DSA backup, scoped and time-bounded emergency-freeze mechanism, multisig treasury, recovery runbooks.
+- Recovery posture — emergency-key registry with SLH-DSA backup, scoped and time-bounded emergency-freeze mechanism, multisig treasury, recovery runbooks. _(Superseded — the emergency-key registry and its SLH-DSA backup were removed; a break-day migration is handled by the emergency freeze plus a coordinated hard fork, with crypto agility deferred to a future genesis. See the v6 reconciliation note at the head of this changelog.)_
 
 License: CC BY-SA 4.0 on the whitepaper text.
