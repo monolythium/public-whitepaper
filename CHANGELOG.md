@@ -50,17 +50,23 @@ Release history of the Monolythium public whitepaper.
 > - **Stele's product architecture is standalone web, not a desktop-wallet marketplace.** As of
 >   2026-07-16, the public preview is live at
 >   [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet
->   v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet and can inspect an
->   existing valid non-economic approval preview; it does not create drafts. Hosted Stele MCP is keyless
->   and exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic
->   booking-draft preparation. Draft preparation is unavailable without a published listing. The
->   isolated local Stele MCP exposes exactly three read/status tools and no transaction tool. Economic
->   writes, transaction signing, and mainnet remain off. Legacy or unreconciled desktop builds may retain
->   a gated historical surface until reviewed removal and migration are released.
+>   v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet. Its
+>   wallet-authenticated Provider Studio can create, edit, preview, and delete private wallet-owned
+>   provider-listing drafts; these durable provider-listing drafts are not published, discoverable, or
+>   transactable, and provider publication remains off. Booking-approval drafts are separate: the web can
+>   inspect an existing valid non-economic
+>   booking-approval draft, but it does not create booking-approval drafts. Hosted Stele MCP is keyless and
+>   exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic
+>   booking-draft preparation. Hosted booking-draft preparation is unavailable without a published listing,
+>   and hosted MCP does not create or access provider-listing drafts. The isolated local Stele MCP exposes
+>   exactly three read/status tools and no transaction tool. Economic writes, transaction signing, and
+>   mainnet remain off. Legacy or unreconciled desktop builds may retain a gated historical surface until
+>   reviewed removal and migration are released.
 > - **The public artifact boundary is now fail-closed.** Unpublished working drafts are kept outside the
->   public repository. The build rejects internal filesystem paths, publication-blocking draft markers,
->   office documents, and PDFs outside the explicit release allowlist. PDF cross-document annotations
->   resolve against the public repository so clean builds are independent of checkout location.
+>   public repository. The build rejects normalized private-path variants and symlinks as well as internal
+>   filesystem paths, publication-blocking draft markers, office documents, and PDFs outside the explicit
+>   release allowlist. PDF cross-document annotations resolve against the public repository so clean builds
+>   are independent of checkout location.
 > - **The registered public-network identity was reachable but stale on 2026-07-16.** Repeated RPC checks
 >   remained at height 74,907 with latest timestamp 2026-07-08T22:39:05Z. Registration and topology are not
 >   liveness or production-settlement evidence.

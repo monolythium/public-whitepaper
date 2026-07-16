@@ -10,7 +10,7 @@ Settlement Layer for the Autonomous Economy. Rust/RISC-V execution, post-quantum
 
 **Monolythium Lightpaper v5.0 — May 2026, reconciled 2026-07-16** &nbsp;·&nbsp; [Markdown](2026/may/monolythium-lightpaper-v5.0.md) &nbsp;·&nbsp; [Web](2026/may/monolythium-lightpaper-v5.0.html) &nbsp;·&nbsp; [PDF](2026/may/monolythium-lightpaper-v5.0.pdf)
 
-A condensed read of the whitepaper. It distinguishes activated protocol facts, target architecture, and the standalone Stele web/MCP product boundary; it is not an API reference or proof of current network liveness. As of 2026-07-16, the Stele public preview is live at [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet and can inspect an existing valid non-economic approval preview; it does not create drafts. Hosted Stele MCP exposes exactly two OAuth-protected tools, while the isolated local Stele MCP exposes exactly three read/status tools and no transaction tool. Draft preparation is unavailable without a published listing. Economic writes, transaction signing, and mainnet remain off.
+A condensed read of the whitepaper. It distinguishes activated protocol facts, target architecture, and the standalone Stele web/MCP product boundary; it is not an API reference or proof of current network liveness. As of 2026-07-16, the Stele public preview is live at [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet. Its wallet-authenticated Provider Studio can create, edit, preview, and delete private wallet-owned provider-listing drafts; these durable provider-listing drafts are not published, discoverable, or transactable, and provider publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid non-economic booking-approval draft, but it does not create booking-approval drafts. Hosted Stele MCP exposes exactly two OAuth-protected tools, including bounded booking-draft preparation, and does not create or access provider-listing drafts. Hosted booking-draft preparation is unavailable without a published listing. The isolated local Stele MCP exposes exactly three read/status tools and no transaction tool. Economic writes, transaction signing, and mainnet remain off.
 
 ## Formats
 
@@ -42,8 +42,9 @@ Each release is dated and lives under its own folder. The newest release is link
 ## Public release boundary
 
 This repository contains only publishable source and release artifacts. Draft or private working
-material belongs outside the repository. The release gate rejects unpublished markers, local filesystem
-paths, office documents, and PDFs other than the two explicitly approved artifacts listed above. See
+material belongs outside the repository. The release gate rejects private-path variants and symlinks in
+addition to unpublished markers, local filesystem paths, office documents, and PDFs other than the two
+explicitly approved artifacts listed above. See
 [`tools/README.md`](tools/README.md) for the build, boundary, and secret-scan commands.
 
 ## License

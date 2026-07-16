@@ -7,6 +7,7 @@ import io
 import re
 import subprocess
 import sys
+import unicodedata
 import zipfile
 import zlib
 from pathlib import Path, PurePosixPath
@@ -45,7 +46,10 @@ OFFICE_SUFFIXES = frozenset(
     }
 )
 
-PRIVATE_PATH_PARTS = frozenset({"draft", "drafts", "internal", "private"})
+PRIVATE_PATH_TOKENS = frozenset({"draft", "drafts", "internal", "private"})
+PRIVATE_HIDDEN_PATH_PARTS = frozenset(
+    {".claude", ".codex", ".cursor", ".idea", ".local"}
+)
 
 # Build signatures in pieces so the gate does not trigger on its own source.
 UNPUBLISHED_MARKER = re.compile(
@@ -68,6 +72,25 @@ FALLBACK_IGNORED_DIRS = frozenset(
 )
 
 
+def is_private_path_part(part: str) -> bool:
+    """Reject normalized private-work variants without rejecting words like privacy."""
+    compatible = unicodedata.normalize("NFKC", part)
+    if compatible.casefold() in PRIVATE_HIDDEN_PATH_PARTS:
+        return True
+
+    # Preserve camel-case boundaries before folding so ``SteleInternal`` cannot
+    # bypass the same gate that rejects ``stele-internal``.
+    separated = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "-", compatible)
+    folded = separated.casefold().lstrip(".")
+    tokens = set(re.findall(r"[a-z0-9]+", folded))
+    if tokens & PRIVATE_PATH_TOKENS:
+        return True
+
+    return bool(
+        re.match(r"^(?:drafts?|internal|private)(?:$|[^a-z]|[0-9])", folded)
+    )
+
+
 def candidate_files(root: Path = ROOT) -> list[Path]:
     """Return files Git would publish, with an archive-friendly fallback."""
     try:
@@ -81,7 +104,7 @@ def candidate_files(root: Path = ROOT) -> list[Path]:
         return sorted(
             path
             for path in root.rglob("*")
-            if path.is_file()
+            if (path.is_file() or path.is_symlink())
             and not any(part in FALLBACK_IGNORED_DIRS for part in path.parts)
         )
 
@@ -91,7 +114,7 @@ def candidate_files(root: Path = ROOT) -> list[Path]:
             continue
         path = root / encoded.decode("utf-8", errors="strict")
         # A staged deletion is not part of the candidate tree.
-        if path.is_file():
+        if path.exists() or path.is_symlink():
             files.append(path)
     return sorted(files)
 
@@ -153,10 +176,22 @@ def scan(root: Path = ROOT) -> tuple[list[str], int]:
         relative = path.relative_to(root).as_posix()
         pure_path = PurePosixPath(relative)
         suffix = pure_path.suffix.casefold()
-        contents = path.read_bytes()
 
-        if any(part.casefold() in PRIVATE_PATH_PARTS for part in pure_path.parts):
+        if any(is_private_path_part(part) for part in pure_path.parts):
             failures.append(f"private path is tracked: {relative}")
+
+        # Tracked links can make a clean checkout publish bytes outside the
+        # reviewed tree. Fail before dereferencing either relative or absolute
+        # links, including links whose target does not exist.
+        if path.is_symlink():
+            failures.append(f"symlink is not allowed: {relative}")
+            continue
+
+        if not path.is_file():
+            failures.append(f"non-regular tracked entry is not allowed: {relative}")
+            continue
+
+        contents = path.read_bytes()
 
         if suffix in OFFICE_SUFFIXES or looks_like_office_container(contents):
             failures.append(f"office artifact is not allowed: {relative}")
@@ -173,9 +208,15 @@ def scan(root: Path = ROOT) -> tuple[list[str], int]:
         if not (root / relative).is_file():
             failures.append(f"allowlisted PDF is missing: {relative}")
 
-    builder = (root / "tools/build.py").read_bytes()
-    if re.search(rb"presentational_hints\s*=\s*True\b", builder):
-        failures.append("tools/build.py enables unsafe HTML presentational hints")
+    builder_path = root / "tools/build.py"
+    if builder_path.is_symlink():
+        failures.append("tools/build.py must not be a symlink")
+    elif not builder_path.is_file():
+        failures.append("tools/build.py is missing")
+    else:
+        builder = builder_path.read_bytes()
+        if re.search(rb"presentational_hints\s*=\s*True\b", builder):
+            failures.append("tools/build.py enables unsafe HTML presentational hints")
 
     return sorted(set(failures)), len(files)
 

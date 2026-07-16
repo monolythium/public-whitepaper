@@ -105,11 +105,19 @@ STELE_STATUS_REQUIRED = (
     "zero published services",
     "Browser Wallet v0.4.5 is a prerelease",
     "public web authenticates users through Browser Wallet",
-    "inspect an existing valid non-economic approval preview",
-    "does not create drafts",
+    "Provider Studio",
+    "create, edit, preview, and delete private wallet-owned provider-listing drafts",
+    "durable provider-listing drafts",
+    "not published, discoverable, or transactable",
+    "provider publication remains off",
+    "Booking-approval drafts are separate",
+    "inspect an existing valid non-economic booking-approval draft",
+    "does not create booking-approval drafts",
     "Hosted Stele MCP",
     "exactly two OAuth-protected tools",
-    "Draft preparation is unavailable without a published listing",
+    "booking-draft preparation",
+    "does not create or access provider-listing drafts",
+    "Hosted booking-draft preparation is unavailable without a published listing",
     "local Stele MCP",
     "exactly three read/status tools",
     "no transaction tool",
@@ -183,31 +191,76 @@ GATED_CAPABILITIES = {
     "economic writes": r"economic\s+writes?",
     "transaction signing": r"transaction\s+signing",
     "mainnet": r"mainnet",
+    "provider publication": r"provider\s+publication",
 }
 ENABLED_STATE = r"(?:on|enabled|live|active|available|operational|permitted)"
 REVERSE_ENABLED_STATE = r"(?:enabled|live|active|available|operational|permitted)"
 
-PUBLIC_WEB_DRAFT_CREATION = {
-    "public web claims draft creation": re.compile(
-        r"\b(?:the\s+)?public\s+web\b(?:(?![.!?]).){0,160}?\b(?:"
+PUBLIC_WEB_BOOKING_DRAFT_CREATION = {
+    "public web claims booking-approval draft creation": re.compile(
+        r"\b(?:the\s+)?(?:public\s+web|Provider\s+Studio)\b"
+        r"(?:(?![.!?]).){0,180}?\b(?:"
         r"(?:can|does|will|now|currently)\s+(?!not\b)(?:create|prepare|generate|build)|"
         r"(?<!not\s)(?:creates|prepares|generates|builds)"
-        r")\s+(?:an?\s+|booking\s+|non-economic\s+|approval\s+){0,4}"
-        r"(?:drafts?|previews?)\b",
+        r")\s+(?:an?\s+|short-lived\s+|non-economic\s+){0,4}"
+        r"(?:booking(?:-approval)?|approval)[- ](?:drafts?|previews?)\b",
         re.IGNORECASE | re.DOTALL,
     ),
-    "draft creation assigned to public web": re.compile(
-        r"\b(?:draft|preview)\s+creation\b(?:(?![.!?]).){0,120}?\b"
-        r"(?:in|through|on)\s+(?:the\s+)?public\s+web\b",
+    "booking-approval draft creation assigned to public web": re.compile(
+        r"\b(?:booking(?:-approval)?|approval)[- ](?:draft|preview)\s+creation\b"
+        r"(?:(?![.!?]).){0,120}?\b(?:in|through|on)\s+(?:the\s+)?"
+        r"(?:public\s+web|Provider\s+Studio)\b",
         re.IGNORECASE | re.DOTALL,
     ),
 }
 
-DRAFT_WITHOUT_LISTING = {
-    "draft preparation claims no listing prerequisite": re.compile(
-        r"\b(?:booking-)?draft\s+preparation\b(?:(?![.!?]).){0,120}?\b(?:"
+STALE_PUBLIC_WEB_DRAFT_DENIAL = {
+    "public web still denies every draft class": re.compile(
+        r"\b(?:the\s+)?public\s+web\b(?:(?![.!?]).){0,160}?\b(?:"
+        r"does\s+not|cannot|can't"
+        r")\s+(?:create|prepare|manage)\s+(?:any\s+)?drafts?\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
+BOOKING_DRAFT_WITHOUT_LISTING = {
+    "booking-draft preparation claims no listing prerequisite": re.compile(
+        r"\b(?:hosted\s+(?:Stele\s+)?MCP\s+)?"
+        r"(?:booking(?:-approval)?|approval)[- ]draft\s+preparation\b"
+        r"(?:(?![.!?]).){0,120}?\b(?:"
         r"(?:is\s+)?available\s+without|does\s+not\s+require|works?\s+without"
         r")\s+(?:an?\s+)?published\s+listing\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
+PROVIDER_DRAFT_BOUNDARY = {
+    "provider-listing draft presented as public or executable": re.compile(
+        r"\b(?:private\s+|wallet-owned\s+){0,3}provider[- ]listing\s+drafts?\b"
+        r"(?:(?![.!?]).){0,120}?\b(?:is|are|becomes?|remains?)\s+(?:now\s+)?"
+        r"(?!not\b)(?:published|discoverable|transactable|on-chain)\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    "Provider Studio presented as a publication or transaction surface": re.compile(
+        r"\bProvider\s+Studio\b(?:(?![.!?]).){0,180}?\b(?:"
+        r"(?:can|does|will|now|currently)\s+(?!not\b)"
+        r"(?:(?:create|prepare|manage)\s+and\s+)?"
+        r"(?:publish|submit|broadcast|transact|execute)\w*|"
+        r"(?<!not\s)(?:publishes|submits|broadcasts|transacts|executes)"
+        r")\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    "hosted MCP claims provider-listing draft authority": re.compile(
+        r"\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?]).){0,180}?\b(?:"
+        r"(?:can|does|will|now|currently)\s+(?!not\b)(?:create|prepare|access|manage)|"
+        r"(?<!not\s)(?:creates|prepares|accesses|manages)"
+        r")\s+(?:private\s+|wallet-owned\s+){0,3}provider[- ]listing\s+drafts?\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    "provider-listing and booking-approval drafts are conflated": re.compile(
+        r"\bprovider[- ]listing\s+drafts?\b(?:(?![.!?]).){0,100}?\b"
+        r"(?:is|are|means?|equals?|(?:is|are)\s+the\s+same\s+as)\s+"
+        r"(?:an?\s+)?booking[- ]approval\s+drafts?\b",
         re.IGNORECASE | re.DOTALL,
     ),
 }
@@ -299,8 +352,10 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
 
     for patterns in (
         INVENTORY_ENABLED,
-        PUBLIC_WEB_DRAFT_CREATION,
-        DRAFT_WITHOUT_LISTING,
+        PUBLIC_WEB_BOOKING_DRAFT_CREATION,
+        STALE_PUBLIC_WEB_DRAFT_DENIAL,
+        BOOKING_DRAFT_WITHOUT_LISTING,
+        PROVIDER_DRAFT_BOUNDARY,
     ):
         for label, pattern in patterns.items():
             for match in pattern.finditer(prose):

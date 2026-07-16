@@ -110,15 +110,19 @@
 >     As of 2026-07-16, the public preview is live at
 >     [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet
 >     v0.4.5 is a prerelease and owns identity proof; Stele's hosted services never receive wallet
->     secrets. The public web authenticates users through Browser Wallet and can inspect an existing valid
->     non-economic approval preview; it does not create drafts. Hosted Stele MCP is keyless and exposes
->     exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft
->     preparation. Draft preparation is unavailable without a published listing. A separately installed
->     local Stele MCP exposes exactly three read/status tools and no transaction tool. Economic writes,
->     transaction signing, and mainnet remain off. The current product line retires embedded Stele, but
->     legacy or unreconciled desktop builds may retain a gated historical surface until their separately
->     reviewed removal and migration are released. E2EE rooms, provider publication, settlement,
->     disputes, and reviews remain separately gated. See §18.10 for the product boundary.
+>     secrets. The public web authenticates users through Browser Wallet. Its wallet-authenticated Provider
+>     Studio can create, edit, preview, and delete private wallet-owned provider-listing drafts; these
+>     durable provider-listing drafts are not published, discoverable, or transactable, and provider
+>     publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid
+>     non-economic booking-approval draft, but
+>     it does not create booking-approval drafts. Hosted Stele MCP is keyless and exposes exactly two
+>     OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. It
+>     does not create or access provider-listing drafts, and hosted booking-draft preparation is unavailable
+>     without a published listing. A separately installed local Stele MCP exposes exactly three read/status
+>     tools and no transaction tool. Economic writes, transaction signing, and mainnet remain off. The
+>     current product line retires embedded Stele, but legacy or unreconciled desktop builds may retain a
+>     gated historical surface until their separately reviewed removal and migration are released. E2EE
+>     rooms, settlement, disputes, and reviews remain separately gated. See §18.10 for the product boundary.
 >
 > **Dated network-status note — 2026-07-16.** The registered v0.4.0 public development-network
 > identity remained reachable, but its public RPC reported height 74,907 with latest timestamp
@@ -1357,17 +1361,19 @@ The intended safety property is a bridge from natural language to a constrained,
 
 ### 18.10 Stele product boundary
 
-**Stele's release architecture is a standalone public web product, not a marketplace embedded in the desktop wallet.** As of 2026-07-16, the public preview is live at [stele.monolythium.com](https://stele.monolythium.com), and its catalog contains zero published services. Browser Wallet v0.4.5 is a prerelease; it owns identity proof, while Stele's hosted services never receive a seed phrase or private key. The public web authenticates users through Browser Wallet and can inspect an existing valid non-economic approval preview; it does not create drafts.
+**Stele's release architecture is a standalone public web product, not a marketplace embedded in the desktop wallet.** As of 2026-07-16, the public preview is live at [stele.monolythium.com](https://stele.monolythium.com), and its catalog contains zero published services. Browser Wallet v0.4.5 is a prerelease; it owns identity proof, while Stele's hosted services never receive a seed phrase or private key. The public web authenticates users through Browser Wallet. Its wallet-authenticated Provider Studio can create, edit, preview, and delete private wallet-owned provider-listing drafts. These durable provider-listing drafts are not published, discoverable, or transactable, and provider publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid non-economic booking-approval draft, but it does not create booking-approval drafts.
 
 | Surface | Public release boundary | Separately gated target |
 |---|---|---|
-| Public web | Live public preview; browse the empty public catalog, authenticate through Browser Wallet, and inspect an existing valid non-economic approval preview; the web does not create drafts | Provider publication, private rooms, settlement, disputes, and reviews |
-| Hosted Stele MCP | Exactly two keyless, OAuth-protected tools: public catalog search and bounded non-economic booking-draft preparation; draft preparation is unavailable without a published listing | Status as a third MCP tool; wallet custody, signing, broadcast, settlement, or autonomous spending |
+| Public web | Live public preview; browse the empty public catalog; authenticate through Browser Wallet; use Provider Studio to create, edit, preview, and delete private wallet-owned provider-listing drafts; inspect an existing valid non-economic booking-approval draft; the web does not create booking-approval drafts | Provider publication, private rooms, settlement, disputes, and reviews |
+| Hosted Stele MCP | Exactly two keyless, OAuth-protected tools: public catalog search and bounded non-economic booking-draft preparation; hosted booking-draft preparation is unavailable without a published listing; hosted MCP does not create or access provider-listing drafts | Status as a third MCP tool; wallet custody, signing, broadcast, settlement, or autonomous spending |
 | Isolated local Stele MCP | Exactly three read/status tools in the current package | Any transaction tool requires a separately reviewed local signer/SDK contract and explicit user authorization |
 | Browser wallet | v0.4.5 prerelease: authenticate the user and retain human authority | Display and sign a released, versioned economic transaction only after protocol activation |
 | Desktop wallet | Target product line retires the Stele marketplace surface; generic wallet functions remain independent | Legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal and migration ship |
 
-The live deployment establishes only public-preview availability: zero published services means it does not evidence a provider market or on-chain listing registry. Preview creation belongs to hosted MCP or the private API, not the public web, and remains bounded to an existing published listing. Draft preparation is unavailable without a published listing; with zero published services, no valid draft can currently be prepared. Catalog records and approval drafts do not prove on-chain listings, availability, price, escrow, reputation, or settlement. E2EE rooms, provider publication, economic writes, transaction signing, and mainnet remain off until their independent release gates are satisfied. No hosted component may hold wallet secrets or convert a preview into a transaction.
+The two draft classes are independent. A provider-listing draft is a durable server-side, wallet-owned candidate service record created in Provider Studio; it can exist while the catalog is empty and has no publication or transaction action. Here, *private* means access-controlled to the authenticated wallet and absent from the public catalog, not local-only storage or end-to-end encryption. A booking-approval draft is a separate, short-lived, non-economic review record prepared through hosted MCP for an existing published listing. Provider Studio does not create it, hosted MCP does not create or access provider-listing drafts, and the review surface cannot publish a listing or make a transaction.
+
+The live deployment establishes only public-preview and private-drafting availability: zero published services means it does not evidence a provider market or on-chain listing registry. Hosted booking-draft preparation is unavailable without a published listing; with zero published services, no valid booking-approval draft can currently be prepared. Catalog records, provider-listing drafts, and booking-approval drafts do not prove on-chain listings, availability, price, escrow, reputation, or settlement. E2EE rooms, provider publication, economic writes, transaction signing, and mainnet remain off until their independent release gates are satisfied. No hosted component may hold wallet secrets or convert either draft class into a transaction.
 
 ---
 

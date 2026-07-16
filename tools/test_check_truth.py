@@ -50,9 +50,14 @@ class SteleDeploymentTruthTests(unittest.TestCase):
 > The public preview is live at
 > [stele.monolythium.com](https://stele.monolythium.com) with zero published services.
 > Browser Wallet
-> v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet and can
-> inspect an existing valid non-economic approval preview; it does not create drafts.
-> Hosted Stele MCP exposes exactly two OAuth-protected tools. Draft preparation is unavailable
+> v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet.
+> Provider Studio can create, edit, preview, and delete private wallet-owned provider-listing
+> drafts. These durable provider-listing drafts are not published, discoverable, or transactable,
+> and provider publication remains off.
+> Booking-approval drafts are separate. The web can inspect an existing valid non-economic
+> booking-approval draft, but it does not create booking-approval drafts.
+> Hosted Stele MCP exposes exactly two OAuth-protected tools, including booking-draft preparation.
+> It does not create or access provider-listing drafts. Hosted booking-draft preparation is unavailable
 > without a published listing.
 > The isolated local Stele MCP exposes exactly three read/status tools and no transaction tool.
 > Economic writes, transaction
@@ -71,6 +76,15 @@ class SteleDeploymentTruthTests(unittest.TestCase):
                 for pattern in check_truth.STALE_STELE_DEPLOYMENT.values()
             )
         )
+        self.assertEqual([], check_truth.stele_status_contradictions(current))
+
+    def test_provider_studio_listing_draft_creation_is_allowed(self) -> None:
+        current = (
+            "The public web Provider Studio can create private wallet-owned provider-listing "
+            "drafts. These durable provider-listing drafts are not published, discoverable, "
+            "or transactable."
+        )
+        self.assertEqual([], check_truth.stele_status_contradictions(current))
 
 
 class SteleTruthMainBlackBoxTests(unittest.TestCase):
@@ -128,16 +142,16 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
     def test_main_rejects_wrong_local_tool_count_when_correct_anchor_remains(self) -> None:
         self.run_mutation(
             "2026/may/monolythium-whitepaper-v5.0.md",
-            "local Stele MCP exposes exactly three read/status tools",
-            "local Stele MCP exposes exactly four read/status tools",
+            "| Isolated local Stele MCP | Exactly three read/status tools",
+            "| Isolated local Stele MCP | Exactly four read/status tools",
             "local Stele MCP claims exactly 4 tools; expected exactly 3",
         )
 
     def test_main_rejects_transaction_capable_local_mcp(self) -> None:
         self.run_mutation(
             "README.md",
-            "no transaction tool. Draft preparation",
-            "no transaction tool, but it supports transaction signing. Draft preparation",
+            "no transaction tool. Economic writes",
+            "no transaction tool, but it supports transaction signing. Economic writes",
             "local Stele MCP claims transaction capability",
         )
 
@@ -173,20 +187,73 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
             "Stele mainnet incorrectly presented as enabled",
         )
 
-    def test_main_rejects_public_web_draft_creation(self) -> None:
+    def test_main_rejects_public_web_booking_approval_draft_creation(self) -> None:
         self.run_mutation(
             "README.md",
-            "it does not create drafts.",
-            "it does not create drafts. The public web can create booking drafts.",
-            "public web claims draft creation",
+            "it does not create booking-approval drafts.",
+            "it does not create booking-approval drafts. "
+            "The public web can create booking-approval drafts.",
+            "public web claims booking-approval draft creation",
         )
 
-    def test_main_rejects_draft_preparation_without_a_listing(self) -> None:
+    def test_main_rejects_booking_draft_preparation_without_a_listing(self) -> None:
         self.run_mutation(
             "README.md",
-            "Draft preparation is unavailable without a published listing.",
-            "Draft preparation is unavailable without a published listing. Draft preparation is available without a published listing.",
-            "draft preparation claims no listing prerequisite",
+            "Hosted booking-draft preparation is unavailable without a published listing.",
+            "Hosted booking-draft preparation is unavailable without a published listing. "
+            "Booking-draft preparation is available without a published listing.",
+            "booking-draft preparation claims no listing prerequisite",
+        )
+
+    def test_main_rejects_stale_generic_public_web_draft_denial(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "it does not create booking-approval drafts.",
+            "it does not create booking-approval drafts. The public web does not create drafts.",
+            "public web still denies every draft class",
+        )
+
+    def test_main_rejects_published_provider_listing_draft(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "these durable provider-listing drafts are not published, discoverable, or transactable",
+            "these durable provider-listing drafts are not published, discoverable, or transactable. "
+            "Private provider-listing drafts are published",
+            "provider-listing draft presented as public or executable",
+        )
+
+    def test_main_rejects_provider_studio_publication(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "provider publication remains off.",
+            "provider publication remains off. Provider Studio can publish provider listings.",
+            "Provider Studio presented as a publication or transaction surface",
+        )
+
+    def test_main_rejects_hosted_mcp_provider_listing_drafts(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "does not create or access provider-listing drafts.",
+            "does not create or access provider-listing drafts. "
+            "Hosted Stele MCP creates provider-listing drafts.",
+            "hosted MCP claims provider-listing draft authority",
+        )
+
+    def test_main_rejects_provider_and_booking_draft_conflation(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "Booking-approval drafts are separate:",
+            "Provider-listing drafts are booking-approval drafts. "
+            "Booking-approval drafts are separate:",
+            "provider-listing and booking-approval drafts are conflated",
+        )
+
+    def test_main_rejects_enabled_provider_publication(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "provider publication remains off.",
+            "provider publication remains off. Provider publication is enabled.",
+            "Stele provider publication incorrectly presented as enabled",
         )
 
 

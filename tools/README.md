@@ -22,11 +22,18 @@ the target agent-commerce suite, spending-policy/USDC agent-payment routes, Stel
 economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also rejects stale
 Stele hostname-reservation or unavailable-deployment language. Every public status surface must preserve
 the dated live-preview link, zero-service catalog, Browser Wallet v0.4.5 prerelease label, exact hosted
-and local MCP tool counts, public-web inspect-only draft boundary, published-listing prerequisite, and
-the economic-write, transaction-signing, and mainnet-off gates. Correct anchors do not mask conflicting
-copy: nonzero inventory, wrong tool counts, a transaction-capable local MCP, public-web draft creation,
-draft preparation without a listing, or an enabled gated capability each fail the build. It can be run
-directly without the rendering dependencies:
+and local MCP tool counts, and the economic-write, transaction-signing, provider-publication, and
+mainnet-off gates.
+
+The Stele draft gate treats the two released record types separately. It requires the public web's
+wallet-authenticated Provider Studio to be described as create/edit/preview/delete for durable, private
+wallet-owned provider-listing drafts that remain unpublished, off-catalog, MCP-inaccessible, and
+non-transactable. It separately requires hosted MCP booking-approval drafts to remain bounded to an
+existing published listing and public-web inspection. Correct anchors do not mask conflicting copy:
+generic claims that the web creates no drafts, claims that the web creates booking-approval drafts,
+hosted-MCP access to provider-listing drafts, draft-class conflation, nonzero inventory, wrong tool
+counts, a transaction-capable local MCP, or any enabled gated capability each fail the build. It can be
+run directly without the rendering dependencies:
 
 ```bash
 python tools/check_truth.py
@@ -34,9 +41,11 @@ python -m unittest discover -s tools -p 'test_*.py'
 ```
 
 After rendering, `tools/check_public_boundary.py` inspects the candidate file set and compressed PDF
-streams. It rejects unpublished markers, local filesystem paths, draft/private directories, disguised
-office containers, office files, and every PDF not explicitly allowlisted. The two release PDFs are the
-only current allowlist entries. Run it directly with:
+streams. It normalizes Unicode and camel-case path components before rejecting draft/private/internal
+variants and private tooling directories. It rejects tracked symlinks before dereferencing them and
+rejects other non-regular tracked entries, along with unpublished markers, local filesystem paths,
+disguised office containers, office files, and every PDF not explicitly allowlisted. The two release
+PDFs are the only current allowlist entries. Run it directly with:
 
 ```bash
 python tools/check_public_boundary.py
@@ -72,7 +81,9 @@ tools/
 ├── README.md            — this file
 ├── build.py             — the HTML/PDF generator
 ├── check_public_boundary.py — public-only path/content/artifact gate (standard library only)
+├── test_check_public_boundary.py — boundary normalization and symlink regression tests
 ├── check_truth.py       — public capability-boundary regression gate (standard library only)
+├── test_check_truth.py  — deployment-truth regression tests
 ├── requirements.txt     — pinned Python deps
 └── fonts/               — bundled IBM Plex woff2 (OFL 1.1)
     ├── ibm-plex-sans-latin-{400,500,600,700}-normal.woff2

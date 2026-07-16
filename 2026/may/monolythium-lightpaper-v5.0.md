@@ -75,15 +75,19 @@
 >     2026-07-16, the public preview is live at
 >     [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet
 >     v0.4.5 is a prerelease and owns identity proof; Stele's hosted services never receive wallet
->     secrets. The public web authenticates users through Browser Wallet and can inspect an existing valid
->     non-economic approval preview; it does not create drafts. Hosted Stele MCP is keyless and exposes
->     exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft
->     preparation. Draft preparation is unavailable without a published listing. The isolated local
->     Stele MCP exposes exactly three read/status tools and no transaction tool. Economic writes,
->     transaction signing, and mainnet remain off. The current product line retires embedded Stele, but
->     legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal
->     and migration are released. Provider publication, E2EE rooms, settlement, disputes, and reviews
->     remain gated.
+>     secrets. The public web authenticates users through Browser Wallet. Its wallet-authenticated Provider
+>     Studio can create, edit, preview, and delete private wallet-owned provider-listing drafts; these
+>     durable provider-listing drafts are not published, discoverable, or transactable, and provider
+>     publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid
+>     non-economic booking-approval draft, but
+>     it does not create booking-approval drafts. Hosted Stele MCP is keyless and exposes exactly two
+>     OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. It
+>     does not create or access provider-listing drafts, and hosted booking-draft preparation is unavailable
+>     without a published listing. The isolated local Stele MCP exposes exactly three read/status tools and
+>     no transaction tool. Economic writes, transaction signing, and mainnet remain off. The current product
+>     line retires embedded Stele, but legacy or unreconciled desktop builds may retain a gated historical
+>     surface until reviewed removal and migration are released. E2EE rooms, settlement, disputes, and
+>     reviews remain gated.
 >
 > **Dated network-status note — 2026-07-16.** The registered v0.4.0 development-network endpoint was
 > reachable but stalled at height 74,907 with latest timestamp 2026-07-08T22:39:05Z during repeated
@@ -313,7 +317,7 @@ These are not current SDK methods or MCP transaction tools. The intended safety 
 
 ### Stele boundary
 
-Stele's release architecture is a standalone public web product. As of 2026-07-16, the public preview is live at [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet v0.4.5 is a prerelease; it owns identity proof, while Stele's hosted services never receive wallet secrets. The public web authenticates users through Browser Wallet and can inspect an existing valid non-economic approval preview; it does not create drafts. Hosted Stele MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. Draft preparation is unavailable without a published listing. The isolated local Stele MCP exposes exactly three read/status tools and no transaction tool. Neither MCP holds a wallet, signs, broadcasts, or settles. Economic writes, transaction signing, and mainnet remain off. Provider publication, E2EE rooms, settlement, disputes, and reviews remain separately gated. The target desktop product line retires the Stele marketplace surface; legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal and migration are released.
+Stele's release architecture is a standalone public web product. As of 2026-07-16, the public preview is live at [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet v0.4.5 is a prerelease; it owns identity proof, while Stele's hosted services never receive wallet secrets. The public web authenticates users through Browser Wallet. Its wallet-authenticated Provider Studio can create, edit, preview, and delete private wallet-owned provider-listing drafts; these durable provider-listing drafts are not published, discoverable, or transactable, and provider publication remains off. Here, private means wallet access-controlled and off-catalog, not local-only or end-to-end encrypted. Booking-approval drafts are separate: the web can inspect an existing valid non-economic booking-approval draft, but it does not create booking-approval drafts. Hosted Stele MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. Hosted booking-draft preparation is unavailable without a published listing, and hosted MCP does not create or access provider-listing drafts. With zero published services, no booking-approval draft can currently be prepared, while a private provider-listing draft can still be created without publishing it. The isolated local Stele MCP exposes exactly three read/status tools and no transaction tool. Neither MCP holds a wallet, signs, broadcasts, or settles. Economic writes, transaction signing, and mainnet remain off. E2EE rooms, settlement, disputes, and reviews remain separately gated. The target desktop product line retires the Stele marketplace surface; legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal and migration are released.
 
 ---
 
