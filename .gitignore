@@ -1,0 +1,32 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+# Internal working material is never part of this public repository.
+/drafts/
+/internal/
+/private/
+*.doc
+*.docx
+*.docm
+*.dot
+*.dotx
+*.ppt
+*.pptx
+*.pptm
+*.xls
+*.xlsx
+*.xlsm
+*.odt
+*.ods
+*.odp
+*.rtf
+*.pages
+*.numbers
+*.key
+
+# PDF publication is fail-closed. Keep this list aligned with
+# tools/check_public_boundary.py.
+*.pdf
+!2026/may/monolythium-lightpaper-v5.0.pdf
+!2026/may/monolythium-whitepaper-v5.0.pdf

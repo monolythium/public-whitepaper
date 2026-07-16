@@ -28,6 +28,9 @@ from pathlib import Path
 import markdown
 from weasyprint import HTML as WeasyHTML
 
+from check_public_boundary import main as check_public_boundary
+from check_truth import main as check_public_truth
+
 
 # ---------------------------------------------------------------------------
 # Paths (all relative to this script)
@@ -37,6 +40,9 @@ TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parent
 FONTS_DIR = TOOLS / "fonts"
 RELEASES = REPO / "2026" / "may"
+PUBLIC_REPOSITORY_BLOB_ROOT = (
+    "https://github.com/monolythium/public-whitepaper/blob/main/"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -49,6 +55,8 @@ class Doc:
     src: Path            # markdown source
     cover_title: str     # large title on the cover ("Whitepaper" / "Lightpaper")
     short_kind: str      # used in header/footer ("Whitepaper" / "Lightpaper")
+    version: str         # document version printed in source and artifacts
+    release_date: str    # historical release date printed in source and artifacts
 
 
 DOCS = [
@@ -57,12 +65,16 @@ DOCS = [
         src=RELEASES / "monolythium-whitepaper-v5.0.md",
         cover_title="Whitepaper",
         short_kind="Whitepaper",
+        version="v5.1",
+        release_date="June 2026",
     ),
     Doc(
         slug="monolythium-lightpaper-v5.0",
         src=RELEASES / "monolythium-lightpaper-v5.0.md",
         cover_title="Lightpaper",
         short_kind="Lightpaper",
+        version="v5.0",
+        release_date="May 2026",
     ),
 ]
 
@@ -158,9 +170,9 @@ def cover_html(doc: Doc) -> str:
     <div class="cover-eyebrow">MONOLYTHIUM</div>
     <h1 class="cover-title">{doc.cover_title}</h1>
     <div class="cover-version-row">
-      <span class="cover-version">v5.0</span>
+      <span class="cover-version">{doc.version}</span>
       <span class="cover-sep">&middot;</span>
-      <span class="cover-date">May 2026</span>
+      <span class="cover-date">{doc.release_date}</span>
     </div>
     <div class="cover-rule"></div>
     <p class="cover-tagline">Settlement Layer for the Autonomous Economy</p>
@@ -549,7 +561,7 @@ def build_doc(doc: Doc, fonts_css: str) -> tuple[Path, Path]:
     md_text = doc.src.read_text(encoding="utf-8")
     body_html = md_to_body_html(md_text)
 
-    doc_title = f"Monolythium {doc.short_kind} v5.0"
+    doc_title = f"Monolythium {doc.short_kind} {doc.version}"
 
     html_str = f"""<!DOCTYPE html>
 <html lang="en" data-theme="monolythium">
@@ -573,7 +585,7 @@ def build_doc(doc: Doc, fonts_css: str) -> tuple[Path, Path]:
 </article>
 <footer class="wp-footer">
   <div class="wp-footer-inner">
-    <div class="footer-mark">{doc_title} &middot; May 2026</div>
+    <div class="footer-mark">{doc_title} &middot; {doc.release_date}</div>
     <div class="footer-license">CC BY-SA 4.0 &middot; Mono Labs R&amp;D LLC &middot; Monolythium Foundation</div>
   </div>
 </footer>
@@ -587,7 +599,13 @@ def build_doc(doc: Doc, fonts_css: str) -> tuple[Path, Path]:
 
     out_html.write_text(html_str, encoding="utf-8")
 
-    WeasyHTML(string=html_str, base_url=str(doc.src.parent)).write_pdf(
+    # A local checkout path here becomes a clickable local-file annotation in the
+    # PDF whenever Markdown contains a relative cross-document link. Resolve
+    # those annotations against the stable public repository instead so output
+    # bytes never depend on where the repository was checked out.
+    release_directory = doc.src.parent.relative_to(REPO).as_posix()
+    pdf_base_url = f"{PUBLIC_REPOSITORY_BLOB_ROOT}{release_directory}/"
+    WeasyHTML(string=html_str, base_url=pdf_base_url).write_pdf(
         str(out_pdf),
         presentational_hints=True,
     )
@@ -608,6 +626,9 @@ def build_doc(doc: Doc, fonts_css: str) -> tuple[Path, Path]:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    if check_public_truth() != 0:
+        raise SystemExit("refusing to build public artifacts with capability regressions")
+
     print("loading bundled fonts...", file=sys.stderr)
     fonts_css = font_face_css()
 
@@ -617,6 +638,9 @@ def main() -> None:
             print(f"  SKIP {doc.slug}: source missing ({doc.src})", file=sys.stderr)
             continue
         build_doc(doc, fonts_css)
+
+    if check_public_boundary() != 0:
+        raise SystemExit("refusing to keep artifacts that cross the public boundary")
 
     print("done", file=sys.stderr)
 

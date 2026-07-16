@@ -438,63 +438,107 @@ body {
 <article class="wp-body">
 <blockquote>
 <p><em>A condensed, ten-minute read of the <a href="monolythium-whitepaper-v5.0.md">Monolythium Whitepaper v5.0</a>. For implementation detail, threat model, and full citations, see the whitepaper.</em></p>
-<p><strong>Erratum — v2 (LythiumDAG-BFT) testnet status.</strong> Seven constructions described in this text have
-changed with the Monolythium v2 re-genesis, and the running chain no longer matches those sections.
-A full v6 edition will re-scope the text; this note is the interim factual correction.</p>
+<p><strong>v6 reconciliation — updated 2026-07-16.</strong> This text has a set of factual corrections applied so
+that it matches the running Monolythium v2 chain (LythiumDAG-BFT) as of the <strong>v0.4.0 re-genesis of
+2026-07-07</strong>. The affected sections have been rewritten in place; a full v6 edition will re-scope the
+surrounding narrative. What changed, and why:</p>
 <ol>
-<li><strong>The encrypted mempool (&ldquo;LythiumSeal&rdquo;) has been removed.</strong> v2 runs a plaintext mempool;
-   transaction-ordering fairness is addressed at the DAG-consensus layer. The encrypted-mempool
-   sealing scheme is no longer part of the protocol.</li>
-<li><strong>The Groth16-BN254 zero-knowledge verifier is disabled at genesis.</strong> The direction is a
-   post-quantum recursive-STARK verifier (the &ldquo;keystone&rdquo;), which ships gated off until it is ready;
-   until then no Groth16 verifier is reachable on the value path. Consensus finality remains pure
-   ML-DSA-65 and never depended on the application-layer verifier.</li>
-<li><strong>Wallet recovery no longer uses the &ldquo;PQM-1&rdquo; mnemonic format.</strong> The PQM-1 format has been dropped.
-   Wallets and the <code>@monolythium/core-sdk</code> now use a standard 24-word BIP-39 mnemonic, with the seed
-   re-derived for ML-DSA-65 as
-   <code>mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]</code>.
-   There is no algorithm-tag/version byte header, and the <code>"PQM-1 mnemonic"</code> scheme described below
-   is <strong>superseded</strong> and must not be used to derive addresses; a third-party wallet implementing it
-   would compute the wrong address.</li>
-<li><strong>Testnet topology is no longer single-cluster.</strong> The running testnet is a 2×10 DVT fleet (two
-   clusters of ten operators, 7-of-10 each) plus two relays — 22 nodes total — not a single cluster
-   of ten.</li>
-<li><strong>Confidential amounts / amount-hiding are disabled at genesis.</strong> Confidential transactions are
-   not on the value path; stealth-address recipient privacy is retained, but amount confidentiality
-   is not active on the live chain (see the bifurcated-denomination section).</li>
-<li><strong>The on-chain prover market, GPU proof market, and service-tier oracle-feed payments are gated
-   off at genesis</strong> and are not reachable on the live chain (see the &ldquo;Service tiers&rdquo; utility bullet).</li>
-<li><strong>The ZK / light-client bridge routes and the SP1 bridge verifier are draft/paused and gated
-   off.</strong> They should not be treated as live capabilities.</li>
+<li><strong>Cross-chain interop is now an external-provider integration, not an in-tree bridge.</strong> The entire
+   in-tree bridge stack — the on-chain bridge proof verifier, the route/fee/insurance scaffolding, and
+   the associated build feature — has been <strong>removed</strong>. The chain no longer verifies bridge proofs
+   on-chain; interoperability is delivered by integrating an <strong>external interop provider</strong> (evaluation
+   in progress; described vendor-neutrally). This moves the highest-risk surface out of consensus and
+   lets interop evolve without a re-genesis.</li>
+<li><strong>The application-layer Groth16-BN254 / SP1 zero-knowledge verifier is disabled at genesis.</strong> The
+   intended direction is a post-quantum FRI/STARK verifier that ships <strong>gated off</strong> until ready.
+   Consensus finality is pure ML-DSA-65 and never depended on it.</li>
+<li><strong>The encrypted mempool (&ldquo;LythiumSeal&rdquo;) has been removed.</strong> v2 runs a <strong>plaintext</strong> mempool;
+   ordering fairness is handled at the DAG-consensus layer. The threshold-decryption design was dropped.</li>
+<li><strong>DVT uses a per-operator ML-DSA-65 multisig, not shared or threshold keys.</strong> Each operator signs
+   with its own independent key; a cluster certificate is a 7-of-10 bitmap of those raw signatures.</li>
+<li><strong>Cross-cluster finality quorum is count-based, not stake-weighted.</strong> Clusters carry equal weight;
+   stake sets only top-100 admission rank.</li>
+<li><strong>Rewards are service-weighted, not stake-weighted.</strong> A cluster&rsquo;s share of the reward pool is set by
+   proven services (archive, GPU proving, RPC, indexing, geo/client diversity), not by delegated stake;
+   stake&rsquo;s only role is top-100 admission rank. This supersedes the earlier &ldquo;quadratic reward curve&rdquo;
+   wording.</li>
+<li><strong>Confidential (amount-hidden) value transfer was removed from the protocol and is not live.</strong>
+   Stealth-address recipient privacy and privacy policy remain in the v0.4.0 protocol, but the earlier
+   Ristretto/Pedersen + Bulletproofs value path was deleted after audit; any replacement is a future
+   post-quantum design, not a gated switch.</li>
+<li><strong>The on-chain prover / GPU proof market and service-tier oracle-feed payments are gated off at
+   genesis</strong> and are not reachable in the public v0.4.0 protocol.</li>
+<li><strong>Wallet recovery uses a standard 24-word BIP-39 mnemonic</strong> re-derived for ML-DSA-65 as
+   <code>mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]</code>; the
+   earlier &ldquo;PQM-1&rdquo; format was dropped and any PQM-1 scheme described below is <strong>superseded</strong>.</li>
+<li><strong>The registered v0.4.0 development-network topology is a 4×10 DVT fleet</strong> (four clusters of ten
+    operator identities, 7-of-10 each) plus two relay identities. Registration does not prove current
+    participation or liveness; see the dated degraded-status observation below.</li>
+<li><strong>The SLH-DSA emergency-backup key, emergency-key registry, and on-chain algorithm rotation were
+    removed.</strong> The chain is ML-DSA-65-only. A second-family backup and in-protocol rotation require a
+    future genesis; the separate time-bounded emergency freeze does not rotate user keys.</li>
+<li><strong>The classical signature code has been removed from the implementation</strong>, not merely refused at
+    admission. ML-DSA-65 was always the only algorithm accepted at transaction admission, but the
+    implementation still carried secp256k1, Ed25519 and WebAuthn P-256 behind a build flag, plus a
+    classical/post-quantum <strong>hybrid</strong> construction and a wallet-side key-import path for them. None of
+    it could produce a transaction the chain would accept. It is now deleted, and those wire tags are
+    permanently retired. The claims below (&ldquo;no classical signature acceptance path&rdquo;, &ldquo;no classical
+    fallback&rdquo;, no hybrid) are therefore now true of the code and not only of the admission gate. One
+    classical dependency remains: the peer-to-peer transport&rsquo;s node-identity keys, which authenticate
+    network connections and never consensus or state.</li>
+<li><strong>The peer-to-peer handshake is not &ldquo;Noise XX&rdquo;, and the argument against hybrid signatures was
+    unsound.</strong> The operator-to-operator handshake is a <strong>self-contained KEM-Noise IK-style
+    construction of our own</strong>, not a stock Noise pattern, and it has <strong>not yet had an independent
+    cryptographic review</strong> (a tracked gate before mainnet). The case against hybrid also mis-stated
+    itself — it defined hybrid as accepting <em>either</em> signature but argued against a scheme requiring
+    <em>both</em>. The conclusion (pure post-quantum, no hybrid) is unchanged; see whitepaper §7 and §12.3
+    for the corrected reasoning.</li>
+<li><strong>Agent commerce remains a target architecture.</strong> Service listings, availability, escrow,
+    arbitration, bilateral reputation, protocol spending policy, economic runbooks, and autonomous
+    signing are not activated on the current public development network. The methods and state
+    machines below are design requirements, not a current ABI.</li>
+<li><strong>Stele&rsquo;s target product architecture is standalone web, not a desktop-wallet feature.</strong> Public
+    discovery and wallet-owned approval previews are separate from economic execution. Hosted MCP is
+    keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded,
+    non-economic booking-draft preparation. The isolated local Stele MCP currently has three
+    read/status tools and no transaction tool. The current product line retires embedded Stele, but
+    legacy or unreconciled desktop builds may retain a gated historical surface until reviewed
+    removal and migration are released. Provider writes, E2EE rooms, settlement, disputes, reviews,
+    agent signing, and mainnet are gated. The canonical production hostname is reserved as
+    <code>stele.monolythium.com</code>, but this paper does not publish it as a live link until deployment health
+    and release gates pass.</li>
 </ol>
+<p><strong>Dated network-status note — 2026-07-16.</strong> The registered v0.4.0 development-network endpoint was
+reachable but stalled at height 74,907 with latest timestamp 2026-07-08T22:39:05Z during repeated
+checks. Treat it as degraded/stale, not as production settlement or network-liveness evidence.</p>
 </blockquote>
 <h2 id="tldr">TL;DR</h2>
 <p>Monolythium is a Layer 1 blockchain designed as the <strong>settlement layer for the autonomous economy</strong> — a future in which humans, companies, AI agents, machines, and software services transact directly on open rails.</p>
-<p>The chain is <strong>not EVM-compatible at execution</strong>. It is <strong>EVM-connected at the liquidity edge</strong>. And it is designed to compose <strong>underneath</strong> every major agent-payment standard — x402, AP2, ACP, MCP, Visa Intelligent Commerce, Mastercard Agent Pay — as the chain-anchored trust, policy, escrow, identity, and reputation layer those rails leave open.</p>
+<p>The chain is <strong>not EVM-compatible at execution</strong>. Its target architecture is connected at the liquidity edge through separately released external-provider or issuer integrations and is designed to compose <strong>underneath</strong> major agent-payment standards. Those commerce and interop paths are not current integration claims.</p>
 <p>Six positions define the design:</p>
 <ol>
 <li><strong>Post-quantum accounts by default</strong>, with no classical signature acceptance path.</li>
 <li><strong>Rust-first smart contracts</strong> compiled to a deterministic RISC-V execution target.</li>
-<li><strong>Native modules</strong> for tokens, NFTs, markets, bridges, payments, and agent commerce.</li>
+<li><strong>Native modules</strong> for tokens, NFTs, and markets, with payments and agent commerce as separately activated target modules.</li>
 <li><strong>Bifurcated denomination</strong> that separates monetary privacy from commerce so the chain cannot be used as a fungible-anonymous-payment rail.</li>
 <li><strong>Cluster marketplace</strong> that turns validator operation into a public, competitive market with distributed validator technology.</li>
 <li><strong>No on-chain governance and no perpetual futures</strong>, so the surface that can be captured, gamed, or weaponised is smaller.</li>
 </ol>
-<p>The chain is useful even if the agent economy grows slowly. Native tokens, spot markets, post-quantum identity, verifiable bridges, and the bifurcated denomination are valuable on their own. The bet is asymmetric: a strong fit for the autonomous-economy case, a strong general-purpose settlement chain in the meantime.</p>
+<p>The chain is useful even if the agent economy grows slowly. Native tokens, spot markets, post-quantum identity, external-provider interop, and the bifurcated denomination are valuable on their own. The bet is asymmetric: a strong fit for the autonomous-economy case, a strong general-purpose settlement chain in the meantime.</p>
 <hr>
 <h2 id="1-the-thesis">1. The Thesis</h2>
 <p>Most production blockchains today are honestly named <strong>trading chains</strong>. They optimize for swap latency, perpetuals throughput, and high-frequency fee surfaces. Trading is fine; trading is not what the next ten years of digital economic activity will primarily look like.</p>
 <p>The next ten years are <strong>agentic</strong>. An AI agent that pays for inference, hires a contractor, buys data, settles an invoice, escrows funds against a deliverable, subscribes to compute, or pays another agent for a service is not science fiction — each of those actions is technically possible today. What is missing is open, neutral, enforceable rails on which to settle them.</p>
 <p>Today, an agent that wants to spend money does so through an account it shares with its user inside a closed AI platform, through a payment-processor account leased by the user, or through a custodial wallet rented from a single exchange. Each rail is <strong>owned</strong>. The agent is rentable. The identity is rentable. The reputation accrued through years of work is rentable. If the platform changes its terms, the agent&rsquo;s economic life resets.</p>
-<p>Monolythium exists to provide a different option — programmable, auditable, permissionless, bridge-connected, post-quantum, and structurally hostile to use cases that combine anonymous payment with anonymous service discovery.</p>
+<p>Monolythium exists to provide a different option — programmable, auditable, permissionless, interop-connected, post-quantum, and structurally hostile to use cases that combine anonymous payment with anonymous service discovery.</p>
 <p>The audience the chain is built for, in plain terms: <strong>anyone who needs a delegated software entity to act with bounded authority across providers and jurisdictions on rails the principal controls.</strong> That includes AI agents — but also fintech automations, organizational treasury policies, vendor pipelines, and routine machine-to-machine commerce. The chain is the same chain it would be if no agent ever showed up. The user is different.</p>
 <blockquote>
-<p><em>The moment an AI assistant can say, &ldquo;Send me 50 USDC to complete this task,&rdquo; the agent-commerce era has started.</em> The chain provides the rails on which that conversation settles.</p>
+<p><em>The moment an AI assistant can say, &ldquo;Send me 50 USDC to complete this task,&rdquo; the agent-commerce era has started.</em> Monolythium is designing user-controlled rails for that future; current Stele MCP surfaces do not hold a wallet or sign a transaction.</p>
 </blockquote>
 <hr>
 <h2 id="2-the-first-wedge">2. The First Wedge</h2>
 <p>A settlement layer for the autonomous economy is the long horizon. The first commercial wedge is narrower.</p>
-<p><strong>The wedge is agent escrow, spending policy, and reputation as the trust layer behind paid APIs and services.</strong></p>
+<p><strong>The planned wedge is agent escrow, spending policy, and reputation as the trust layer behind paid APIs and services.</strong></p>
 <p>The market is already converging on standardised payment handshakes for agents. x402 (Coinbase) shipped in 2025; AP2 (Google) launched the same year; Stripe and OpenAI released the Agentic Commerce Protocol; AWS Bedrock AgentCore added native stablecoin payment rails; Visa and Mastercard both announced agent-payment programs. These standards solve the payment <strong>handshake</strong> — how an agent discovers a paid endpoint, presents payment, and receives a response.</p>
 <p>They do not solve four problems that are unavoidable once agents operate against more than trivial workflows:</p>
 <ul>
@@ -503,57 +547,57 @@ A full v6 edition will re-scope the text; this note is the interim factual corre
 <li><strong>Portable cross-platform reputation tied to the agent identity</strong> that survives a switch of model provider, runtime, or wallet.</li>
 <li><strong>Chain-anchored consent records</strong> the principal can revoke instantly, leaving in-flight commitments grandfathered.</li>
 </ul>
-<p>Monolythium ships those four as native modules. They are the chain&rsquo;s first deliverable to the existing rails — not as competition, but as composition.</p>
+<p>The target architecture assigns those four capabilities to versioned native or indexed surfaces. They are not activated public-network deliverables.</p>
 <hr>
-<h2 id="3-composition-with-agent-payment-standards">3. Composition with Agent-Payment Standards</h2>
-<p>Monolythium is designed to compose <strong>underneath</strong> the open standards now shipping for AI-agent payments. Each standard solves a different layer of the stack; Monolythium provides the layer they all share.</p>
+<h2 id="3-target-composition-with-agent-payment-standards">3. Target Composition with Agent-Payment Standards</h2>
+<p>The following table describes possible roles after the exact protocol, asset, SDK, wallet, privacy, and connector contracts are released. It is not a current integration list.</p>
 <table>
 <thead>
 <tr>
 <th>Layer</th>
 <th>Standard</th>
-<th>Monolythium role</th>
+<th>Possible role after activation</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>HTTP payment handshake</td>
 <td><strong>x402</strong> (Coinbase, x402 Foundation)</td>
-<td>Receives x402-initiated stablecoin settlement; provides on-chain receipt, escrow, and reputation against the payee</td>
+<td>Could bind settlement to versioned receipts, escrow, and reputation</td>
 </tr>
 <tr>
 <td>Agent intent mandate</td>
 <td><strong>AP2</strong> (Google, open)</td>
-<td>Anchors the agent&rsquo;s mandate as on-chain consent + spending-policy registration on the agent&rsquo;s sub-account</td>
+<td>Could bind a mandate to principal-controlled consent and policy</td>
 </tr>
 <tr>
 <td>Checkout flow</td>
 <td><strong>ACP</strong> (Stripe, OpenAI)</td>
-<td>Settles ACP checkout outputs; provides escrow with counter-offer flow and dispute resolution for the seller</td>
+<td>Could bind checkout output to settlement and dispute state</td>
 </tr>
 <tr>
 <td>Tool / connector boundary</td>
 <td><strong>MCP</strong> (Model Context Protocol)</td>
-<td>Exposes spending policy, runbooks, escrow, and discovery as MCP tools the assistant can invoke</td>
+<td>Could expose released discovery or approval workflows; signing requires a separate local design and explicit authority</td>
 </tr>
 <tr>
 <td>Card-issuer agent flows</td>
 <td><strong>Visa Intelligent Commerce, Mastercard Agent Pay</strong></td>
-<td>Provides the chain-anchored settlement, identity, and reputation layer behind agent-initiated card payments</td>
+<td>Could add portable identity and receipts behind issuer-controlled flows</td>
 </tr>
 </tbody>
 </table>
-<p>The composition is <strong>one-directional</strong>. Monolythium does not require the rails to adopt anything; the rails do their job (initiate payment, transmit intent, complete checkout) and Monolythium handles the parts they leave open (policy enforcement, escrow, dispute, reputation, post-quantum settlement).</p>
-<h3 id="worked-example-x402-monolythium">Worked example — x402 + Monolythium</h3>
+<p>The intended composition is one-directional: the external rail would handle its own handshake while an activated Monolythium surface could add policy, escrow, dispute, reputation, and settlement.</p>
+<h3 id="illustrative-future-example-x402-monolythium">Illustrative future example — x402 + Monolythium</h3>
 <ol>
-<li>An assistant requests a paid API. The endpoint returns <code>HTTP 402</code> with x402 payment details.</li>
-<li>The wallet checks the Monolythium spending policy on the agent&rsquo;s sub-account: category allow-listed, price under per-call cap, monthly aggregate under cap.</li>
-<li>The wallet signs a Monolythium transaction that pays the x402 invoice in stablecoin; <code>purpose</code> references the x402 payment ID; the runbook is <code>pay_vendor</code>.</li>
-<li>The protocol verifies the spending-policy constraints <strong>at admission</strong> and refuses if any fail.</li>
-<li>Settlement happens at anchor finality (three to five seconds). The endpoint serves the response.</li>
-<li>If the response is disputed, the principal opens an escrow-arbiter dispute referencing the x402 transaction.</li>
+<li>An assistant could receive an <code>HTTP 402</code> response and prepare a bounded request.</li>
+<li>A future wallet could compare it with a released principal-owned policy.</li>
+<li>Only under explicit authority could the wallet sign a typed transaction referencing the external payment identifier.</li>
+<li>An activated protocol would reject policy violations at admission.</li>
+<li>A released receiver could wait for observed finality before serving the response.</li>
+<li>A released escrow protocol could permit a dispute tied to the finalized receipt.</li>
 </ol>
-<p>The endpoint integrates only with x402. The chain handles everything beyond the handshake. The agent does not implement any of this manually — the wallet, the runbook, and the spending policy carry the discipline.</p>
+<p>This scenario does not assert a current x402 receiver, stablecoin route, settlement-time SLA, <code>pay_vendor</code> ABI, or transaction-capable MCP tool.</p>
 <hr>
 <h2 id="4-what-monolythium-refuses">4. What Monolythium Refuses</h2>
 <p>A chain&rsquo;s identity is shaped at least as much by what it refuses to do as by what it does. Five refusals define Monolythium.</p>
@@ -564,17 +608,17 @@ A full v6 edition will re-scope the text; this note is the interim factual corre
 <p>Spot markets, yes. Perpetual futures, on-chain leverage, and margin trading, no — not on mainnet, not as a mintable asset class, not as a planned addition. Once a chain becomes a perpetuals venue, the design pressure on every other surface bends toward the perpetuals product. The chain pays the simplification — smaller audit surface, cleaner identity — to keep the design focused on settlement.</p>
 <h3 id="43-no-evm-execution">4.3 No EVM execution</h3>
 <p>Monolythium is <strong>not EVM-compatible at execution</strong>. EVM bytecode does not run on the chain; Solidity is not the default developer model; ERC conventions are not the protocol standards.</p>
-<p>The chain is <strong>EVM-connected at the liquidity edge</strong> — value moves in and out through light-client and zero-knowledge bridges, cross-chain swaps, and issuer-supported integrations. Once value arrives, it settles through Mono-native standards on a Rust/RISC-V execution layer.</p>
+<p>The chain is <strong>EVM-connected at the liquidity edge</strong> — value moves in and out through an external interop provider and issuer-supported integrations, rather than an in-tree cross-chain bridge. Once value arrives, it settles through Mono-native standards on a Rust/RISC-V execution layer.</p>
 <h3 id="44-no-fungibility-between-public-and-private-money">4.4 No fungibility between public and private money</h3>
-<p>LYTH has two denominations, <strong>public</strong> and <strong>private</strong>, and they are <strong>not fungible</strong>. The crossing from public to private is one-way; private LYTH cannot ever return to public. Private LYTH supports two operations only: transfer to another private address, and burn. It cannot enter a smart contract, cannot trade on the spot order book, cannot bridge, and cannot pay for any service mediated by the discovery registry. See §9.</p>
+<p>The design separates <strong>public</strong> and <strong>private</strong> LYTH and forbids a reverse private-to-public crossing. The confidential value path that would create and move amount-hidden private LYTH was removed after audit, so it is not usable today. Any replacement must preserve the rule that private-denominated value cannot enter contracts, markets, interop, delegation, or a future discovery registry. See §9.</p>
 <h3 id="45-no-bundled-ai-model">4.5 No bundled AI model</h3>
-<p>The chain does not bundle a specific AI model with the protocol. Agent identity is chain-native; the model behind any agent is the user&rsquo;s choice. Runbooks are typed and signed; they are not &ldquo;AI prompts.&rdquo; The chain is model-agnostic on principle so that no model vendor&rsquo;s roadmap binds the protocol&rsquo;s neutrality.</p>
+<p>The chain does not bundle a specific AI model with the protocol. The target agent identity is provider-independent, and future economic action schemas would be typed and wallet-visible rather than treated as AI prompts. Those schemas are not activated today.</p>
 <hr>
 <h2 id="5-six-design-positions">5. Six Design Positions</h2>
 <p>The chain&rsquo;s identity is the product of the six commitments below. Each is structural, not parameterised.</p>
 <h3 id="51-post-quantum-accounts-by-default">5.1 Post-quantum accounts by default</h3>
 <p>ML-DSA-65 (NIST FIPS 204, Dilithium Level 3) is the only signature primitive accepted at transaction admission. No classical fallback. No hybrid mode. No ECDSA acceptance path &ldquo;for compatibility.&rdquo; Every account signs every transaction with a post-quantum primitive from the chain&rsquo;s first block.</p>
-<p>Hybrid is rejected for three reasons: a hybrid signature is only as strong as its weakest component, hybrid creates audit ambiguity and downgrade-attack surface, and hybrid postpones the migration twice (once now, once later) instead of doing it once at genesis when there is no installed base of classical-only wallets to support.</p>
+<p>Hybrid is rejected for three reasons. If consensus accepts <strong>either</strong> signature, the scheme is only as strong as its weakest component — a quantum adversary forges the classical half and the post-quantum half is never examined. If consensus requires <strong>both</strong>, the post-quantum primitive is already carrying the whole quantum defense alone, and the classical half hedges the opposite risk (a classical break of the lattice assumption), which Monolythium answers with process — emergency freeze plus a coordinated migration — rather than a second signature on every transaction forever. Hybrid also creates audit ambiguity and downgrade-attack surface, and it postpones the migration twice (once now, once later) instead of doing it once at genesis when there is no installed base of classical-only wallets to support.</p>
 <p>The cost of pure post-quantum is signature size — ML-DSA-65 signatures are ~3,309 bytes versus ECDSA&rsquo;s 64 bytes. The cost is real and paid in storage and bandwidth. The alternative is paying the migration cost twice.</p>
 <table>
 <thead>
@@ -591,14 +635,14 @@ A full v6 edition will re-scope the text; this note is the interim factual corre
 <td>Every user-signed transaction</td>
 </tr>
 <tr>
-<td>Emergency backup signatures</td>
-<td><strong>SLH-DSA</strong> (FIPS 205, hash-based)</td>
-<td>Pre-registered backup; activated under emergency rotation</td>
+<td>Crypto-agility backup</td>
+<td><strong>Future genesis; primitive not selected</strong></td>
+<td>The removed SLH-DSA registry is not available; a second-family design requires independent review</td>
 </tr>
 <tr>
 <td>Key encapsulation</td>
 <td><strong>ML-KEM-768</strong> (FIPS 203)</td>
-<td>Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation</td>
+<td>Peer-to-peer handshakes (a KEM-Noise IK-style construction of our own, pending cryptographer review), RPC TLS, stealth-address derivation</td>
 </tr>
 <tr>
 <td>Consensus signatures</td>
@@ -606,9 +650,9 @@ A full v6 edition will re-scope the text; this note is the interim factual corre
 <td>Per-operator vertex signatures; cluster 7-of-10 quorum is a bitmap multisig of independent operator signatures</td>
 </tr>
 <tr>
-<td>Zero-knowledge verification</td>
-<td><strong>SP1 zkVM + Groth16-BN254</strong></td>
-<td>zkML attestations, high-value off-chain computation</td>
+<td>Zero-knowledge verification (gated off)</td>
+<td><strong>Post-quantum FRI/STARK — intended direction</strong></td>
+<td>Application-layer proof verification is <strong>disabled at genesis</strong>; the earlier SP1 zkVM + Groth16-BN254 verifier is not enabled. Consensus finality is pure ML-DSA-65 and never depended on it</td>
 </tr>
 <tr>
 <td>Hash</td>
@@ -620,15 +664,15 @@ A full v6 edition will re-scope the text; this note is the interim factual corre
 <h3 id="52-post-quantum-finality">5.2 Post-quantum finality</h3>
 <p>The chain delivers a single, post-quantum finality tier, with no classical fast-path and no separate checkpoint tier:</p>
 <ul>
-<li><strong>Anchor-level finality</strong> (roughly four to eight seconds, ML-DSA-65). Each operator signs its cluster&rsquo;s vertex with its own ML-DSA-65 key; the cluster&rsquo;s 7-of-10 quorum certificate is a bitmap multisig of those independent operator signatures. Used for everyday transfers, application interactions, mempool admission, and equally for bridges, exchange listings, and high-value cross-chain attestations.</li>
+<li><strong>Anchor-level finality</strong> (roughly four to eight seconds, ML-DSA-65). Each operator signs its cluster&rsquo;s vertex with its own ML-DSA-65 key; the cluster&rsquo;s 7-of-10 quorum certificate is a bitmap multisig of those independent operator signatures. Used for everyday transfers, application interactions, mempool admission, and equally for external interop attestations, exchange listings, and high-value cross-chain settlement.</li>
 </ul>
 <p>Because every anchor is already finalized under post-quantum signatures, there is no quantum-forgeable tier to outrun: an attacker who cannot forge ML-DSA-65 cannot forge an anchor. Integrations wanting deeper economic finality wait for more confirmations, not for a separate signature tier.</p>
 <h3 id="53-rust-on-risc-v">5.3 Rust on RISC-V</h3>
 <p>The execution layer has three tiers:</p>
 <ol>
-<li><strong>Native protocol modules</strong> for hot and security-critical primitives — token balances, NFTs, multi-assets, spot markets, delegation, bridge proof verification, agent-commerce registries, spending policy, name registry, privacy cordons.</li>
+<li><strong>Native protocol modules</strong> for activated hot and security-critical primitives; agent-commerce registries and spending policy remain separately gated target modules.</li>
 <li><strong>Rust/RISC-V contracts</strong> for application-specific programmable logic.</li>
-<li><strong>zkVM-proven computation</strong> for bridge proofs, cross-chain swaps, zkML, and high-cost off-chain verification.</li>
+<li><strong>zkVM-proven computation</strong> <em>(gated off at genesis)</em> — a future application-layer verifier for high-cost off-chain verification and, when armed, verified-matching swaps and zkML; not reachable today, and cross-chain interop runs through an external provider (§11), not in-tree bridge proofs.</li>
 </ol>
 <p>Why this combination:</p>
 <ul>
@@ -690,77 +734,79 @@ A full v6 edition will re-scope the text; this note is the interim factual corre
 </ul>
 <p>A hard per-operator multi-cluster cap prevents a successful operator from reproducing single-operator centralisation across the cluster set.</p>
 <h3 id="56-bifurcated-denomination">5.6 Bifurcated denomination</h3>
-<p>LYTH has two denominations and they are not fungible. The crossing from public to private is one-way at the protocol layer. Privacy machinery (stealth addresses, confidential transactions) lives <strong>inside the private denomination only</strong>. See §9 for the full position.</p>
+<p>The target design makes public and private LYTH non-fungible and permits no private-to-public crossing. Stealth-address recipient privacy and privacy-policy code remain in v0.4.0; the confidential value path—public→private creation, amount-hidden transfer, and burn—was <strong>removed</strong>, not merely gated. See §8.</p>
 <hr>
-<h2 id="6-the-eight-agent-commerce-primitives">6. The Eight Agent-Commerce Primitives</h2>
-<p>Monolythium ships eight primitives that together enable the autonomous-economy use case. The primitives are minimal, composable, and consensus-critical only where consensus protection is necessary; gameable primitives are deliberately placed at the application or indexer layer.</p>
+<h2 id="6-target-agent-commerce-architecture">6. Target Agent-Commerce Architecture</h2>
+<p>This section condenses a future design. The current public development network does not expose these eight primitives as an executable suite. Names, state machines, method vocabulary, fees, events, and layer assignments below are requirements—not a current ABI.</p>
 <table>
 <thead>
 <tr>
 <th>#</th>
 <th>Primitive</th>
-<th>Layer</th>
-<th>Purpose</th>
+<th>Target layer</th>
+<th>Intended purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>1</td>
 <td><code>attestation</code></td>
-<td>Native module</td>
-<td>Foundational signed-hash + typed schema registry</td>
+<td>Target native module</td>
+<td>Signed-hash + typed-schema registry</td>
 </tr>
 <tr>
 <td>2</td>
 <td><code>consent</code></td>
-<td>Native module</td>
-<td>Principal-signed consent records with revocation</td>
+<td>Target native module</td>
+<td>Principal-signed records with revocation</td>
 </tr>
 <tr>
 <td>3</td>
 <td><code>issuer-registry</code></td>
-<td>Native module</td>
-<td>Permissionless registry of credential issuers</td>
+<td>Target native module</td>
+<td>Permissionless credential-issuer registry</td>
 </tr>
 <tr>
 <td>4</td>
 <td><code>discovery</code></td>
-<td>Native module</td>
+<td>Target native module</td>
 <td>Permissionless service-listing registry</td>
 </tr>
 <tr>
 <td>5</td>
 <td><code>reputation</code></td>
-<td>Indexer view</td>
-<td>Multi-dimensional rating aggregation over chain-emitted events</td>
+<td>Target indexer view</td>
+<td>Multi-dimensional aggregation over finalized events</td>
 </tr>
 <tr>
 <td>6</td>
 <td><code>availability</code></td>
-<td>Native module</td>
-<td>Generic availability state composed by every domain registry</td>
+<td>Target native module</td>
+<td>Availability state for domain registries</td>
 </tr>
 <tr>
 <td>7</td>
 <td><code>escrow + arbiter-registry</code></td>
-<td>Native modules</td>
-<td>Configurable escrow with counter-offer flow + pluggable arbiters</td>
+<td>Target native modules</td>
+<td>Escrow, counter-offer, and arbitration</td>
 </tr>
 <tr>
 <td>8</td>
 <td><code>spending-policy</code></td>
-<td>Native module (consensus-critical)</td>
-<td>Programmable per-account spending caps enforced at admission</td>
+<td>Target consensus module</td>
+<td>Per-account constraints enforced at admission</td>
 </tr>
 </tbody>
 </table>
-<p>Only <code>spending-policy</code> consumes the consensus path. The protocol must enforce budget caps because the agent itself cannot be trusted to enforce its own caps — the agent is precisely what the policy is constraining. Reputation lives at the indexer layer because the gaming surface (Sybil rating, wash trades, coordinated reputation farming) does not belong in consensus-critical code.</p>
+<p>In the design, only <code>spending-policy</code> would consume the consensus path; reputation would remain an indexer view. Neither statement implies current deployment.</p>
 <p>Two primitives are worth calling out:</p>
-<p><strong>Escrow</strong> uses an <code>Open → Negotiating(round_n) → Accepted → InProgress → Submitted → Released | Disputed</code> state machine. Counter-offers can modify any term (timeline, scope, price, payment schedule, penalty clauses); each counter-offer is signed by both parties before becoming binding; either party can walk away during negotiation with no penalty. Arbiter mode is set per escrow at creation — single arbiter for low-value, quorum-of-N for mid-value, human-credentialed for high-value.</p>
-<p><strong>Spending policy</strong> is enforced <strong>at admission, not after the fact</strong>. A transaction signed by an agent sub-account that would violate any active policy is rejected before it enters the mempool. The agent cannot opt out of its own policy; the policy is the protocol.</p>
+<p>The <strong>escrow target</strong> uses an <code>Open → Negotiating(round_n) → Accepted → InProgress → Submitted → Released | Disputed</code> state machine. Exact transitions and arbitration contracts require a versioned protocol release.</p>
+<p>The <strong>spending-policy target</strong> requires admission-time enforcement so the delegated agent cannot opt out. No current public RPC offers that policy surface.</p>
 <h3 id="runbooks">Runbooks</h3>
-<p>Agents transact through <strong>typed, versioned, signed templates</strong> rather than free-text RPC. A runbook is a JSON-shaped operation definition with a signed parameter schema and a typed result. Initial runbooks include <code>pay_vendor</code>, <code>open_escrow</code>, <code>release_escrow</code>, <code>refund_payment</code>, <code>book_service</code>, <code>place_trade</code>, <code>set_spending_policy</code>, <code>revoke_agent_permission</code>, <code>verify_receipt</code>, and <code>rate_vendor</code>.</p>
-<p>Runbooks are the bridge between natural language and safe settlement. The user speaks naturally; the agent maps intent into a constrained workflow; the wallet shows the exact action before approval. The protocol enforces the runbook&rsquo;s typed parameters; an agent cannot smuggle a hand-crafted RPC call past a wallet expecting a runbook.</p>
+<p>The target requires <strong>typed, versioned, wallet-visible actions</strong> rather than free-text RPC. Provisional names include <code>pay_vendor</code>, <code>open_escrow</code>, <code>release_escrow</code>, <code>refund_payment</code>, <code>book_service</code>, <code>place_trade</code>, <code>set_spending_policy</code>, <code>revoke_agent_permission</code>, <code>verify_receipt</code>, and <code>rate_vendor</code>.</p>
+<p>These are not current SDK methods or MCP transaction tools. The intended safety property is that a released wallet and activated protocol validate the same schema while the user retains authority.</p>
+<h3 id="stele-boundary">Stele boundary</h3>
+<p>Stele&rsquo;s release architecture is a standalone public web product. Public catalog browsing and wallet-authenticated, non-economic approval previews can ship independently. Hosted MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. The isolated local Stele MCP currently exposes exactly three read/status tools. Neither holds a wallet, signs, broadcasts, or settles. Provider writes, E2EE rooms, economic execution, disputes, reviews, mainnet, and autonomous signing remain separately gated. The target desktop product line retires the Stele marketplace surface; legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal and migration are released. The reserved production hostname <code>stele.monolythium.com</code> is intentionally not a live link in this paper until the actual deployment passes its health, privacy, and release gates.</p>
 <hr>
 <h2 id="7-identity-addresses-mnemonics-and-names">7. Identity: Addresses, Mnemonics, and Names</h2>
 <h3 id="bech32m-only-display">Bech32m-only display</h3>
@@ -796,23 +842,21 @@ A full v6 edition will re-scope the text; this note is the interim factual corre
 </tr>
 <tr>
 <td><code>monox1...</code></td>
-<td>Bridge account</td>
+<td>External-interop (bridge) account</td>
 </tr>
 </tbody>
 </table>
-<h3 id="pqm-1-mnemonic">PQM-1 mnemonic</h3>
-<blockquote>
-<p><strong>Superseded (see erratum item 3).</strong> The PQM-1 format has been dropped. Wallets and the
-<code>@monolythium/core-sdk</code> now use a standard 24-word BIP-39 mnemonic, with the seed re-derived for
-ML-DSA-65 as <code>mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]</code>.
-The scheme below is retained for historical reference only and must not be used to derive addresses.</p>
-</blockquote>
-<p>Wallets support two recovery formats. The default is an encrypted keystore (Argon2id over the password, XChaCha20-Poly1305 over the seed). For users who want phrase-based backup, the chain defines <strong>PQM-1</strong>: a 24-word BIP-39 phrase whose bytes are interpreted under a post-quantum scheme (algorithm tag + version + 240-bit entropy, expanded via SHAKE256, used as the ML-DSA-65 keygen seed). A typical BIP-39 → secp256k1 EVM mnemonic is <strong>not compatible</strong> — wallets warn the user explicitly before either direction is attempted.</p>
+<h3 id="wallet-recovery-pqm-1-removed">Wallet recovery — PQM-1 removed</h3>
+<p>PQM-1 and its algorithm-tagged seed layout must not be used. The canonical mnemonic input is a standard 24-word BIP-39 phrase re-derived for ML-DSA-65 as <code>mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]</code>.</p>
+<p>The browser wallet uses an Argon2id/XChaCha20-Poly1305 encrypted vault in extension-local storage. That is not a generic OS-keychain or biometric guarantee, and network selection does not change derivation. Cross-client recovery—especially with the desktop wallet—must be tested before compatibility is claimed. Stele and hosted MCP never receive a mnemonic.</p>
 <h3 id="lyth-name-registry">LYTH name registry</h3>
 <p>A hierarchical, on-chain name registry maps human-readable names to addresses. Lowercase ASCII letters, digits, and hyphens; no mixed case, no Unicode confusables. Names live under the <code>.mono</code> namespace and resolve to five structural categories: a bare <code>&lt;name&gt;.mono</code> is a human/personal account, an agent registers beneath its human principal as <code>&lt;name&gt;.agent.&lt;human&gt;.mono</code>, and clusters, contracts, and protocol entities take <code>&lt;name&gt;.cluster.mono</code>, <code>&lt;name&gt;.contract.mono</code>, and <code>&lt;name&gt;.system.mono</code> (the system category is foundation-only). U-curve pricing discourages both squatting (short names cost more) and clutter (long names pay a small administrative fee). Transfer is propose-accept with a 24-hour acceptance window. Reserved prefixes prevent collisions with bech32m HRPs and <code>0x</code> strings.</p>
 <p>A person is addressed as <code>alex-rivera.mono</code>, their agent as <code>support-bot.agent.alex-rivera.mono</code>, and a cluster as <code>northstar.cluster.mono</code>. The bech32m address remains the canonical underlying identifier; the name is a human-readable alias.</p>
 <hr>
 <h2 id="8-bifurcated-denomination-privacy-without-contamination">8. Bifurcated Denomination — Privacy Without Contamination</h2>
+<blockquote>
+<p><strong>Design-status boundary.</strong> The confidential value implementation was deleted after audit. This section preserves the required cordon and one-way economic design for a future post-quantum replacement; it does not describe usable amount-hidden value today.</p>
+</blockquote>
 <p>Privacy on a public ledger has, over the last several years, been on a steady regulatory collision course. The two historical trajectories are visible:</p>
 <ul>
 <li>A chain with <strong>fungible</strong> shielded and transparent denominations gets delisted by major exchanges because shielded-to-transparent flow contaminates the entire public denomination. Fungibility breaks the audit story for everyone.</li>
@@ -820,13 +864,13 @@ The scheme below is retained for historical reference only and must not be used 
 </ul>
 <p>Both trajectories converge on the same outcome. Monolythium&rsquo;s bifurcation is a third option that has not been deployed at scale.</p>
 <h3 id="how-bifurcation-works">How bifurcation works</h3>
-<p>The protocol enforces non-fungibility at the consensus layer. Every account holds two balances — public and private — represented as separate state entries with separate spendable conditions. Every transaction operates on exactly one denomination. A native <strong>caller-origin cordon</strong> in the execution layer prevents a public contract or module path from receiving private-denominated value, and prevents private-denominated state from being used in any public contract context. The cordon is enforced by the host, not by user code, so no contract can opt out.</p>
-<p>A user can move LYTH from public to private at any time. The protocol records the movement as a <strong>crossing</strong>. The reverse direction does not exist. There is no module, no instruction, no foundational mechanism that allows private LYTH to become public LYTH again.</p>
+<p>The target protocol enforces non-fungibility at the consensus layer with separate public and private state. A native <strong>caller-origin cordon</strong> prevents public modules from receiving private-denominated value and prevents private state in a public contract context. Stealth-address recipient privacy and privacy-policy code remain in v0.4.0; confidential amount transfer does not.</p>
+<p>Any future <strong>crossing</strong> must conserve value exactly once and omit a reverse instruction. The removed construction cannot be re-armed; a replacement requires a post-quantum design, conservation proof, independent audit, and separate activation.</p>
 <h3 id="what-this-gives-a-regulator-or-an-exchange">What this gives a regulator or an exchange</h3>
 <p>The <strong>public denomination</strong> is fully auditable. Public activity is transparent and traceable by the analytics tooling that already exists for other transparent chains. A KYC-supervised exchange can custody public LYTH with the same audit posture as any other transparent asset.</p>
 <p>The <strong>private denomination</strong> is opaque by design. The protocol does not pretend otherwise. An exchange may refuse private deposits, require a proof-of-crossing, or accept them at a higher KYC tier. The chain does not constrain the choice; the chain provides the structural separation that makes the choice coherent.</p>
 <h3 id="side-effect-structurally-hostile-to-illicit-commerce">Side effect — structurally hostile to illicit commerce</h3>
-<p>The pattern that history calls &ldquo;the darknet marketplace&rdquo; requires the simultaneous availability of an anonymous-payment rail and an anonymous-service-discovery surface. Monolythium&rsquo;s bifurcation makes those two requirements impossible to satisfy on the same chain. The private denomination has no service-discovery surface; the public denomination has full discovery but is fully transparent. A user can have anonymous money or service discovery, never both at once.</p>
+<p>The target cordon forbids private-denominated value from any future discovery, escrow, or dispute module. Public Stele catalog data is transparent and non-economic; it is not an activated on-chain discovery registry.</p>
 <blockquote>
 <p><em>Monolythium separates monetary privacy from commerce. The private denomination supports peer-to-peer transfers only — it cannot pay for services, interact with smart contracts, or trade. The public denomination supports full commerce and is fully transparent and analyzable.</em></p>
 </blockquote>
@@ -844,6 +888,9 @@ The scheme below is retained for historical reference only and must not be used 
 <p>The mempool is plaintext: a transaction body is visible from the moment it enters the mempool until anchor inclusion, and the protocol does not seal or encrypt mempool contents. Transaction-ordering fairness is addressed at the DAG-consensus layer rather than through mempool encryption — ordering follows the deterministic DAG linearization, not a single sequencer&rsquo;s discretion, so a plaintext order is sequenced by consensus rules rather than by privileged pre-inclusion reads.</p>
 <hr>
 <h2 id="10-tokenomics">10. Tokenomics</h2>
+<blockquote>
+<p><strong>Design-status boundary.</strong> The values below record the v5 tokenomics charter. Unless independently observable from finalized chain state, they are target parameters—not proof of current balances, rewards, bonds, vesting, sale terms, yield, or holder rights. The stale RPC observed on 2026-07-16 is not evidence of current economic operation. Agent-commerce fees, registry bonds, service-tier payments, and delegation economics remain separately gated.</p>
+</blockquote>
 <h3 id="101-supply">10.1 Supply</h3>
 <ul>
 <li><strong>Initial supply.</strong> 100,000,000 LYTH at genesis.</li>
@@ -919,13 +966,13 @@ The scheme below is retained for historical reference only and must not be used 
 <ul>
 <li><strong>Consensus.</strong> Each active operator position requires a 5,000 LYTH self-bond; standbys bond at the same level. Equivocation slashing burns the entire bond.</li>
 <li><strong>Network.</strong> Every transaction pays gas in LYTH, including transactions moving stablecoins, MRC assets, or NFTs. A portion of every transaction&rsquo;s gas is burned.</li>
-<li><strong>Service tiers.</strong> RPC calls, archival reads, GPU prover requests, and oracle feed consumption are denominated in LYTH and paid directly to the serving operator. The on-chain prover market is a native LYTH-denominated venue.</li>
-<li><strong>Bridges.</strong> Each bridge route charges a fee in LYTH on top of the asset-denominated value; bridge insurance and reserve programs pay in LYTH.</li>
-<li><strong>Registries.</strong> Discovery listings, issuer registrations, arbiter registrations, and name-registry entries all pay LYTH bonds or fees.</li>
+<li><strong>Service tiers.</strong> The target model denominates released RPC and archival service contracts in LYTH. This is not proof of a paid public endpoint. GPU prover and oracle-feed payment paths remain gated.</li>
+<li><strong>Interop.</strong> Cross-chain interop runs through an external interop provider rather than an in-tree bridge, so the protocol no longer charges in-protocol bridge-route fees or runs bridge insurance and reserve programs; value arriving through the provider still pays LYTH gas once it transacts on-chain.</li>
+<li><strong>Registries.</strong> Future discovery, issuer, and arbiter registries may use published LYTH-denominated anti-spam terms; those §6 paths are not activated.</li>
 <li><strong>Markets.</strong> Native order-book maker/taker fees pay in LYTH or in the asset traded (with a LYTH-denominated discount path).</li>
-<li><strong>Agent commerce.</strong> Spending-policy registration, escrow opening, dispute escalation, and arbiter compensation all settle in LYTH.</li>
+<li><strong>Agent commerce.</strong> If §6 is activated, its versioned fee and settlement contracts may use LYTH; no current fee or settlement path is asserted.</li>
 </ul>
-<p>Agents paying USDC for an API call still pay LYTH gas. Bridges moving Ethereum-resident value still pay LYTH route fees. Clusters serving traffic still earn LYTH. The token captures the chain&rsquo;s economic activity at every layer above the payment-asset itself.</p>
+<p>The target economic thesis is that activity in other assets would still require LYTH-denominated protocol resources. It is not a current API-payment or service-yield claim.</p>
 <h3 id="104-liquid-bonding-and-distributed-delegation">10.4 Liquid bonding and distributed delegation</h3>
 <p>Monolythium&rsquo;s staking model is <strong>liquid bonding</strong>: stakers retain custody of their LYTH at all times. There is no staking contract to send funds to. There is <strong>zero unbonding period</strong> for delegators. A delegator can exit a delegation instantly. Slashing applies to operator self-bonds, not to delegators.</p>
 <p>The core anti-capture mechanism is the <strong>per-wallet delegation cap</strong>: any single wallet can delegate at most X% of its total LYTH holdings to any single cluster. The cap binds on <strong>capital</strong>, not on wallet count, so an adversary splitting capital across many wallets gains no advantage.</p>
@@ -961,9 +1008,9 @@ The scheme below is retained for historical reference only and must not be used 
 </tbody>
 </table>
 <p>Tightening is triggered by sustained network conditions (number of independent clusters, geographic distribution, operator entropy), not by calendar dates and not by any in-protocol vote. Modifying the schedule requires a coordinated hard fork.</p>
-<p>The cap composes with a <strong>quadratic reward curve</strong> at the reward layer: doubling a cluster&rsquo;s stake does not double its reward share. Decentralization is the highest-yield strategy at every margin, not just at the boundary.</p>
+<p>The cap composes with a <strong>service-weighted reward layer</strong>: a cluster&rsquo;s share of the cluster reward pool is set by the <strong>proven useful services it provides</strong> — archive serving, GPU proving, public RPC, indexing, and geo/client diversity — not by how much stake is delegated to it. Stake sets only a cluster&rsquo;s rank for top-100 active-set admission; once admitted, clusters vote with equal weight and earn strictly in proportion to proven service, so two clusters with equal service earn equal pots regardless of stake. Decentralization is the highest-yield strategy at every margin — the way to earn more is to serve more, not to accumulate stake.</p>
 <h3 id="105-the-four-button-autovote">10.5 The four-button autovote</h3>
-<p>Delegation is enforced at the protocol layer; day-to-day delegation happens in the wallet. The reference wallet ships an <strong>Intelligent Autovote</strong> surface with four named modes:</p>
+<p>The v5 design proposes an <strong>Intelligent Autovote</strong> wallet surface with four named modes. It is a UX target, not a current shipped-feature claim:</p>
 <ul>
 <li><strong>Max Yield</strong> — allocate to highest-APR clusters consistent with the per-cluster cap.</li>
 <li><strong>Max Diversity</strong> — spread across as many independent clusters as the current cap allows.</li>
@@ -971,18 +1018,18 @@ The scheme below is retained for historical reference only and must not be used 
 <li><strong>Custom</strong> — manual per-cluster allocation, with the cap enforced at submission time.</li>
 </ul>
 <hr>
-<h2 id="11-bridges-and-the-liquidity-edge">11. Bridges and the Liquidity Edge</h2>
-<p>Monolythium needs liquidity but does not need EVM execution to get it. The liquidity strategy has three layers:</p>
+<h2 id="11-interop-and-the-liquidity-edge">11. Interop and the Liquidity Edge</h2>
+<p>Monolythium needs liquidity but does not need EVM execution to get it — and it no longer ships an <strong>in-tree bridge</strong> to get it either. The entire in-tree bridge stack — the on-chain bridge proof verifier, the route/fee/insurance scaffolding, and the associated build feature — has been <strong>removed</strong> from the protocol. The chain does not verify bridge proofs on-chain.</p>
+<p>Cross-chain interoperability is instead delivered by integrating an <strong>external interop provider</strong> (evaluation in progress; described here vendor-neutrally). Running the chain&rsquo;s own bridge verifier in-tree concentrated the highest-risk, audit-heavy surface inside consensus; moving interop to an external provider takes that surface out of the core, lets interop evolve without a re-genesis, and keeps the base layer post-quantum and lean. The liquidity strategy is now two layers:</p>
 <ol>
-<li><strong>Zero-knowledge or light-client bridges</strong> for major external assets where proof-bound verification is feasible.</li>
-<li><strong>Cross-chain swaps</strong> where proof-bound settlement is better than a full bridge route.</li>
+<li><strong>External interop-provider integration</strong> for moving major external assets in and out — verification, routing, and settlement of the cross-chain leg are the provider&rsquo;s responsibility, not the protocol&rsquo;s.</li>
 <li><strong>Issuer-supported native assets</strong> where the network earns enough adoption to justify direct issuer integrations.</li>
 </ol>
-<p><strong>Wrapped assets are labeled honestly.</strong> A bridged stablecoin is not the same as a native issuer-minted stablecoin. Wallets and explorers show the route, trust model, cooldown, proof status, drain caps, circuit-breaker state, and risk metadata.</p>
+<p><strong>Wrapped assets are labeled honestly.</strong> An asset that arrives through the external interop provider is not the same as a native issuer-minted asset. Wallets and explorers surface the provider, route, trust model, and any provider-side risk metadata, and mark clearly which assets are native and which arrived through an external provider.</p>
 <blockquote>
-<p>The goal is not to hide bridge risk; the goal is to make bridge risk legible.</p>
+<p>The goal is not to hide interop risk; the goal is to make interop risk legible.</p>
 </blockquote>
-<p>Bridge cooldowns are <strong>route-specific safety parameters</strong>, not a single global constant. Long human-dispute windows make sense for weaker, trusted bridges; proof-verified routes can run on much tighter cooldowns. Every bridge route exposes its drain caps, circuit-breaker policy, verification model, and reserve information.</p>
+<p>Because the chain does not itself verify the cross-chain leg, the trust model for any incoming bridged asset is the <strong>external provider&rsquo;s</strong> trust model — any drain caps, circuit breakers, cooldowns, or route verification are provider properties surfaced to the user as provider metadata, not guarantees enforced by Monolythium consensus. The retired <code>0x1008</code> bridge precompile is a fail-closed tombstone; the node refuses to boot any milestone that would attempt to activate it.</p>
 <hr>
 <h2 id="12-hardware-sovereignty-monarch-os">12. Hardware Sovereignty — Monarch OS</h2>
 <p>Production operators run on <strong>Monarch OS</strong> — an immutable substrate built on a minimal Linux base, hardened for institutional security and designed for permissionless accessibility. A home operator with a recent gaming PC runs on the same substrate a co-located bare-metal operator runs.</p>
@@ -998,16 +1045,13 @@ The scheme below is retained for historical reference only and must not be used 
 <p>Network-level and geographic diversity scoring is layered on top — distinct IP per operator, on-chain ASN recording, geographic claims cross-checked against IP geolocation and latency triangulation, hosting class derived from PCR patterns. Diverse clusters earn delegator preference; concentrated clusters lose it.</p>
 <hr>
 <h2 id="13-recovery-posture">13. Recovery Posture</h2>
-<p>The chain&rsquo;s recovery posture is designed for two scenarios that are normally underspecified in L1 protocols.</p>
-<h3 id="emergency-key-registry">Emergency-key registry</h3>
-<p>Users can pre-register a <strong>backup key in a different cryptographic family</strong> — specifically SLH-DSA (FIPS 205, hash-based) — alongside their primary ML-DSA-65 key. The backup key is dormant unless the protocol declares an emergency algorithm rotation. At that point, users with a registered backup sign with the backup key; users without are <strong>frozen</strong> — never drainable by the attacker, recoverable through a runbook-based claim process.</p>
-<p>Hash-based signatures rest on different mathematical assumptions than lattice-based signatures. An attack that breaks ML-DSA does not, on current understanding, break SLH-DSA, and vice versa.</p>
+<p>The audited SLH-DSA backup, emergency-key registry, and on-chain user-key rotation were removed as inoperative. The v0.4.0 protocol is ML-DSA-65-only. A second-family backup and protocol rotation path are future-genesis work requiring independent cryptographic review; no user should believe a backup key is registered today. A break-day migration therefore depends on the separate time-bounded emergency freeze plus a coordinated hard fork, with public operational playbooks required before mainnet.</p>
 <h3 id="emergency-freeze-scope-and-limits">Emergency freeze — scope and limits</h3>
-<p>A multi-signature Foundation key with a declared signer set and ratification window can pause transaction admission during a confirmed cryptographic-primitive break, a confirmed active bridge exploit, or a confirmed adversarial fork. The freeze is <strong>not</strong> for routine upgrades, parameter changes, protocol-direction decisions, asset confiscation, ongoing supervision, or censorship of specific accounts.</p>
+<p>A multi-signature Foundation key with a declared signer set and ratification window can pause transaction admission during a confirmed cryptographic-primitive break or a confirmed adversarial fork. (Cross-chain interop runs through an external provider outside consensus, so pausing a compromised interop route is the provider&rsquo;s control surface, not a Monolythium freeze action.) The freeze is <strong>not</strong> for routine upgrades, parameter changes, protocol-direction decisions, asset confiscation, ongoing supervision, or censorship of specific accounts.</p>
 <p>It is a circuit breaker — a documented, accountable, time-bounded path through a worst-case event, instead of relying on improvisation under duress. The chain&rsquo;s no-governance design (§4.1) and the freeze mechanism are compatible exactly because the freeze is scoped to events with clear, observable triggers, not to ongoing decisions about how the protocol should evolve.</p>
 <hr>
 <h2 id="14-threat-model-in-one-page">14. Threat Model in One Page</h2>
-<p>Monolythium&rsquo;s threat model assumes some operators are Byzantine, bridges are an active attack surface, private keys can be stolen, governance can be socially engineered (which is one reason the chain has none), and cryptographic primitives may eventually fail. The defensive posture is <strong>separation of blast radius</strong> — different surfaces have different protection budgets, and a failure at one surface should not compromise another.</p>
+<p>Monolythium&rsquo;s threat model assumes some operators are Byzantine, external interop is an active attack surface, private keys can be stolen, governance can be socially engineered (which is one reason the chain has none), and cryptographic primitives may eventually fail. The defensive posture is <strong>separation of blast radius</strong> — different surfaces have different protection budgets, and a failure at one surface should not compromise another.</p>
 <table>
 <thead>
 <tr>
@@ -1024,13 +1068,13 @@ The scheme below is retained for historical reference only and must not be used 
 </tr>
 <tr>
 <td>User signatures</td>
-<td>ML-DSA-65 + emergency-key registry + algorithm rotation</td>
-<td>Primitive break triggers rotation; users with backup keys survive; users without are frozen, not drained</td>
+<td>ML-DSA-65 only; future crypto agility requires a new genesis</td>
+<td>A primitive break has no current on-chain per-user rotation path; emergency response is freeze plus coordinated hard fork</td>
 </tr>
 <tr>
-<td>Bridges</td>
-<td>Light-client / zero-knowledge proof verification + drain caps + circuit breakers + per-route cooldown</td>
-<td>Bridge failure bounded to route&rsquo;s drain cap; consensus and accounts elsewhere unaffected</td>
+<td>Interop (external provider)</td>
+<td>Cross-chain verification and routing run with an external interop provider, outside consensus; wallets surface the provider&rsquo;s trust model and risk metadata</td>
+<td>Interop failure bounded to the provider and the assets that transited it; consensus and native accounts unaffected — the chain neither verifies nor custodies the cross-chain leg</td>
 </tr>
 <tr>
 <td>Mempool</td>
@@ -1049,12 +1093,12 @@ The scheme below is retained for historical reference only and must not be used 
 </tr>
 <tr>
 <td>Recovery</td>
-<td>Emergency-key registry + frozen-account claim flow</td>
-<td>Primitive break or coordinated attack does not allow draining; affected accounts are recoverable</td>
+<td>Time-bounded emergency freeze + coordinated hard fork</td>
+<td>No current emergency-key registry or frozen-account claim ABI exists</td>
 </tr>
 </tbody>
 </table>
-<p><strong>What the chain does not promise</strong>: that operators will not be compromised, that bridges will never be exploited, that smart contracts will not have bugs, that cryptography will work forever, or that no user will lose funds to social engineering. Honesty about limits is part of the threat model — a chain that claims invulnerability is a chain whose users are unprepared when invulnerability fails.</p>
+<p><strong>What the chain does not promise</strong>: that operators will not be compromised, that an external interop provider will never be exploited, that smart contracts will not have bugs, that cryptography will work forever, or that no user will lose funds to social engineering. Honesty about limits is part of the threat model — a chain that claims invulnerability is a chain whose users are unprepared when invulnerability fails.</p>
 <h3 id="mev">MEV</h3>
 <p>MEV is bounded structurally by the chain&rsquo;s design. A post-quantum leader-seed beacon, derived from a domain-separated, chain-id-bound BLAKE3 hash of the ML-DSA-65 quorum certificate the quorum already committed before the next leader is known, forecloses leader-grinding through block-content selection. The native order book settles deterministically against the consensus order rather than against a single sequencer&rsquo;s discretion, so order-book MEV games are bounded by the DAG linearization. The mempool is plaintext, so the chain does not claim MEV is zero — some backrunning of public events and inter-market arbitrage exists wherever transactions are visible — but the leaderless DAG ordering and deterministic order book remove the sequencer-discretion and leader-grinding categories.</p>
 <hr>
@@ -1064,16 +1108,16 @@ The scheme below is retained for historical reference only and must not be used 
 <li>AI-agent settlement as a primary category;</li>
 <li>Rust/RISC-V-native execution from the base layer;</li>
 <li>post-quantum accounts as default, not optional;</li>
-<li>native MRC token, NFT, market, and agent-commerce modules;</li>
-<li>zero-knowledge and light-client bridge liquidity rather than EVM execution compatibility;</li>
+<li>native MRC token, NFT, and market modules, plus a target agent-commerce architecture;</li>
+<li>external interop-provider liquidity rather than EVM execution compatibility;</li>
 <li>no on-chain governance;</li>
 <li>no mainnet perpetuals;</li>
 <li>structurally non-fungible public/private denomination;</li>
 <li>a public cluster marketplace with distributed validator technology;</li>
-<li>focused use of zero-knowledge proofs at bridges, swaps, zkML, and high-value verification;</li>
-<li>direct composition with the major agent-payment standards as the chain-anchored trust and settlement layer.</li>
+<li>a lean, post-quantum core that keeps cross-chain interop (external provider) and application-layer zero-knowledge verification (a post-quantum FRI/STARK verifier, gated off) out of consensus;</li>
+<li>target composition with major agent-payment standards after compatible integrations are released.</li>
 </ul>
-<p>For agent commerce, neutrality matters because agents transact across companies, model providers, wallets, jurisdictions, and service providers. A payment rail owned by one AI lab or one platform may work inside that platform, but it is less credible as a universal settlement substrate. A bank or fintech that wants its agent flow to interoperate with the rest of the agent economy needs a substrate that is not owned by a competitor. Monolythium provides that.</p>
+<p>For agent commerce, neutrality matters because agents transact across companies, model providers, wallets, jurisdictions, and service providers. Monolythium&rsquo;s target is such a neutral substrate; the current capability boundary above must not be mistaken for delivery of that target.</p>
 <hr>
 <h2 id="16-honest-limitations">16. Honest Limitations</h2>
 <p>The chain&rsquo;s direction is a strategic bet. The risks are real and named.</p>
@@ -1083,7 +1127,7 @@ The scheme below is retained for historical reference only and must not be used 
 <li>Wallets and explorers require more custom work than they would on an EVM chain.</li>
 <li>Native MRC standards must earn trust before they reach ubiquity comparable to ERC standards.</li>
 <li>Rust/RISC-V contract tooling must be excellent — anything less than excellent loses to a familiar EVM environment.</li>
-<li>Zero-knowledge bridge circuits are complex and require serious audit work.</li>
+<li>Interop depends on an external provider; the security and availability of cross-chain movement is bounded by that provider&rsquo;s trust model and is not verified by Monolythium consensus. A post-quantum application-layer zero-knowledge verifier (FRI/STARK) is still ahead and ships gated off.</li>
 <li>The market for agent commerce may take longer to mature than expected.</li>
 <li>Post-quantum signatures are larger than classical signatures, raising storage and bandwidth costs. This is most visible in consensus: each anchor&rsquo;s quorum certificates carry raw per-operator ML-DSA-65 signatures (3,309 bytes each, seven per 7-of-10 cluster), so a certificate grows linearly with the number of voting clusters. This is a deliberate cost of post-quantum, stateless consensus, not an oversight.</li>
 <li>Distributed validator technology has not been deployed at the chain&rsquo;s target scale in a leaderless DAG-BFT configuration; the operational learning is ahead, not behind.</li>
@@ -1093,13 +1137,13 @@ The scheme below is retained for historical reference only and must not be used 
 <p>These are not footnotes. They are the cost of choosing a distinct category. The counter-risk is also real: becoming another EVM-compatible chain may make adoption easier at first but leave the project buried under stronger incumbents, deeper liquidity, and thousands of similar competitors. The chain accepts the harder path because the easier path leads to a category in which it is already too late to win.</p>
 <hr>
 <h2 id="17-what-success-looks-like">17. What Success Looks Like</h2>
-<p>Monolythium succeeds if it becomes a credible settlement layer for AI agents acting on behalf of human or organizational principals, human-to-agent commerce, agent-to-agent commerce, payments, token and NFT issuance, spot markets, cross-chain swaps, safer bridge liquidity, and long-lived post-quantum digital identities.</p>
+<p>Monolythium succeeds if it becomes a credible settlement layer for AI agents acting on behalf of human or organizational principals, human-to-agent commerce, agent-to-agent commerce, payments, token and NFT issuance, spot markets, cross-chain swaps, safer cross-chain interop through external providers, and long-lived post-quantum digital identities.</p>
 <p>Structural success indicators independent of any single market hype cycle:</p>
 <ul>
 <li>the number of independent clusters and the geographic and ASN distribution of their operators;</li>
 <li>the depth of the discovery registry and the number of legitimate providers it hosts;</li>
 <li>the volume of escrowed agent-to-agent and human-to-agent transactions;</li>
-<li>the share of bridge volume moving through proof-bound routes versus trusted-multisig routes;</li>
+<li>the share of cross-chain volume moving through proof-verified external-provider routes versus trusted-multisig routes;</li>
 <li>the volume of agent-payment-standard composition (x402, AP2, ACP, MCP) settling against Monolythium spending policies and escrows;</li>
 <li>the diversity of MRC asset issuers;</li>
 <li>the survival of agent identities across model providers — the structural portability of reputation.</li>
@@ -1108,19 +1152,19 @@ The scheme below is retained for historical reference only and must not be used 
 <hr>
 <h2 id="18-closing">18. Closing</h2>
 <p>Monolythium is a deliberate break from the default Layer-1 playbook.</p>
-<p>It does not try to win by becoming a slightly faster EVM chain. It chooses Rust on a deterministic RISC-V target, post-quantum accounts as default, native asset standards, native markets, native agent-commerce primitives, zero-knowledge and light-client bridge liquidity, focused use of zero-knowledge proofs at the highest-value boundaries, a structurally non-fungible privacy denomination, a public cluster marketplace, and a smaller protocol surface.</p>
-<p>It composes underneath the major agent-payment standards rather than fighting them, providing the chain-anchored policy, escrow, identity, and reputation layer those rails leave open.</p>
+<p>It does not try to win by becoming a slightly faster EVM chain. It chooses Rust on a deterministic RISC-V target, post-quantum accounts as default, native asset standards, native markets, a target agent-commerce architecture, external-provider interop, a lean post-quantum core, a structurally separated privacy design, a public cluster marketplace, and a smaller protocol surface.</p>
+<p>It aims to compose underneath major agent-payment standards rather than fight them, after the chain-anchored policy, escrow, identity, and reputation surfaces are activated.</p>
 <p>That choice is harder. It means more tooling, more education, and a slower path to existing Solidity liquidity. It also gives the chain a clearer identity and a stronger foundation for the workloads it expects to serve.</p>
 <p>The thesis is straightforward: the next major settlement layer will not be the chain that copies Ethereum most closely. It will be the chain that gives new economic actors — autonomous agents, organizations delegating to software, services that want neutral cross-platform rails — safer rails to transact across applications, markets, and jurisdictions.</p>
 <hr>
 <h2 id="read-further">Read Further</h2>
-<p>This lightpaper distils the <a href="monolythium-whitepaper-v5.0.md">Monolythium Whitepaper v5.0</a>. For implementation detail, full threat model, cryptographic specifications, the consensus mathematics, the cluster operations model, the recovery runbook, and complete citations, the whitepaper is the canonical reference (~110 pages).</p>
+<p>This lightpaper distils the reconciled <a href="monolythium-whitepaper-v5.0.md">Monolythium Whitepaper v5.1 text</a>. For design detail, threat model, cryptographic specifications, consensus mathematics, cluster operations, recovery posture, and citations, the whitepaper is the canonical reference. Neither document is an API reference or proof of current network liveness.</p>
 <hr>
 <h2 id="entities">Entities</h2>
 <p>Monolythium is operated and stewarded by two entities:</p>
 <ul>
 <li><strong>Mono Labs R&amp;D LLC</strong> — the operating company, based in San Francisco, California. Mono Labs R&amp;D LLC develops the Monolythium protocol, operates the reference client and SDK, and is the seller of record for the LYTH token in jurisdictions where a seller of record is required.</li>
-<li><strong>Monolythium Foundation</strong> — the protocol steward, based in the Cayman Islands. The Foundation operates the chain&rsquo;s emergency-key registry, the Foundation multisig treasury, the genesis name reserve, the emergency-freeze ratification window, and other constitutional-layer functions that require an entity rather than a company.</li>
+<li><strong>Monolythium Foundation</strong> — the protocol steward, based in the Cayman Islands. The removed emergency-key registry is not among its current protocol functions. Any treasury, name-reserve, or emergency-freeze authority must be verified against separately published, current artifacts rather than inferred from this historical v5 design.</li>
 </ul>
 <p>The two entities are independent, with separate governance, separate financial accounts, and separate roles in the protocol&rsquo;s operation.</p>
 <hr>
