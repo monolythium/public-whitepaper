@@ -17,6 +17,38 @@ pip install -r tools/requirements.txt
 python tools/build.py
 ```
 
+The build first runs `tools/check_truth.py`, which fails closed if public copy regresses to presenting
+the target agent-commerce suite, spending-policy/USDC agent-payment routes, Stele-in-desktop, current
+economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also requires the
+legacy-desktop and deployment-gated-link qualifications. It can be run directly without the rendering
+dependencies:
+
+```bash
+python tools/check_truth.py
+```
+
+After rendering, `tools/check_public_boundary.py` inspects the candidate file set and compressed PDF
+streams. It rejects unpublished markers, local filesystem paths, draft/private directories, disguised
+office containers, office files, and every PDF not explicitly allowlisted. The two release PDFs are the
+only current allowlist entries. Run it directly with:
+
+```bash
+python tools/check_public_boundary.py
+```
+
+The PDF renderer resolves cross-document annotations against the public GitHub repository. It must not
+use a checkout directory as its base URL: doing so embeds a local `file:` annotation and makes the PDF
+bytes depend on the build path.
+
+Secret checks use the standard Gitleaks rules. `.gitleaksignore` contains two exact historical finding
+fingerprints for the same prose-only false positive: a sentence naming Argon2id and XChaCha20-Poly1305
+as encrypted-keystore algorithms. The entries do not suppress a file, commit, rule, or future finding.
+
+```bash
+gitleaks dir --redact .
+gitleaks git --redact --log-opts=--all
+```
+
 System libraries WeasyPrint needs (Debian / Ubuntu):
 
 ```bash
@@ -32,7 +64,9 @@ The script writes outputs **in place** next to each markdown source. Review the 
 ```
 tools/
 ├── README.md            — this file
-├── build.py             — the generator (single file, no project dependencies)
+├── build.py             — the HTML/PDF generator
+├── check_public_boundary.py — public-only path/content/artifact gate (standard library only)
+├── check_truth.py       — public capability-boundary regression gate (standard library only)
 ├── requirements.txt     — pinned Python deps
 └── fonts/               — bundled IBM Plex woff2 (OFL 1.1)
     ├── ibm-plex-sans-latin-{400,500,600,700}-normal.woff2
