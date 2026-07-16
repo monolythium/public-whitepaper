@@ -22,8 +22,11 @@ the target agent-commerce suite, spending-policy/USDC agent-payment routes, Stel
 economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also rejects stale
 Stele hostname-reservation or unavailable-deployment language. Every public status surface must preserve
 the dated live-preview link, zero-service catalog, Browser Wallet v0.4.5 prerelease label, exact hosted
-and local MCP tool counts, and the economic-write, transaction-signing, and mainnet-off gates. It can be
-run directly without the rendering dependencies:
+and local MCP tool counts, public-web inspect-only draft boundary, published-listing prerequisite, and
+the economic-write, transaction-signing, and mainnet-off gates. Correct anchors do not mask conflicting
+copy: nonzero inventory, wrong tool counts, a transaction-capable local MCP, public-web draft creation,
+draft preparation without a listing, or an enabled gated capability each fail the build. It can be run
+directly without the rendering dependencies:
 
 ```bash
 python tools/check_truth.py

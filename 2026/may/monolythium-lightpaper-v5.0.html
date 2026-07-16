@@ -501,12 +501,15 @@ surrounding narrative. What changed, and why:</p>
     2026-07-16, the public preview is live at
     <a href="https://stele.monolythium.com">stele.monolythium.com</a> with zero published services. Browser Wallet
     v0.4.5 is a prerelease and owns identity proof; Stele&rsquo;s hosted services never receive wallet
-    secrets. Hosted Stele MCP is keyless and exposes exactly two OAuth-protected tools: public catalog
-    search and bounded, non-economic booking-draft preparation. The isolated local Stele MCP exposes
-    exactly three read/status tools and no transaction tool. Economic writes, transaction signing, and
-    mainnet remain off. The current product line retires embedded Stele, but legacy or unreconciled
-    desktop builds may retain a gated historical surface until reviewed removal and migration are
-    released. Provider publication, E2EE rooms, settlement, disputes, and reviews remain gated.</li>
+    secrets. The public web authenticates users through Browser Wallet and can inspect an existing valid
+    non-economic approval preview; it does not create drafts. Hosted Stele MCP is keyless and exposes
+    exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft
+    preparation. Draft preparation is unavailable without a published listing. The isolated local
+    Stele MCP exposes exactly three read/status tools and no transaction tool. Economic writes,
+    transaction signing, and mainnet remain off. The current product line retires embedded Stele, but
+    legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal
+    and migration are released. Provider publication, E2EE rooms, settlement, disputes, and reviews
+    remain gated.</li>
 </ol>
 <p><strong>Dated network-status note — 2026-07-16.</strong> The registered v0.4.0 development-network endpoint was
 reachable but stalled at height 74,907 with latest timestamp 2026-07-08T22:39:05Z during repeated
@@ -806,7 +809,7 @@ checks. Treat it as degraded/stale, not as production settlement or network-live
 <p>The target requires <strong>typed, versioned, wallet-visible actions</strong> rather than free-text RPC. Provisional names include <code>pay_vendor</code>, <code>open_escrow</code>, <code>release_escrow</code>, <code>refund_payment</code>, <code>book_service</code>, <code>place_trade</code>, <code>set_spending_policy</code>, <code>revoke_agent_permission</code>, <code>verify_receipt</code>, and <code>rate_vendor</code>.</p>
 <p>These are not current SDK methods or MCP transaction tools. The intended safety property is that a released wallet and activated protocol validate the same schema while the user retains authority.</p>
 <h3 id="stele-boundary">Stele boundary</h3>
-<p>Stele&rsquo;s release architecture is a standalone public web product. As of 2026-07-16, the public preview is live at <a href="https://stele.monolythium.com">stele.monolythium.com</a> with zero published services. Browser Wallet v0.4.5 is a prerelease; it owns identity proof, while Stele&rsquo;s hosted services never receive wallet secrets. Hosted Stele MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. The isolated local Stele MCP exposes exactly three read/status tools and no transaction tool. Neither MCP holds a wallet, signs, broadcasts, or settles. Economic writes, transaction signing, and mainnet remain off. Provider publication, E2EE rooms, settlement, disputes, and reviews remain separately gated. The target desktop product line retires the Stele marketplace surface; legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal and migration are released.</p>
+<p>Stele&rsquo;s release architecture is a standalone public web product. As of 2026-07-16, the public preview is live at <a href="https://stele.monolythium.com">stele.monolythium.com</a> with zero published services. Browser Wallet v0.4.5 is a prerelease; it owns identity proof, while Stele&rsquo;s hosted services never receive wallet secrets. The public web authenticates users through Browser Wallet and can inspect an existing valid non-economic approval preview; it does not create drafts. Hosted Stele MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. Draft preparation is unavailable without a published listing. The isolated local Stele MCP exposes exactly three read/status tools and no transaction tool. Neither MCP holds a wallet, signs, broadcasts, or settles. Economic writes, transaction signing, and mainnet remain off. Provider publication, E2EE rooms, settlement, disputes, and reviews remain separately gated. The target desktop product line retires the Stele marketplace surface; legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal and migration are released.</p>
 <hr>
 <h2 id="7-identity-addresses-mnemonics-and-names">7. Identity: Addresses, Mnemonics, and Names</h2>
 <h3 id="bech32m-only-display">Bech32m-only display</h3>
