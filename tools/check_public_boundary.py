@@ -173,6 +173,10 @@ def scan(root: Path = ROOT) -> tuple[list[str], int]:
         if not (root / relative).is_file():
             failures.append(f"allowlisted PDF is missing: {relative}")
 
+    builder = (root / "tools/build.py").read_bytes()
+    if re.search(rb"presentational_hints\s*=\s*True\b", builder):
+        failures.append("tools/build.py enables unsafe HTML presentational hints")
+
     return sorted(set(failures)), len(files)
 
 
