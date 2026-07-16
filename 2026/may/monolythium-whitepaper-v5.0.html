@@ -436,6 +436,85 @@ body {
 </section>
 
 <article class="wp-body">
+<blockquote>
+<p><strong>v6 reconciliation — updated 2026-07-16.</strong> This is the v5.1 text (June 2026) with a set of factual
+corrections applied so that it matches the running Monolythium v2 chain (LythiumDAG-BFT) as of the
+<strong>v0.4.0 re-genesis of 2026-07-07</strong>. The affected sections have been rewritten in place; a full v6
+edition will re-scope the surrounding narrative. What changed relative to v5.1, and why:</p>
+<ol>
+<li><strong>Cross-chain interop is now an external-provider integration, not an in-tree bridge.</strong> The entire
+   in-tree bridge stack — the on-chain bridge proof verifier, the route-policy, fee, and insurance
+   scaffolding, and the associated build feature — has been <strong>removed</strong> from the protocol. The chain
+   no longer verifies bridge proofs on-chain. Interoperability with external chains is instead
+   delivered by integrating an <strong>external interop provider</strong> (evaluation in progress; described
+   vendor-neutrally throughout). This moves the highest-risk, audit-heavy surface out of consensus and
+   lets interop evolve without a re-genesis while the core stays post-quantum and lean. §20 is
+   rewritten accordingly and the passing &ldquo;zero-knowledge / light-client bridge&rdquo; references elsewhere
+   are updated.</li>
+<li><strong>The application-layer Groth16-BN254 / SP1 zero-knowledge verifier is disabled at genesis.</strong> The
+   intended direction is a post-quantum FRI/STARK verifier that ships <strong>gated off</strong> until it is ready;
+   until then no application-layer ZK verifier is reachable on the value path. As stated in §12.4,
+   consensus finality is pure ML-DSA-65 and never depended on it.</li>
+<li><strong>The encrypted mempool (&ldquo;LythiumSeal&rdquo;, §12.5) has been removed.</strong> v2 runs a <strong>plaintext</strong> mempool;
+   ordering fairness is handled at the DAG-consensus layer. The threshold-decryption sealing design was
+   dropped — it relied on the same shared/threshold-key machinery that per-operator DVT multisig
+   replaced.</li>
+<li><strong>DVT uses a per-operator ML-DSA-65 multisig, not shared or threshold keys.</strong> Any earlier
+   FROST/DKG/threshold-BLS shared-key construction is gone: each operator signs with its own
+   independent ML-DSA-65 key and a cluster certificate is a 7-of-10 bitmap of those raw signatures,
+   with no shared key and no key-setup ceremony.</li>
+<li><strong>Cross-cluster finality quorum is count-based, not stake-weighted.</strong> An anchor is final once a
+   2f+1 <strong>count-based</strong> quorum of clusters (each with equal weight) has contributed a valid 7-of-10
+   cluster vote. Stake sets only the top-100 admission rank (§16, §17), never vote weight.</li>
+<li><strong>Confidential (amount-hiding) value transfer has been removed from the protocol and is not live.</strong>
+   Stealth-address recipient privacy and per-account / per-asset privacy policy are live; confidential
+   <em>amounts</em> (the public→private crossing and the shielded spend/exit value path) are <strong>not
+   implemented</strong>. The earlier Ristretto/Pedersen + Bulletproofs construction was <strong>deleted</strong> rather
+   than left disabled: an audit found its commitment path could mint unbacked value, and a disabled
+   precompile is a weak guarantee when a signed configuration entry could re-arm it. Confidential
+   amounts are now described as a future post-quantum capability rather than a present-tense or gated
+   feature (§5, §12, §19).</li>
+<li><strong>The on-chain prover / GPU proof market and service-tier oracle-feed payments (§16.3, §17.3,
+   §17.4) are gated off at genesis</strong> and are not reachable on the live chain. They are described as
+   roadmap capabilities.</li>
+<li><strong>Wallet recovery uses a standard 24-word BIP-39 mnemonic</strong> re-derived for ML-DSA-65 as
+   <code>mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]</code>. The
+   earlier &ldquo;PQM-1&rdquo; mnemonic format was dropped; the §13.3 PQM-1 domain string and seed-layout table
+   are <strong>superseded</strong> (see the banner in §13.3) and must not be used to derive addresses.</li>
+<li><strong>The live testnet is a 4×10 DVT fleet</strong> (four clusters of ten operators, 7-of-10 each) plus two
+   relays — 42 nodes — not a single cluster; the per-cluster bandwidth figures in §12.4 are still
+   correct per cluster. Four clusters put the cross-cluster quorum at 2f+1 with <strong>f = 1</strong>, so a whole
+   cluster can fail without halting the chain.</li>
+<li><strong>The SLH-DSA hash-based emergency-backup key and the in-protocol emergency-key registry are
+    removed; there is no on-chain emergency algorithm rotation at launch.</strong> The chain is
+    <strong>ML-DSA-65-only</strong>. The advertised break-glass — a pre-registered SLH-DSA (FIPS 205, hash-based)
+    backup key, the on-chain emergency-key registry, and the algorithm-rotation event that would
+    activate it — was found in audit to be inoperative and has been <strong>removed</strong> from the protocol.
+    Post-quantum <strong>crypto agility</strong> (a second-family backup primitive plus an in-protocol rotation path)
+    is now described as a <strong>future capability to be introduced in a subsequent genesis</strong>, not a
+    present-tense feature; §7 (&ldquo;the quantum hedge&rdquo;), §12.1, §22, and §23.1 are corrected accordingly.
+    The emergency <strong>freeze</strong> circuit breaker (a global, time-bounded pause, §23.2) is a separate
+    mechanism and is unaffected.</li>
+<li><strong>The classical signature code has been removed from the implementation, not merely refused at
+    admission.</strong> §12.1 already stated that ML-DSA-65 is the only signature primitive accepted at
+    transaction admission, and that has always been enforced. But the implementation still <em>carried</em>
+    the classical primitives — secp256k1, Ed25519, WebAuthn P-256 — behind a build flag, along with a
+    classical/post-quantum <strong>hybrid</strong> construction and a wallet-side key-import path for them. None of
+    it could produce a transaction the chain would accept, and §7 argues at length that a hybrid mode
+    should not exist; carrying the code anyway was the gap between the paper and the tree. It is now
+    deleted: the primitives, the crate that hosted them, the hybrid construction, the build flag, and
+    the import paths. Their wire tags are <strong>permanently retired</strong> — a transaction presenting one
+    resolves to no algorithm and is rejected before verification — and the tags are never reused, so
+    every remaining algorithm&rsquo;s wire value is unchanged. The claims in §7 and §12.1 (&ldquo;no classical
+    fallback, no hybrid mode, no ECDSA acceptance path&rdquo;) are therefore now true of the code and not
+    only of the admission gate, and §12.5&rsquo;s statement about the build-enforced lint is corrected to
+    match: there is no longer any allow-listed signature or KEM exception. One classical dependency
+    remains and is disclosed in §12.3 — the peer-to-peer transport&rsquo;s node-identity keys, which
+    authenticate network connections and never consensus or state. The honest claim is <strong>no classical
+    primitive in the protocol path</strong>, not &ldquo;no classical code anywhere in the build.&rdquo;</li>
+</ol>
+<p><em>&ldquo;Sovereignty is not given; it is verified by the silicon and the math.&rdquo;</em></p>
+</blockquote>
 <h2 id="abstract">Abstract</h2>
 <p>Monolythium is a Layer 1 blockchain designed as a settlement layer for the autonomous economy — a future in which humans, companies, AI agents, machines, and software services transact directly on open rails.</p>
 <p>The chain is built around six positions:</p>
@@ -747,9 +826,9 @@ body {
 <td>Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig of independent operator signatures</td>
 </tr>
 <tr>
-<td>Emergency recovery</td>
-<td><strong>SLH-DSA</strong> (FIPS 205, hash-based)</td>
-<td>Pre-registered backup; activated under emergency rotation</td>
+<td>Emergency recovery (removed)</td>
+<td><strong>None at launch — ML-DSA-65-only</strong></td>
+<td>The SLH-DSA hash-based backup key, the emergency-key registry, and in-protocol algorithm rotation are <strong>removed</strong>; a cross-family backup + rotation is a future capability for a subsequent genesis (reconciliation note, item 10)</td>
 </tr>
 <tr>
 <td>Key encapsulation</td>
@@ -783,8 +862,16 @@ body {
 <p>The cost of pure post-quantum is signature size — ML-DSA-65 signatures are roughly 3,309 bytes versus ECDSA&rsquo;s 64 bytes. The cost is real and is paid in storage and bandwidth. The alternative is paying the migration cost twice.</p>
 <h3 id="the-quantum-hedge">The quantum hedge</h3>
 <p>Post-quantum cryptography is not unconditionally future-safe. Cryptographic primitives have historically had finite useful lifetimes, and lattice-based cryptography is no different. The honest position is that ML-DSA-65 is the right choice for the foreseeable horizon, that it will likely remain a good choice for a decade or more, and that a future cryptographic break should be planned for rather than denied.</p>
-<p>The chain plans for it through a small, targeted mechanism: the <strong>emergency-key registry</strong>. A user can pre-register a backup key in a different cryptographic family — specifically SLH-DSA (FIPS 205, hash-based) — alongside their primary ML-DSA-65 key. Hash-based signatures rest on different mathematical assumptions than lattice-based signatures; an attack that breaks ML-DSA does not, on current understanding, break SLH-DSA, and vice versa. Registration is one-time and lives in a registry trie that does not widen the account record.</p>
-<p>If an emergency algorithm rotation is declared, the protocol refuses transactions signed with the broken algorithm at a specified anchor height. Users with a registered backup rotate to their hash-based key and continue transacting. Users without a registered backup are <strong>frozen</strong> — never drainable by the attacker, recoverable through a runbook claim process. The break-day outcome is bounded.</p>
+<blockquote>
+<p><strong>Reconciliation (v6, item 10) — crypto agility is a future capability, not a live feature.</strong> An earlier
+design planned for a break through an in-protocol mechanism: an <strong>emergency-key registry</strong> in which a user
+pre-registered a hash-based <strong>SLH-DSA (FIPS 205)</strong> backup key alongside their ML-DSA-65 key, plus an
+<strong>algorithm-rotation</strong> event that would refuse the broken primitive at a set anchor height and move
+registered users to their backup. That mechanism was found inoperative in audit and has been <strong>removed</strong>:
+the chain is <strong>ML-DSA-65-only</strong>, with no second-family backup key and no in-protocol algorithm swap at
+launch.</p>
+</blockquote>
+<p>The honest present-tense posture is that a future ML-DSA-65 break is planned for at the level of <strong>process</strong>, not an armed on-chain switch: the emergency <strong>freeze</strong> circuit breaker (§23.2) can pause transaction admission while a signature-primitive migration is coordinated as a maintainer-and-operator hard fork. Post-quantum <strong>crypto agility</strong> — reintroducing a cross-family backup primitive and an in-protocol rotation path so that a break-day migration is automatic rather than coordinated — is a capability the project intends to bring back <strong>in a subsequent genesis</strong>, and it is described here as future, not live. Hash-based signatures rest on different mathematical assumptions than lattice-based ones, so a cross-family backup remains the right shape for that future mechanism; what changed is that it is no longer present on the chain today.</p>
 <hr>
 <h2 id="8-forking-as-the-exit-path">8. Forking as the Exit Path</h2>
 <p>The chain refuses on-chain governance (§4.1). The replacement model needs an answer to the question: what happens if a significant fraction of holders, operators, or users disagree with the chain&rsquo;s direction?</p>
@@ -918,9 +1005,9 @@ body {
 <td>Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig of independent operator signatures</td>
 </tr>
 <tr>
-<td>Emergency backup signatures</td>
-<td><strong>SLH-DSA</strong> (FIPS 205, hash-based)</td>
-<td>Pre-registered backup; activated under emergency rotation</td>
+<td>Emergency backup signatures (removed)</td>
+<td><strong>None at launch — ML-DSA-65-only</strong></td>
+<td>The SLH-DSA hash-based backup and the emergency-key registry are <strong>removed</strong>; a cross-family backup + in-protocol rotation is a future-genesis capability (§23.1; reconciliation note item 10)</td>
 </tr>
 <tr>
 <td>Key encapsulation</td>
@@ -939,7 +1026,7 @@ body {
 </tr>
 </tbody>
 </table>
-<p>There is no Ed25519 acceptance path. There is no hybrid signature mode. The protocol validates exactly one signature primitive at transaction admission: ML-DSA-65 (with SLH-DSA as the emergency-rotation alternative, never coexistent).</p>
+<p>There is no Ed25519 acceptance path. There is no hybrid signature mode. The protocol validates exactly one signature primitive at transaction admission: ML-DSA-65. The earlier SLH-DSA emergency-rotation alternative has been <strong>removed</strong> (§23.1); there is no second signature primitive on the chain today.</p>
 <h3 id="122-ml-dsa-65-dilithium-level-3">12.2 ML-DSA-65 (Dilithium Level 3)</h3>
 <p><strong>Standard.</strong> NIST FIPS 204, parameter set 3 — security comparable to AES-192.</p>
 <p><strong>Security basis.</strong> Module-Learning-With-Errors (M-LWE) hardness. M-LWE is the lattice problem on which Dilithium rests. No known quantum or classical algorithm breaks M-LWE in feasible time at the parameters used.</p>
@@ -964,7 +1051,7 @@ body {
 <p><strong>At scale.</strong> The cost is perfectly linear: each added voting cluster contributes another ~23.2 KB to the certificate. At the whitepaper&rsquo;s target of roughly 100 clusters with a 2f+1 (67-of-100) quorum, one quorum certificate is about 1.5 MiB; if all 100 clusters vote, about 2.2 MiB. Each anchor carries a small fixed number of such certificates (round, leader, and data-availability quorum certificates). This bandwidth is the price of the post-quantum posture, sized honestly here so operators can provision for it; it is not hidden behind a &ldquo;tiny aggregate&rdquo; claim.</p>
 <h3 id="125-mempool">12.5 Mempool</h3>
 <p>The mempool is plaintext: a transaction body is visible from the moment it enters the mempool until anchor inclusion, and the protocol does not seal or encrypt mempool contents. Transaction-ordering fairness is addressed at the DAG-consensus layer — ordering follows the deterministic DAG linearization rather than a single sequencer&rsquo;s discretion, so a plaintext order is sequenced by consensus rules rather than by privileged pre-inclusion reads.</p>
-<p>The machine-checked <code>no_classical_in_protocol</code> lint is enforced as a hard build fail: the consensus and signature/KEM protocol path carries no classical asymmetric primitive. One documented carve-out is explicitly allow-listed and is neither a consensus signature nor a KEM — the privacy precompile&rsquo;s Ristretto/Pedersen group arithmetic (application-layer confidential transfers). That confidential-transfer path is <strong>gated off at genesis</strong> and is not reachable on the value path: stealth-address recipient privacy is retained, but confidential <em>amount</em> transfer is not active (see §19).</p>
+<p>The machine-checked <code>no_classical_in_protocol</code> lint is enforced as a hard build fail: the consensus and signature/KEM protocol path carries no classical asymmetric primitive. <strong>No signature or KEM carve-out is allow-listed.</strong> The classical primitives — secp256k1, Ed25519, WebAuthn P-256 — the crate that hosted them, and the classical/post-quantum hybrid construction were removed from the tree outright, and their wire tags are permanently retired: a transaction presenting one resolves to no algorithm and is rejected before verification. The lint&rsquo;s only remaining exemptions are the zero-knowledge proof-verifier boundary (§12.6), which is neither a consensus signature nor a KEM and is disabled at genesis, and the peer-to-peer transport&rsquo;s node-identity keys (§12.3), which authenticate network connections rather than consensus or state. The precise claim is therefore <strong>no classical primitive in the protocol path</strong>, not &ldquo;no classical code in the dependency graph.&rdquo; The earlier confidential-transfer exemption (the privacy precompile&rsquo;s Ristretto/Pedersen group arithmetic) is gone because that construction itself was removed (§19).</p>
 <h3 id="126-zero-knowledge-proof-systems">12.6 Zero-knowledge proof systems</h3>
 <p>Application-layer zero-knowledge verification is <strong>disabled at genesis and is not reachable on the live chain</strong>. It is not consumed by the consensus path and never was: consensus finality is pure ML-DSA-65 (§12.4), and no proof system settles state. The earlier design shipped an SP1 zkVM with an on-chain Groth16-BN254 SNARK verifier; that verifier is <strong>not enabled</strong>. The intended direction is a hash-only, fully post-quantum <strong>FRI/STARK verifier</strong>, which ships <strong>gated off</strong> until the proving ecosystem delivers on-chain-verifiable STARK receipts. Because application-layer ZK verification is gated off, no non-post-quantum verifier is reachable on the value path, and an attacker cannot use it to forge the per-anchor ML-DSA-65 finality that settles state.</p>
 <p>When an application-layer verifier is eventually armed, the roadmap targets zero knowledge where it reduces risk the most. Each of the following is a <strong>gated, future capability, not a live one</strong>:</p>
@@ -1640,25 +1727,25 @@ revert(code, data)
 <p>Concretely, the runtime tracks the denomination origin of every value passing through a contract call frame. A call that mixes denominations is rejected at admission. A contract that attempts to read private-denominated state from a public-denominated execution context is rejected. The rule is enforced by the host, not by user code, so no contract can opt out.</p>
 <p>This is the rule that turns the bifurcation from a policy into a structural property. Without the cordon, a sufficiently clever contract could route private LYTH through a public contract and emit it on the public side. With the cordon, that path does not type-check.</p>
 <h3 id="privacy-modes-inside-the-private-denomination">Privacy modes inside the private denomination</h3>
-<p>Some of these are live today; the confidential (amount-hidden) value path is a <strong>gated, not-yet-live capability</strong>. Live now:</p>
+<p>Some of these are live today; the confidential (amount-hidden) value path is <strong>not present in the protocol</strong>. Live now:</p>
 <ul>
 <li><strong>stealth addresses</strong> for sender/recipient unlinkability;</li>
 <li><strong>per-account and per-asset privacy policy</strong> — which privacy levels are legal for an asset and whether KYC is required.</li>
 </ul>
-<p>Gated off at genesis and <strong>not active on the live chain</strong> — the confidential value path (a Pedersen-commitment / Bulletproofs construction) fail-closes at every height:</p>
+<p><strong>Removed from the protocol</strong> — the confidential value path is not implemented and is not reachable at any height. It is described here as a future capability, not a gated one. The earlier design (a Ristretto/Pedersen-commitment construction with Bulletproofs range proofs) was <strong>deleted</strong>, not merely disabled: an audit found the commitment path could mint unbacked value, and a disabled precompile is a weak guarantee — under a signed upgrade channel a single configuration entry could re-arm it. Removing the construction removes that possibility. Any future confidential-amount capability will be a new, post-quantum construction introduced deliberately:</p>
 <ul>
 <li><strong>confidential transactions</strong> for amount hiding;</li>
 <li>the <strong>one-way crossing</strong> from public to private (public→private), with no reverse path;</li>
 <li><strong>transfer to another private (amount-hidden) address</strong>;</li>
 <li><strong>burn</strong> from the private denomination.</li>
 </ul>
-<p>In practice today, you can send to a stealth address and set privacy policy, but you cannot move confidential (amount-hidden) value on-chain. The description of the private denomination in this section and in §4.4 and §5 is the intended design for when that path is armed.</p>
+<p>In practice today, you can send to a stealth address and set privacy policy, but you cannot move confidential (amount-hidden) value on-chain — the protocol has no code that would do so. The description of the private denomination in this section and in §4.4 and §5 is the intended design for when that path is armed.</p>
 <p>A full shielded pool inside the private denomination is not part of the base protocol. The structural separation between public and private is the novel primitive; layering additional privacy machinery on top of bifurcation before bifurcation itself is operationally proven would be premature.</p>
 <h3 id="privacy-at-the-wallet-edge">Privacy at the wallet edge</h3>
 <p>Wallets render the two denominations distinctly. A user moving LYTH from public to private sees the warning explicitly: &ldquo;this is a one-way move; private LYTH cannot return to public.&rdquo; The crossing is intentional and visible, not an accident.</p>
 <hr>
 <h2 id="20-interop-and-the-liquidity-edge">20. Interop and the Liquidity Edge</h2>
-<p>Monolythium needs liquidity but does not need to inherit EVM execution to get it — and, as of the v0.3.4 re-genesis, it no longer ships an <strong>in-tree bridge</strong> to get it either. The entire in-tree bridge stack — the on-chain bridge proof verifier, the route-policy, fee, and insurance scaffolding, and the associated build feature — has been <strong>removed</strong> from the protocol. The chain does not verify bridge proofs on-chain.</p>
+<p>Monolythium needs liquidity but does not need to inherit EVM execution to get it — and it no longer ships an <strong>in-tree bridge</strong> to get it either. The entire in-tree bridge stack — the on-chain bridge proof verifier, the route-policy, fee, and insurance scaffolding, and the associated build feature — has been <strong>removed</strong> from the protocol. The chain does not verify bridge proofs on-chain.</p>
 <p>Cross-chain interoperability is instead delivered by integrating an <strong>external interop provider</strong> (evaluation in progress; described here vendor-neutrally). The rationale is deliberate: running the chain&rsquo;s own bridge verifier in-tree concentrated the highest-risk, audit-heavy surface inside consensus. Moving interop to an external provider takes that surface out of the core, lets interop evolve without a re-genesis, and keeps the base layer post-quantum and lean.</p>
 <p>The liquidity strategy is now two layers:</p>
 <ol>
@@ -1692,7 +1779,7 @@ revert(code, data)
 <h3 id="212-kernel-attack-surface-hardening">21.2 Kernel attack-surface hardening</h3>
 <p>Beyond the absence of a userspace foothold, Monarch OS ships with an aggressively trimmed kernel configuration: features the operator node does not need are not compiled in or are compiled out of autoload.</p>
 <ul>
-<li>The userspace cryptographic kernel API is disabled at kernel-config level. The node binary performs all cryptographic work in-process via Rust libraries (ML-DSA-65, ML-KEM, BLAKE3, SLH-DSA), not via kernel crypto sockets. The entire class of kernel-CVE attacks against userspace crypto APIs is closed off going forward.</li>
+<li>The userspace cryptographic kernel API is disabled at kernel-config level. The node binary performs all cryptographic work in-process via Rust libraries (ML-DSA-65, ML-KEM, BLAKE3), not via kernel crypto sockets. The entire class of kernel-CVE attacks against userspace crypto APIs is closed off going forward.</li>
 <li>Unused kernel subsystems are disabled: virtualization (operators do not host VMs), audio and video, Bluetooth, wireless drivers (operators are wired-network-only), legacy filesystems, and other categories irrelevant to a server-grade operator workload. The smaller the kernel surface, the smaller the future-CVE exposure.</li>
 </ul>
 <p>The crypto-on-OS / crypto-in-app distinction is structural. A chain that signs blocks via system-level cryptographic invocations has a fundamentally different exposure profile than one that signs blocks via in-process Rust libraries. Monolythium chose the latter from genesis. Kernel-CVE classes that target userspace crypto APIs do not affect the operator&rsquo;s signing path at all.</p>
@@ -1749,8 +1836,8 @@ revert(code, data)
 </tr>
 <tr>
 <td>Cryptography (user signatures)</td>
-<td>ML-DSA-65 + emergency-key registry + algorithm rotation</td>
-<td>A primitive break triggers rotation; users with backup keys survive; users without are frozen, not drained</td>
+<td>ML-DSA-65 (only); a break-day migration is handled by process — emergency freeze (§23.2) plus a coordinated hard fork</td>
+<td>A primitive break is a coordinated migration, not an armed on-chain rotation; the in-protocol emergency-key registry and algorithm rotation were removed and return in a future genesis (reconciliation note item 10)</td>
 </tr>
 <tr>
 <td>Interop (external provider)</td>
@@ -1774,8 +1861,8 @@ revert(code, data)
 </tr>
 <tr>
 <td>Recovery</td>
-<td>Emergency-key registry + frozen-account claim flow</td>
-<td>A primitive break or coordinated attack does not allow draining; affected accounts are recoverable</td>
+<td>Emergency freeze (global pause) + Foundation-signed recovery runbooks</td>
+<td>The in-protocol emergency-key registry / frozen-account rotation was <strong>removed</strong> (returns in a future genesis); a break-day migration is coordinated through the freeze and a hard fork rather than an on-chain key swap</td>
 </tr>
 </tbody>
 </table>
@@ -1786,7 +1873,7 @@ revert(code, data)
 <li>that operators will not be compromised individually — instead, the cluster threshold and DVT structure bound the damage;</li>
 <li>that an external interop provider will never be exploited — instead, keeping interop outside consensus bounds the damage to the provider and the assets that transited it, and wallets surface the provider&rsquo;s trust model before a user relies on it;</li>
 <li>that smart contracts will not have bugs — instead, native modules carry the audited primitives and contracts are sandboxed;</li>
-<li>that cryptography will work forever — instead, the emergency-key registry and algorithm rotation provide a planned migration path;</li>
+<li>that cryptography will work forever — instead, a future ML-DSA-65 break is handled by a coordinated migration (the emergency freeze in §23.2 plus a hard fork); the earlier in-protocol emergency-key registry and algorithm rotation were removed and are a future-genesis capability, not a present-tense one;</li>
 <li>that no user will lose funds to social engineering — instead, wallet UX surfaces risk and the chain&rsquo;s runbook + spending-policy model bounds delegated authority.</li>
 </ul>
 <p>Honesty about limits is part of the threat model. A chain that claims invulnerability is a chain whose users are unprepared when invulnerability fails.</p>
@@ -1801,21 +1888,30 @@ revert(code, data)
 <hr>
 <h2 id="23-recovery-and-emergency-posture">23. Recovery and Emergency Posture</h2>
 <p>The chain&rsquo;s recovery posture is designed for two scenarios that are normally underspecified in L1 protocols: a cryptographic primitive breaks, and a coordinated systemic event requires the chain to freeze in place while it is sorted out.</p>
-<h3 id="231-emergency-key-registry">23.1 Emergency-key registry</h3>
-<p>A user can pre-register a backup key in a different cryptographic family (specifically SLH-DSA, FIPS 205) alongside their primary ML-DSA-65 key. The registration is one-time and lives in a registry trie that does not widen the account record.</p>
-<p>The backup key is <strong>never used for normal transactions</strong>. It is dormant unless the protocol declares an emergency algorithm rotation. At that point:</p>
+<h3 id="231-crypto-agility-deferred-to-a-future-genesis">23.1 Crypto agility — deferred to a future genesis</h3>
+<blockquote>
+<p><strong>REMOVED — see the top-of-file reconciliation note (item 10).</strong> The in-protocol <strong>emergency-key
+registry</strong> and the SLH-DSA (FIPS 205) hash-based emergency-backup key described below have been <strong>removed</strong>
+from the protocol. An audit found the advertised break-glass inoperative — the registered backup could not
+actually be used to rotate — so rather than ship a non-functional recovery primitive, the chain is
+<strong>ML-DSA-65-only</strong> at launch with no on-chain emergency algorithm rotation. Post-quantum crypto agility (a
+cross-family backup primitive plus an in-protocol rotation path) is intended to return in a <strong>subsequent
+genesis</strong>. The paragraphs below describe that future design, not a live feature.</p>
+</blockquote>
+<p>The intended design was for a user to pre-register a backup key in a different cryptographic family (specifically SLH-DSA, FIPS 205) alongside their primary ML-DSA-65 key. The registration would be one-time and live in a registry trie that does not widen the account record.</p>
+<p>The backup key would be <strong>never used for normal transactions</strong> — dormant unless the protocol declared an emergency algorithm rotation, at which point:</p>
 <ul>
-<li>the protocol stops accepting signatures using the broken algorithm at a specified anchor height;</li>
-<li>users with a registered backup key sign with the backup key from that anchor forward;</li>
-<li>the wallet UX transitions the user to the backup key transparently;</li>
-<li>users without a registered backup are <strong>frozen</strong> — never drainable by the attacker, recoverable through a runbook-based claim process.</li>
+<li>the protocol would stop accepting signatures using the broken algorithm at a specified anchor height;</li>
+<li>users with a registered backup key would sign with the backup key from that anchor forward;</li>
+<li>the wallet UX would transition the user to the backup key transparently;</li>
+<li>users without a registered backup would be <strong>frozen</strong> — never drainable by the attacker, recoverable through a runbook-based claim process.</li>
 </ul>
-<p>The frozen-account claim process requires the principal to prove control of the account through a series of out-of-band attestations (recovery contacts, KYC linkage if it existed, hardware-bound emergency tokens). The process is documented in the recovery runbook and is designed to be slow and human-checked, so that the very attack that triggered the freeze cannot be used to drain frozen accounts through the recovery channel.</p>
+<p>The frozen-account claim process would require the principal to prove control of the account through a series of out-of-band attestations (recovery contacts, KYC linkage if it existed, hardware-bound emergency tokens), documented in the recovery runbook and designed to be slow and human-checked so that the very attack that triggered the freeze could not be used to drain frozen accounts through the recovery channel. Until this mechanism returns in a future genesis, a break-day migration is instead handled by the emergency <strong>freeze</strong> (§23.2) plus a coordinated hard fork.</p>
 <h3 id="232-emergency-freeze-scope-and-limits">23.2 Emergency freeze — scope and limits</h3>
 <p>In the case of a coordinated systemic event — a discovered cryptographic break before rotation completes, or a confirmed adversarial fork — the chain supports an emergency <strong>freeze</strong> mechanism. The freeze is gated by a multi-signature Foundation key with a declared signer set and a ratification window.</p>
 <p><strong>What the freeze is for</strong> (the entire scope, exhaustively):</p>
 <ul>
-<li>pausing admission of new transactions during a confirmed cryptographic-primitive break, while users transition to the emergency-key registry;</li>
+<li>pausing admission of new transactions during a confirmed cryptographic-primitive break, while a signature-primitive migration is coordinated as a hard fork (the in-protocol emergency-key registry this step once fed is removed — see §23.1);</li>
 <li>pausing transaction admission during a confirmed adversarial fork, until the canonical chain state is re-established.</li>
 </ul>
 <p>Cross-chain interop is handled by an external provider outside consensus (§20), so pausing a compromised interop route is the provider&rsquo;s control surface, not a Monolythium freeze action.</p>
@@ -1967,7 +2063,7 @@ revert(code, data)
 <h2 id="acknowledgments">Acknowledgments</h2>
 <p>The Monolythium protocol is the product of years of design work, research, and engineering by the team at Mono Labs R&amp;D LLC, in coordination with the Monolythium Foundation. The protocol draws on a wide body of academic and open-source work, including:</p>
 <ul>
-<li>the Dilithium, Kyber, and SPHINCS+ post-quantum primitives standardized by NIST as ML-DSA, ML-KEM, and SLH-DSA;</li>
+<li>the Dilithium and Kyber post-quantum primitives standardized by NIST as ML-DSA and ML-KEM;</li>
 <li>the Starfish family of leaderless DAG-BFT consensus protocols;</li>
 <li>the BIP-39 wordlist and bech32m encoding conventions;</li>
 <li>the FRI-based proof-system family and the broader zero-knowledge research community;</li>
@@ -1980,7 +2076,7 @@ revert(code, data)
 <p>Monolythium is operated and stewarded by two entities:</p>
 <ul>
 <li><strong>Mono Labs R&amp;D LLC</strong> — the operating company, based in San Francisco, California. Mono Labs R&amp;D LLC develops the Monolythium protocol, operates the reference client and SDK, and is the seller of record for the LYTH token in jurisdictions where a seller of record is required.</li>
-<li><strong>Monolythium Foundation</strong> — the protocol steward, based in the Cayman Islands. The Foundation operates the chain&rsquo;s emergency-key registry, the Foundation multisig treasury, the genesis name reserve, the emergency-freeze ratification window, and other constitutional-layer functions that require an entity rather than a company.</li>
+<li><strong>Monolythium Foundation</strong> — the protocol steward, based in the Cayman Islands. The Foundation operates the Foundation multisig treasury, the genesis name reserve, the emergency-freeze ratification window, and other constitutional-layer functions that require an entity rather than a company. (The emergency-key registry it would have stewarded is removed — see §23.1.)</li>
 </ul>
 <p>The two entities are independent, with separate governance, separate financial accounts, and separate roles in the protocol&rsquo;s operation.</p>
 <hr>

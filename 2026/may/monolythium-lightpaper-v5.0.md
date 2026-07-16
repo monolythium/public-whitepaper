@@ -12,10 +12,10 @@
 
 ---
 
-> **v6 reconciliation — 2026-07-05.** This text has a set of factual corrections applied so that it
-> matches the running Monolythium v2 chain (LythiumDAG-BFT) as of the v0.3.4 re-genesis. The affected
-> sections have been rewritten in place; a full v6 edition will re-scope the surrounding narrative.
-> What changed, and why:
+> **v6 reconciliation — updated 2026-07-16.** This text has a set of factual corrections applied so
+> that it matches the running Monolythium v2 chain (LythiumDAG-BFT) as of the **v0.4.0 re-genesis of
+> 2026-07-07**. The affected sections have been rewritten in place; a full v6 edition will re-scope the
+> surrounding narrative. What changed, and why:
 >
 > 1. **Cross-chain interop is now an external-provider integration, not an in-tree bridge.** The entire
 >    in-tree bridge stack — the on-chain bridge proof verifier, the route/fee/insurance scaffolding, and
@@ -44,8 +44,18 @@
 > 9. **Wallet recovery uses a standard 24-word BIP-39 mnemonic** re-derived for ML-DSA-65 as
 >    `mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]`; the
 >    earlier "PQM-1" format was dropped and any PQM-1 scheme described below is **superseded**.
-> 10. **The live testnet is a 2×10 DVT fleet** (two clusters of ten operators, 7-of-10 each) plus two
->    relays — 22 nodes — not a single cluster.
+> 10. **The live testnet is a 4×10 DVT fleet** (four clusters of ten operators, 7-of-10 each) plus two
+>    relays — 42 nodes — not a single cluster. Four clusters put the cross-cluster quorum at 2f+1
+>    with **f = 1**, so a whole cluster can fail without halting the chain.
+> 11. **The classical signature code has been removed from the implementation**, not merely refused at
+>     admission. ML-DSA-65 was always the only algorithm accepted at transaction admission, but the
+>     implementation still carried secp256k1, Ed25519 and WebAuthn P-256 behind a build flag, plus a
+>     classical/post-quantum **hybrid** construction and a wallet-side key-import path for them. None of
+>     it could produce a transaction the chain would accept. It is now deleted, and those wire tags are
+>     permanently retired. The claims below ("no classical signature acceptance path", "no classical
+>     fallback", no hybrid) are therefore now true of the code and not only of the admission gate. One
+>     classical dependency remains: the peer-to-peer transport's node-identity keys, which authenticate
+>     network connections and never consensus or state.
 
 ## TL;DR
 
@@ -421,7 +431,7 @@ Delegation is enforced at the protocol layer; day-to-day delegation happens in t
 
 ## 11. Interop and the Liquidity Edge
 
-Monolythium needs liquidity but does not need EVM execution to get it — and, as of the v0.3.4 re-genesis, it no longer ships an **in-tree bridge** to get it either. The entire in-tree bridge stack — the on-chain bridge proof verifier, the route/fee/insurance scaffolding, and the associated build feature — has been **removed** from the protocol. The chain does not verify bridge proofs on-chain.
+Monolythium needs liquidity but does not need EVM execution to get it — and it no longer ships an **in-tree bridge** to get it either. The entire in-tree bridge stack — the on-chain bridge proof verifier, the route/fee/insurance scaffolding, and the associated build feature — has been **removed** from the protocol. The chain does not verify bridge proofs on-chain.
 
 Cross-chain interoperability is instead delivered by integrating an **external interop provider** (evaluation in progress; described here vendor-neutrally). Running the chain's own bridge verifier in-tree concentrated the highest-risk, audit-heavy surface inside consensus; moving interop to an external provider takes that surface out of the core, lets interop evolve without a re-genesis, and keeps the base layer post-quantum and lean. The liquidity strategy is now two layers:
 

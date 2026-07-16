@@ -2,7 +2,7 @@
 
 Release history of the Monolythium public whitepaper.
 
-> **v6 reconciliation — 2026-07-05.** The v5.0/v5.1 entries below describe several constructions that
+> **v6 reconciliation — updated 2026-07-16.** The v5.0/v5.1 entries below describe several constructions that
 > have since changed with the Monolythium v2 (LythiumDAG-BFT) re-genesis. The whitepaper and lightpaper
 > texts have been corrected in place (see the "v6 reconciliation" note at the head of each); a full v6
 > edition will re-scope the surrounding narrative. In summary, relative to v5.1:
@@ -20,15 +20,30 @@ Release history of the Monolythium public whitepaper.
 >   signatures), not FROST/DKG/threshold-shared keys.
 > - **Cross-cluster finality quorum is count-based, not stake-weighted, and block rewards are
 >   service-weighted, not stake-weighted** — stake sets only top-100 admission rank.
-> - **Confidential (amount-hidden) value transfer, the on-chain prover / GPU proof market, and
->   service-tier oracle-feed payments are gated off at genesis** and are not live; stealth-address
->   recipient privacy and privacy policy are live.
+> - **Confidential (amount-hidden) value transfer has been removed from the protocol** and is not
+>   live; stealth-address recipient privacy and privacy policy are live. The Ristretto/Pedersen +
+>   Bulletproofs construction was deleted rather than left disabled — an audit found its commitment
+>   path could mint unbacked value, and a disabled precompile is a weak guarantee when a signed
+>   configuration entry could re-arm it. A future confidential-amount capability will be a new
+>   post-quantum construction.
+> - **The on-chain prover / GPU proof market and service-tier oracle-feed payments are gated off at
+>   genesis** and are not live.
 > - **Wallet recovery uses a standard BIP-39 → ML-DSA-65 mnemonic** (the PQM-1 format was dropped).
 > - **The SLH-DSA hash-based emergency-backup key and the in-protocol emergency-key registry / algorithm
 >   rotation were removed.** The chain is ML-DSA-65-only at launch; the advertised break-glass was audited as
 >   inoperative and taken out. Post-quantum crypto agility (a cross-family backup primitive plus an
 >   in-protocol rotation path) is deferred to a future genesis. The emergency freeze (a global, time-bounded
 >   pause) is a separate mechanism and is unaffected.
+> - **The classical signature code was removed from the implementation, not merely refused at admission.**
+>   ML-DSA-65 was always the only algorithm accepted at transaction admission, but the tree still carried
+>   secp256k1, Ed25519 and WebAuthn P-256 behind a build flag, plus a classical/post-quantum hybrid
+>   construction and a wallet-side key-import path. None of it could produce an acceptable transaction, and
+>   the whitepaper argues a hybrid mode should not exist — carrying the code anyway was the gap between the
+>   paper and the tree. The primitives, the crate hosting them, the hybrid construction, the build flag and
+>   the import paths are deleted, and their wire tags are permanently retired and never reused. The lint now
+>   allows no signature or KEM exception. One classical dependency remains and is disclosed: the
+>   peer-to-peer transport's node-identity keys, which authenticate network connections and never consensus
+>   or state.
 
 ## v5.0 — May 2026
 
@@ -58,7 +73,7 @@ Whitepaper PDF: 81 pages. Lightpaper PDF: 34 pages.
 
 ### Cryptography and identity
 
-- Post-quantum cryptography: ML-DSA-65 user and consensus signatures, ML-KEM-768 key encapsulation, and SLH-DSA emergency backup. Zero-knowledge proofs use SP1 zkVM + Groth16-BN254 on the gated application surface (classical; FRI/STARK is the long-horizon goal, not the shipped verifier). The no_classical_in_protocol lint is green and hard-fails the build: there is no classical signature acceptance path in the protocol. _(Superseded — the SLH-DSA emergency backup was removed; the chain is ML-DSA-65-only and crypto agility is deferred to a future genesis. See the v6 reconciliation note at the head of this changelog.)_
+- Post-quantum cryptography: ML-DSA-65 user and consensus signatures, ML-KEM-768 key encapsulation, and SLH-DSA emergency backup. Zero-knowledge proofs use SP1 zkVM + Groth16-BN254 on the gated application surface (classical; FRI/STARK is the long-horizon goal, not the shipped verifier). The no_classical_in_protocol lint is green and hard-fails the build: there is no classical signature acceptance path in the protocol. _(Superseded — the SLH-DSA emergency backup was removed; the chain is ML-DSA-65-only and crypto agility is deferred to a future genesis. The classical signature code has since been deleted outright rather than merely refused at admission, and the lint now allows no signature or KEM exception. See the v6 reconciliation note at the head of this changelog.)_
 - Single-tier post-quantum finality: a per-operator ML-DSA-65 bitmap-multisig quorum certificate (any seven of a cluster's ten operators' individual signatures form the certificate), with roughly four-to-eight-second anchor finality.
 - Starfish-C consensus: DAG-BFT with deterministic linearization, succinct equivocation proofs, and a post-quantum leader-seed beacon (a domain-separated, chain-id-bound BLAKE3 hash of the ML-DSA-65 quorum certificate that finalizes each anchor).
 - Identity primitives: 20-byte BLAKE3-derived addresses, bech32m display with per-type human-readable prefix discriminator, standard 24-word BIP-39 mnemonic backup (seed re-derived for ML-DSA-65), hierarchical on-chain name registry.

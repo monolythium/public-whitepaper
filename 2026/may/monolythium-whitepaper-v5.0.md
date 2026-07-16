@@ -10,10 +10,10 @@
 
 ---
 
-> **v6 reconciliation — 2026-07-05.** This is the v5.1 text (June 2026) with a set of factual
+> **v6 reconciliation — updated 2026-07-16.** This is the v5.1 text (June 2026) with a set of factual
 > corrections applied so that it matches the running Monolythium v2 chain (LythiumDAG-BFT) as of the
-> v0.3.4 re-genesis. The affected sections have been rewritten in place; a full v6 edition will re-scope
-> the surrounding narrative. What changed relative to v5.1, and why:
+> **v0.4.0 re-genesis of 2026-07-07**. The affected sections have been rewritten in place; a full v6
+> edition will re-scope the surrounding narrative. What changed relative to v5.1, and why:
 >
 > 1. **Cross-chain interop is now an external-provider integration, not an in-tree bridge.** The entire
 >    in-tree bridge stack — the on-chain bridge proof verifier, the route-policy, fee, and insurance
@@ -39,11 +39,14 @@
 > 5. **Cross-cluster finality quorum is count-based, not stake-weighted.** An anchor is final once a
 >    2f+1 **count-based** quorum of clusters (each with equal weight) has contributed a valid 7-of-10
 >    cluster vote. Stake sets only the top-100 admission rank (§16, §17), never vote weight.
-> 6. **Confidential (amount-hiding) value transfer is gated off at genesis and is not live.**
+> 6. **Confidential (amount-hiding) value transfer has been removed from the protocol and is not live.**
 >    Stealth-address recipient privacy and per-account / per-asset privacy policy are live; confidential
->    *amounts* (the public→private crossing and the shielded spend/exit value path) are disabled and
->    fail-closed at every height. Confidential amounts are now described as a gated, future capability
->    rather than a present-tense feature (§5, §12, §19).
+>    *amounts* (the public→private crossing and the shielded spend/exit value path) are **not
+>    implemented**. The earlier Ristretto/Pedersen + Bulletproofs construction was **deleted** rather
+>    than left disabled: an audit found its commitment path could mint unbacked value, and a disabled
+>    precompile is a weak guarantee when a signed configuration entry could re-arm it. Confidential
+>    amounts are now described as a future post-quantum capability rather than a present-tense or gated
+>    feature (§5, §12, §19).
 > 7. **The on-chain prover / GPU proof market and service-tier oracle-feed payments (§16.3, §17.3,
 >    §17.4) are gated off at genesis** and are not reachable on the live chain. They are described as
 >    roadmap capabilities.
@@ -51,9 +54,10 @@
 >    `mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]`. The
 >    earlier "PQM-1" mnemonic format was dropped; the §13.3 PQM-1 domain string and seed-layout table
 >    are **superseded** (see the banner in §13.3) and must not be used to derive addresses.
-> 9. **The live testnet is a 2×10 DVT fleet** (two clusters of ten operators, 7-of-10 each) plus two
->    relays — 22 nodes — not a single cluster; the per-cluster bandwidth figures in §12.4 are still
->    correct per cluster.
+> 9. **The live testnet is a 4×10 DVT fleet** (four clusters of ten operators, 7-of-10 each) plus two
+>    relays — 42 nodes — not a single cluster; the per-cluster bandwidth figures in §12.4 are still
+>    correct per cluster. Four clusters put the cross-cluster quorum at 2f+1 with **f = 1**, so a whole
+>    cluster can fail without halting the chain.
 > 10. **The SLH-DSA hash-based emergency-backup key and the in-protocol emergency-key registry are
 >     removed; there is no on-chain emergency algorithm rotation at launch.** The chain is
 >     **ML-DSA-65-only**. The advertised break-glass — a pre-registered SLH-DSA (FIPS 205, hash-based)
@@ -64,6 +68,23 @@
 >     present-tense feature; §7 ("the quantum hedge"), §12.1, §22, and §23.1 are corrected accordingly.
 >     The emergency **freeze** circuit breaker (a global, time-bounded pause, §23.2) is a separate
 >     mechanism and is unaffected.
+> 11. **The classical signature code has been removed from the implementation, not merely refused at
+>     admission.** §12.1 already stated that ML-DSA-65 is the only signature primitive accepted at
+>     transaction admission, and that has always been enforced. But the implementation still *carried*
+>     the classical primitives — secp256k1, Ed25519, WebAuthn P-256 — behind a build flag, along with a
+>     classical/post-quantum **hybrid** construction and a wallet-side key-import path for them. None of
+>     it could produce a transaction the chain would accept, and §7 argues at length that a hybrid mode
+>     should not exist; carrying the code anyway was the gap between the paper and the tree. It is now
+>     deleted: the primitives, the crate that hosted them, the hybrid construction, the build flag, and
+>     the import paths. Their wire tags are **permanently retired** — a transaction presenting one
+>     resolves to no algorithm and is rejected before verification — and the tags are never reused, so
+>     every remaining algorithm's wire value is unchanged. The claims in §7 and §12.1 ("no classical
+>     fallback, no hybrid mode, no ECDSA acceptance path") are therefore now true of the code and not
+>     only of the admission gate, and §12.5's statement about the build-enforced lint is corrected to
+>     match: there is no longer any allow-listed signature or KEM exception. One classical dependency
+>     remains and is disclosed in §12.3 — the peer-to-peer transport's node-identity keys, which
+>     authenticate network connections and never consensus or state. The honest claim is **no classical
+>     primitive in the protocol path**, not "no classical code anywhere in the build."
 
 > *"Sovereignty is not given; it is verified by the silicon and the math."*
 
@@ -708,7 +729,7 @@ This is the deliberate trade. An anchor certificate is a bundle of raw per-opera
 
 The mempool is plaintext: a transaction body is visible from the moment it enters the mempool until anchor inclusion, and the protocol does not seal or encrypt mempool contents. Transaction-ordering fairness is addressed at the DAG-consensus layer — ordering follows the deterministic DAG linearization rather than a single sequencer's discretion, so a plaintext order is sequenced by consensus rules rather than by privileged pre-inclusion reads.
 
-The machine-checked `no_classical_in_protocol` lint is enforced as a hard build fail: the consensus and signature/KEM protocol path carries no classical asymmetric primitive. One documented carve-out is explicitly allow-listed and is neither a consensus signature nor a KEM — the privacy precompile's Ristretto/Pedersen group arithmetic (application-layer confidential transfers). That confidential-transfer path is **gated off at genesis** and is not reachable on the value path: stealth-address recipient privacy is retained, but confidential *amount* transfer is not active (see §19).
+The machine-checked `no_classical_in_protocol` lint is enforced as a hard build fail: the consensus and signature/KEM protocol path carries no classical asymmetric primitive. **No signature or KEM carve-out is allow-listed.** The classical primitives — secp256k1, Ed25519, WebAuthn P-256 — the crate that hosted them, and the classical/post-quantum hybrid construction were removed from the tree outright, and their wire tags are permanently retired: a transaction presenting one resolves to no algorithm and is rejected before verification. The lint's only remaining exemptions are the zero-knowledge proof-verifier boundary (§12.6), which is neither a consensus signature nor a KEM and is disabled at genesis, and the peer-to-peer transport's node-identity keys (§12.3), which authenticate network connections rather than consensus or state. The precise claim is therefore **no classical primitive in the protocol path**, not "no classical code in the dependency graph." The earlier confidential-transfer exemption (the privacy precompile's Ristretto/Pedersen group arithmetic) is gone because that construction itself was removed (§19).
 
 ### 12.6 Zero-knowledge proof systems
 
@@ -1329,19 +1350,19 @@ This is the rule that turns the bifurcation from a policy into a structural prop
 
 ### Privacy modes inside the private denomination
 
-Some of these are live today; the confidential (amount-hidden) value path is a **gated, not-yet-live capability**. Live now:
+Some of these are live today; the confidential (amount-hidden) value path is **not present in the protocol**. Live now:
 
 - **stealth addresses** for sender/recipient unlinkability;
 - **per-account and per-asset privacy policy** — which privacy levels are legal for an asset and whether KYC is required.
 
-Gated off at genesis and **not active on the live chain** — the confidential value path (a Pedersen-commitment / Bulletproofs construction) fail-closes at every height:
+**Removed from the protocol** — the confidential value path is not implemented and is not reachable at any height. It is described here as a future capability, not a gated one. The earlier design (a Ristretto/Pedersen-commitment construction with Bulletproofs range proofs) was **deleted**, not merely disabled: an audit found the commitment path could mint unbacked value, and a disabled precompile is a weak guarantee — under a signed upgrade channel a single configuration entry could re-arm it. Removing the construction removes that possibility. Any future confidential-amount capability will be a new, post-quantum construction introduced deliberately:
 
 - **confidential transactions** for amount hiding;
 - the **one-way crossing** from public to private (public→private), with no reverse path;
 - **transfer to another private (amount-hidden) address**;
 - **burn** from the private denomination.
 
-In practice today, you can send to a stealth address and set privacy policy, but you cannot move confidential (amount-hidden) value on-chain. The description of the private denomination in this section and in §4.4 and §5 is the intended design for when that path is armed.
+In practice today, you can send to a stealth address and set privacy policy, but you cannot move confidential (amount-hidden) value on-chain — the protocol has no code that would do so. The description of the private denomination in this section and in §4.4 and §5 is the intended design for when that path is armed.
 
 A full shielded pool inside the private denomination is not part of the base protocol. The structural separation between public and private is the novel primitive; layering additional privacy machinery on top of bifurcation before bifurcation itself is operationally proven would be premature.
 
@@ -1353,7 +1374,7 @@ Wallets render the two denominations distinctly. A user moving LYTH from public 
 
 ## 20. Interop and the Liquidity Edge
 
-Monolythium needs liquidity but does not need to inherit EVM execution to get it — and, as of the v0.3.4 re-genesis, it no longer ships an **in-tree bridge** to get it either. The entire in-tree bridge stack — the on-chain bridge proof verifier, the route-policy, fee, and insurance scaffolding, and the associated build feature — has been **removed** from the protocol. The chain does not verify bridge proofs on-chain.
+Monolythium needs liquidity but does not need to inherit EVM execution to get it — and it no longer ships an **in-tree bridge** to get it either. The entire in-tree bridge stack — the on-chain bridge proof verifier, the route-policy, fee, and insurance scaffolding, and the associated build feature — has been **removed** from the protocol. The chain does not verify bridge proofs on-chain.
 
 Cross-chain interoperability is instead delivered by integrating an **external interop provider** (evaluation in progress; described here vendor-neutrally). The rationale is deliberate: running the chain's own bridge verifier in-tree concentrated the highest-risk, audit-heavy surface inside consensus. Moving interop to an external provider takes that surface out of the core, lets interop evolve without a re-genesis, and keeps the base layer post-quantum and lean.
 
