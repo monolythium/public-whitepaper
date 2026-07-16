@@ -50,12 +50,17 @@ Release history of the Monolythium public whitepaper.
 > - **Stele's product architecture is standalone web, not a desktop-wallet marketplace.** As of
 >   2026-07-16, the public preview is live at
 >   [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet
->   v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet. Its
->   wallet-authenticated Provider Studio can create, edit, preview, and delete private wallet-owned
+>   v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet. That authentication
+>   proves only current control of the selected wallet address; it does not prove a human or legal identity,
+>   durable ownership, credentials, or authority. Its wallet-authenticated Provider Studio at
+>   [stele.monolythium.com/studio](https://stele.monolythium.com/studio) can create, edit, preview, and
+>   delete private wallet-owned
 >   provider-listing drafts; these durable provider-listing drafts are not published, discoverable, or
 >   transactable, and provider publication remains off. Booking-approval drafts are separate: the web can
 >   inspect an existing valid non-economic
->   booking-approval draft, but it does not create booking-approval drafts. Hosted Stele MCP is keyless and
+>   booking-approval draft, but it does not create booking-approval drafts. Inspection is read-only and
+>   non-economic: the public web exposes no booking, payment, settlement, or other economic controls.
+>   Hosted Stele MCP is keyless and
 >   exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic
 >   booking-draft preparation. Hosted booking-draft preparation is unavailable without a published listing,
 >   and hosted MCP does not create or access provider-listing drafts. The isolated local Stele MCP exposes

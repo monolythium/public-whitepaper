@@ -51,11 +51,15 @@ class SteleDeploymentTruthTests(unittest.TestCase):
 > [stele.monolythium.com](https://stele.monolythium.com) with zero published services.
 > Browser Wallet
 > v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet.
-> Provider Studio can create, edit, preview, and delete private wallet-owned provider-listing
+> That authentication proves only current control of the selected wallet address; it does not prove
+> a human or legal identity, durable ownership, credentials, or authority.
+> Provider Studio at https://stele.monolythium.com/studio can create, edit, preview, and delete
+> private wallet-owned provider-listing
 > drafts. These durable provider-listing drafts are not published, discoverable, or transactable,
 > and provider publication remains off.
 > Booking-approval drafts are separate. The web can inspect an existing valid non-economic
 > booking-approval draft, but it does not create booking-approval drafts.
+> The public web exposes no booking, payment, settlement, or other economic controls.
 > Hosted Stele MCP exposes exactly two OAuth-protected tools, including booking-draft preparation.
 > It does not create or access provider-listing drafts. Hosted booking-draft preparation is unavailable
 > without a published listing.
@@ -85,6 +89,82 @@ class SteleDeploymentTruthTests(unittest.TestCase):
             "or transactable."
         )
         self.assertEqual([], check_truth.stele_status_contradictions(current))
+
+    def assert_contradiction(self, text: str, expected: str) -> None:
+        labels = {label for _, label in check_truth.stele_status_contradictions(text)}
+        self.assertIn(expected, labels, msg=f"expected rejection for {text!r}")
+
+    def test_hosted_transaction_capability_paraphrases_are_rejected(self) -> None:
+        samples = (
+            "Hosted Stele MCP can sign and broadcast transactions.",
+            "Hosted MCP broadcasts signed transactions.",
+            "Hosted Stele MCP supports transaction submission.",
+            "Hosted MCP offers hosted signing.",
+            "Hosted Stele MCP has wallet custody.",
+        )
+        for sample in samples:
+            with self.subTest(sample=sample):
+                self.assert_contradiction(
+                    sample, "hosted Stele MCP claims transaction capability"
+                )
+
+    def test_public_web_forbidden_capability_paraphrases_are_rejected(self) -> None:
+        samples = (
+            (
+                "The public web can publish provider listings.",
+                "public web claims provider-publication authority",
+            ),
+            (
+                "The Stele web supports provider publication.",
+                "public web claims provider-publication authority",
+            ),
+            (
+                "Provider publication is available through the public web.",
+                "provider publication assigned to public web",
+            ),
+            (
+                "The public web includes booking, payment, and settlement controls.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "The web app can pay providers.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "Settlement controls are live on the Stele web.",
+                "booking, payment, settlement, or economic controls assigned to public web",
+            ),
+        )
+        for sample, expected in samples:
+            with self.subTest(sample=sample):
+                self.assert_contradiction(sample, expected)
+
+    def test_wallet_authentication_identity_overclaims_are_rejected(self) -> None:
+        samples = (
+            "Browser Wallet owns identity proof.",
+            "Browser Wallet proves human identity.",
+            "Wallet authentication verifies legal identity.",
+            "That authentication establishes authority.",
+        )
+        for sample in samples:
+            with self.subTest(sample=sample):
+                self.assert_contradiction(
+                    sample, "wallet authentication presented as identity proof"
+                )
+
+    def test_historical_future_gated_and_negative_copy_is_allowed(self) -> None:
+        samples = (
+            "Hosted Stele MCP does not sign or broadcast transactions.",
+            "A future Hosted Stele MCP could support transaction signing after a separate release.",
+            "The public web exposes no booking, payment, settlement, or other economic controls.",
+            "The public web will support payments only after protocol activation.",
+            "The retired public web used to offer payment controls.",
+            "Provider publication could be available through a future public web after release.",
+            "Wallet authentication does not prove human identity or authority.",
+        )
+        for sample in samples:
+            with self.subTest(sample=sample):
+                self.assertEqual([], check_truth.stele_status_contradictions(sample))
 
 
 class SteleTruthMainBlackBoxTests(unittest.TestCase):
@@ -254,6 +334,50 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
             "provider publication remains off.",
             "provider publication remains off. Provider publication is enabled.",
             "Stele provider publication incorrectly presented as enabled",
+        )
+
+    def test_main_rejects_hosted_signing_and_broadcast_adversarial_copy(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "Economic writes, transaction signing, and mainnet remain off.",
+            "Economic writes, transaction signing, and mainnet remain off. "
+            "Hosted Stele MCP can sign and broadcast transactions.",
+            "hosted Stele MCP claims transaction capability",
+        )
+
+    def test_main_rejects_public_web_economic_controls_adversarial_copy(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "Economic writes, transaction signing, and mainnet remain off.",
+            "Economic writes, transaction signing, and mainnet remain off. "
+            "The public web includes booking, payment, and settlement controls.",
+            "public web claims booking, payment, settlement, or economic controls",
+        )
+
+    def test_main_rejects_public_web_publication_adversarial_copy(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "Economic writes, transaction signing, and mainnet remain off.",
+            "Economic writes, transaction signing, and mainnet remain off. "
+            "The public web can publish provider listings.",
+            "public web claims provider-publication authority",
+        )
+
+    def test_main_rejects_identity_overclaim_when_correct_anchor_remains(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "Economic writes, transaction signing, and mainnet remain off.",
+            "Economic writes, transaction signing, and mainnet remain off. "
+            "Browser Wallet proves human identity.",
+            "wallet authentication presented as identity proof",
+        )
+
+    def test_main_requires_exact_provider_studio_route(self) -> None:
+        self.run_mutation(
+            "README.md",
+            "https://stele.monolythium.com/studio",
+            "https://stele.monolythium.com/providers",
+            "missing Stele status anchor 'https://stele.monolythium.com/studio'",
         )
 
 

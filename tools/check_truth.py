@@ -102,9 +102,12 @@ REQUIRED = (
 STELE_STATUS_REQUIRED = (
     "public preview is live at",
     "https://stele.monolythium.com",
+    "https://stele.monolythium.com/studio",
     "zero published services",
     "Browser Wallet v0.4.5 is a prerelease",
     "public web authenticates users through Browser Wallet",
+    "authentication proves only current control of the selected wallet address",
+    "does not prove a human or legal identity, durable ownership, credentials, or authority",
     "Provider Studio",
     "create, edit, preview, and delete private wallet-owned provider-listing drafts",
     "durable provider-listing drafts",
@@ -113,6 +116,7 @@ STELE_STATUS_REQUIRED = (
     "Booking-approval drafts are separate",
     "inspect an existing valid non-economic booking-approval draft",
     "does not create booking-approval drafts",
+    "public web exposes no booking, payment, settlement, or other economic controls",
     "Hosted Stele MCP",
     "exactly two OAuth-protected tools",
     "booking-draft preparation",
@@ -265,6 +269,93 @@ PROVIDER_DRAFT_BOUNDARY = {
     ),
 }
 
+IDENTITY_OVERCLAIMS = {
+    "wallet authentication presented as identity proof": re.compile(
+        r"\b(?:Browser\s+Wallet|wallet\s+authentication|that\s+authentication)\b"
+        r"(?:(?![.!?]).){0,180}?\b(?:"
+        r"owns?\s+(?:the\s+)?identity\s+proof|"
+        r"(?:can|does|now|currently)\s+(?!not\b)"
+        r"(?:prove|verify|establish)\w*\s+(?:an?\s+|the\s+|user(?:'s)?\s+){0,3}"
+        r"(?:human\s+|legal\s+|real-world\s+)?(?:identity|credentials|authority|ownership)|"
+        r"(?<!not\s)(?<!never\s)(?:proves|verifies|establishes)\s+"
+        r"(?:an?\s+|the\s+|user(?:'s)?\s+){0,3}"
+        r"(?:human\s+|legal\s+|real-world\s+)?(?:identity|credentials|authority|ownership)"
+        r")\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
+PUBLIC_WEB_FORBIDDEN_CAPABILITIES = {
+    "public web claims provider-publication authority": re.compile(
+        r"\b(?:the\s+)?(?:public\s+web|Stele\s+web|web\s+app)\b"
+        r"(?:(?![.!?]).){0,180}?\b(?:"
+        r"(?:can|does|now|currently)\s+(?!not\b)(?:publish|list)\w*"
+        r"(?:(?![.!?]).){0,80}?\b(?:provider|service)\s+listings?\b|"
+        r"(?<!not\s)(?<!never\s)(?:publishes|lists)\s+"
+        r"(?:provider|service)\s+listings?\b|"
+        r"(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:supports?|enables?|offers?|provides?|exposes?|includes?|has)"
+        r"\s+(?!no\b|not\b)(?:provider\s+publication|publication\s+controls?)\b"
+        r")",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    "provider publication assigned to public web": re.compile(
+        r"\bprovider\s+publication\b(?:(?![.!?]).){0,120}?\b"
+        r"(?:is|remains?)\s+(?:now\s+)?(?:available|enabled|live|active|operational)\b"
+        r"(?:(?![.!?]).){0,80}?\b(?:on|through|in)\s+(?:the\s+)?"
+        r"(?:public\s+web|Stele\s+web|web\s+app)\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    "public web claims booking, payment, settlement, or economic controls": re.compile(
+        r"\b(?:the\s+)?(?:public\s+web|Stele\s+web|web\s+app)\b"
+        r"(?:(?![.!?]).){0,180}?\b(?:"
+        r"(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:includes?|offers?|provides?|exposes?|supports?|enables?|has)"
+        r"\s+(?!no\b|not\b)(?:(?![.!?]).){0,120}?\b"
+        r"(?:booking|payment|settlement|economic)\s+"
+        r"(?:controls?|actions?|buttons?|workflows?)\b|"
+        r"(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:supports?|enables?|offers?|provides?|handles?)"
+        r"\s+(?!no\b|not\b)(?:bookings?|payments?|settlements?)\b|"
+        r"(?:can|does|now|currently)\s+(?!not\b)"
+        r"(?:book|pay|settle|purchase|execute)\w*\b"
+        r")",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    "booking, payment, settlement, or economic controls assigned to public web": re.compile(
+        r"\b(?:booking|payment|settlement|economic)\s+"
+        r"(?:controls?|actions?|buttons?|workflows?)\b"
+        r"(?:(?![.!?]).){0,120}?\b(?:are|remain)\s+(?:now\s+)?"
+        r"(?:available|enabled|live|active|operational)\b"
+        r"(?:(?![.!?]).){0,80}?\b(?:on|through|in)\s+(?:the\s+)?"
+        r"(?:public\s+web|Stele\s+web|web\s+app)\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
+HOSTED_TRANSACTION_ENABLED = {
+    "hosted Stele MCP claims transaction capability": re.compile(
+        r"\b(?:can|does|now|currently)\s+(?!not\b)"
+        r"(?:create|prepare|sign|broadcast|submit|settle|execute)\w*\b"
+        r"(?:(?![.!?]).){0,120}?\b(?:transactions?|payments?|settlements?)\b|"
+        r"\b(?<!not\s)(?<!never\s)(?:signs|broadcasts|submits|settles|executes)\b"
+        r"(?:(?![.!?]).){0,100}?\b(?:transactions?|payments?|settlements?)\b|"
+        r"\b(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:supports?|enables?|offers?|provides?)\s+"
+        r"(?!no\b|not\b)(?:hosted\s+|wallet\s+|transaction\s+){0,3}"
+        r"(?:signing|broadcast|submission|settlement|transaction\s+tools?)\b|"
+        r"\bhosted\s+(?:transaction\s+)?(?:signing|broadcast)\s+"
+        r"(?:is|remains?)\s+(?:now\s+)?(?:available|enabled|live|active|operational)\b|"
+        r"\b(?<!not\s)(?<!never\s)(?:has|holds|keeps)\s+"
+        r"(?:wallet\s+)?(?:custody|private\s+keys?|signing\s+keys?)\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
 LOCAL_TRANSACTION_ENABLED = {
     "local Stele MCP claims transaction capability": re.compile(
         r"\btransaction-capable\b|"
@@ -333,6 +424,13 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
                     )
                 )
 
+        if kind == "hosted":
+            segment = prose[surface.start() : segment_end]
+            for label, pattern in HOSTED_TRANSACTION_ENABLED.items():
+                match = pattern.search(segment)
+                if match:
+                    contradictions.append((surface.start() + match.start(), label))
+
         if kind == "local":
             segment = prose[surface.start() : segment_end]
             for label, pattern in LOCAL_TRANSACTION_ENABLED.items():
@@ -356,6 +454,8 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
         STALE_PUBLIC_WEB_DRAFT_DENIAL,
         BOOKING_DRAFT_WITHOUT_LISTING,
         PROVIDER_DRAFT_BOUNDARY,
+        IDENTITY_OVERCLAIMS,
+        PUBLIC_WEB_FORBIDDEN_CAPABILITIES,
     ):
         for label, pattern in patterns.items():
             for match in pattern.finditer(prose):

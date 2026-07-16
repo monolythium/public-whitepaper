@@ -536,13 +536,18 @@ edition will re-scope the surrounding narrative. What changed relative to v5.1, 
 <li><strong>Stele&rsquo;s product architecture is standalone web, not an embedded desktop-wallet marketplace.</strong>
     As of 2026-07-16, the public preview is live at
     <a href="https://stele.monolythium.com">stele.monolythium.com</a> with zero published services. Browser Wallet
-    v0.4.5 is a prerelease and owns identity proof; Stele&rsquo;s hosted services never receive wallet
-    secrets. The public web authenticates users through Browser Wallet. Its wallet-authenticated Provider
-    Studio can create, edit, preview, and delete private wallet-owned provider-listing drafts; these
+    v0.4.5 is a prerelease; Stele&rsquo;s hosted services never receive wallet secrets. The public web
+    authenticates users through Browser Wallet. That authentication proves only current control of the
+    selected wallet address; it does not prove a human or legal identity, durable ownership, credentials,
+    or authority. Its wallet-authenticated Provider Studio at
+    <a href="https://stele.monolythium.com/studio">stele.monolythium.com/studio</a> can create, edit, preview, and
+    delete private wallet-owned provider-listing drafts; these
     durable provider-listing drafts are not published, discoverable, or transactable, and provider
     publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid
     non-economic booking-approval draft, but
-    it does not create booking-approval drafts. Hosted Stele MCP is keyless and exposes exactly two
+    it does not create booking-approval drafts. Inspection is read-only and non-economic: the public web
+    exposes no booking, payment, settlement, or other economic controls. Hosted Stele MCP is keyless and
+    exposes exactly two
     OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. It
     does not create or access provider-listing drafts, and hosted booking-draft preparation is unavailable
     without a published listing. A separately installed local Stele MCP exposes exactly three read/status
@@ -660,7 +665,7 @@ present-tense wording retained in historical discussion does not override this o
 <blockquote>
 <p><em>The moment an AI assistant can say, &ldquo;Send me 50 USDC to complete this task,&rdquo; the agent-commerce era has started.</em></p>
 </blockquote>
-<p>In the target architecture, that would not give the agent unlimited authority. A user could give an agent a dedicated account, budget, and policy; the agent could request funds or prepare a bounded action, while a released wallet and activated protocol enforced the user&rsquo;s rules. Current Stele integrations do not give an assistant a wallet or transaction tool: hosted MCP is keyless, the isolated local MCP is read/status-only, and economic actions remain user-approved previews.</p>
+<p>In the target architecture, that would not give the agent unlimited authority. A user could give an agent a dedicated account, budget, and policy; the agent could request funds or prepare a bounded action, while a released wallet and activated protocol enforced the user&rsquo;s rules. Current Stele integrations do not give an assistant a wallet or transaction tool: hosted MCP is keyless, the isolated local MCP is read/status-only, booking-approval drafts are non-economic review records, and booking, payment, and settlement controls are unavailable.</p>
 <p>This is different from AI-assisted checkout. A checkout protocol lets an assistant help a user buy from a single merchant. Monolythium&rsquo;s surface is broader: an assistant can have an economic account and operate under user-defined rules across many services, across many providers, without depending on any individual marketplace.</p>
 <h3 id="what-the-chain-does-not-over-claim">What the chain does not over-claim</h3>
 <p>The bet that an open, neutral settlement layer wins as the trust layer behind the agentic economy is not a sure thing. Existing payment networks, large model providers, and cloud platforms are shipping their own agent-payment infrastructure today. The chain&rsquo;s bet is not that those rails disappear. The bet is that <strong>the rails will need a neutral, chain-anchored substrate beneath them</strong> for the parts they cannot supply themselves — enforceable principal-level policy, escrow with dispute resolution, portable cross-platform reputation, and post-quantum-grade long-lived identity.</p>
@@ -1723,7 +1728,7 @@ revert(code, data)
 </ul>
 <p>The intended safety property is a bridge from natural language to a constrained, human-authorized workflow. It depends on the wallet and activated protocol validating the same versioned schema. Until that contract exists, an application must not present any name above as executable.</p>
 <h3 id="1810-stele-product-boundary">18.10 Stele product boundary</h3>
-<p><strong>Stele&rsquo;s release architecture is a standalone public web product, not a marketplace embedded in the desktop wallet.</strong> As of 2026-07-16, the public preview is live at <a href="https://stele.monolythium.com">stele.monolythium.com</a>, and its catalog contains zero published services. Browser Wallet v0.4.5 is a prerelease; it owns identity proof, while Stele&rsquo;s hosted services never receive a seed phrase or private key. The public web authenticates users through Browser Wallet. Its wallet-authenticated Provider Studio can create, edit, preview, and delete private wallet-owned provider-listing drafts. These durable provider-listing drafts are not published, discoverable, or transactable, and provider publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid non-economic booking-approval draft, but it does not create booking-approval drafts.</p>
+<p><strong>Stele&rsquo;s release architecture is a standalone public web product, not a marketplace embedded in the desktop wallet.</strong> As of 2026-07-16, the public preview is live at <a href="https://stele.monolythium.com">stele.monolythium.com</a>, and its catalog contains zero published services. Browser Wallet v0.4.5 is a prerelease, while Stele&rsquo;s hosted services never receive a seed phrase or private key. The public web authenticates users through Browser Wallet. That authentication proves only current control of the selected wallet address; it does not prove a human or legal identity, durable ownership, credentials, or authority. Its wallet-authenticated Provider Studio at <a href="https://stele.monolythium.com/studio">stele.monolythium.com/studio</a> can create, edit, preview, and delete private wallet-owned provider-listing drafts. These durable provider-listing drafts are not published, discoverable, or transactable, and provider publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid non-economic booking-approval draft, but it does not create booking-approval drafts. Inspection is read-only and non-economic: the public web exposes no booking, payment, settlement, or other economic controls.</p>
 <table>
 <thead>
 <tr>
@@ -1735,7 +1740,7 @@ revert(code, data)
 <tbody>
 <tr>
 <td>Public web</td>
-<td>Live public preview; browse the empty public catalog; authenticate through Browser Wallet; use Provider Studio to create, edit, preview, and delete private wallet-owned provider-listing drafts; inspect an existing valid non-economic booking-approval draft; the web does not create booking-approval drafts</td>
+<td>Live public preview; browse the empty public catalog; authenticate through Browser Wallet with proof limited to current control of the selected address; use Provider Studio at <a href="https://stele.monolythium.com/studio">stele.monolythium.com/studio</a> to create, edit, preview, and delete private wallet-owned provider-listing drafts; inspect an existing valid non-economic booking-approval draft; the web does not create booking-approval drafts and exposes no booking, payment, settlement, or other economic controls</td>
 <td>Provider publication, private rooms, settlement, disputes, and reviews</td>
 </tr>
 <tr>
@@ -1750,7 +1755,7 @@ revert(code, data)
 </tr>
 <tr>
 <td>Browser wallet</td>
-<td>v0.4.5 prerelease: authenticate the user and retain human authority</td>
+<td>v0.4.5 prerelease: prove current control of the selected wallet address and retain human authority; authentication does not prove human or legal identity, durable ownership, credentials, or authority</td>
 <td>Display and sign a released, versioned economic transaction only after protocol activation</td>
 </tr>
 <tr>

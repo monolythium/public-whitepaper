@@ -21,18 +21,21 @@ The build first runs `tools/check_truth.py`, which fails closed if public copy r
 the target agent-commerce suite, spending-policy/USDC agent-payment routes, Stele-in-desktop, current
 economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also rejects stale
 Stele hostname-reservation or unavailable-deployment language. Every public status surface must preserve
-the dated live-preview link, zero-service catalog, Browser Wallet v0.4.5 prerelease label, exact hosted
-and local MCP tool counts, and the economic-write, transaction-signing, provider-publication, and
-mainnet-off gates.
+the dated live-preview and exact Provider Studio links, zero-service catalog, Browser Wallet v0.4.5
+prerelease label, address-control-only authentication boundary, exact hosted and local MCP tool counts,
+and the economic-write, transaction-signing, provider-publication, and mainnet-off gates.
 
 The Stele draft gate treats the two released record types separately. It requires the public web's
-wallet-authenticated Provider Studio to be described as create/edit/preview/delete for durable, private
+wallet-authenticated Provider Studio at `https://stele.monolythium.com/studio` to be described as
+create/edit/preview/delete for durable, private
 wallet-owned provider-listing drafts that remain unpublished, off-catalog, MCP-inaccessible, and
 non-transactable. It separately requires hosted MCP booking-approval drafts to remain bounded to an
-existing published listing and public-web inspection. Correct anchors do not mask conflicting copy:
+existing published listing and read-only public-web inspection, with no booking, payment, settlement,
+or other economic controls. Correct anchors do not mask conflicting copy:
 generic claims that the web creates no drafts, claims that the web creates booking-approval drafts,
-hosted-MCP access to provider-listing drafts, draft-class conflation, nonzero inventory, wrong tool
-counts, a transaction-capable local MCP, or any enabled gated capability each fail the build. It can be
+hosted-MCP access to provider-listing drafts, hosted signing or broadcast, draft-class conflation,
+public-web publication or economic controls, nonzero inventory, wrong tool counts, a transaction-capable
+local MCP, identity overclaims, or any enabled gated capability each fail the build. It can be
 run directly without the rendering dependencies:
 
 ```bash
@@ -41,11 +44,12 @@ python -m unittest discover -s tools -p 'test_*.py'
 ```
 
 After rendering, `tools/check_public_boundary.py` inspects the candidate file set and compressed PDF
-streams. It normalizes Unicode and camel-case path components before rejecting draft/private/internal
-variants and private tooling directories. It rejects tracked symlinks before dereferencing them and
-rejects other non-regular tracked entries, along with unpublished markers, local filesystem paths,
-disguised office containers, office files, and every PDF not explicitly allowlisted. The two release
-PDFs are the only current allowlist entries. Run it directly with:
+streams. It reads Git index stages and modes so absent or uninitialized gitlinks, symlinks, unmerged
+entries, and missing regular worktree files fail closed. It normalizes Unicode, combining/format
+characters, camel case, and acronym boundaries before rejecting draft/private/internal variants and
+private tooling directories. It also rejects unpublished markers, local filesystem paths, disguised
+office containers, office files, and every PDF not explicitly allowlisted. The two release PDFs are the
+only current allowlist entries. Run it directly with:
 
 ```bash
 python tools/check_public_boundary.py

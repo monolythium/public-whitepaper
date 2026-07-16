@@ -109,13 +109,18 @@
 > 14. **Stele's product architecture is standalone web, not an embedded desktop-wallet marketplace.**
 >     As of 2026-07-16, the public preview is live at
 >     [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet
->     v0.4.5 is a prerelease and owns identity proof; Stele's hosted services never receive wallet
->     secrets. The public web authenticates users through Browser Wallet. Its wallet-authenticated Provider
->     Studio can create, edit, preview, and delete private wallet-owned provider-listing drafts; these
+>     v0.4.5 is a prerelease; Stele's hosted services never receive wallet secrets. The public web
+>     authenticates users through Browser Wallet. That authentication proves only current control of the
+>     selected wallet address; it does not prove a human or legal identity, durable ownership, credentials,
+>     or authority. Its wallet-authenticated Provider Studio at
+>     [stele.monolythium.com/studio](https://stele.monolythium.com/studio) can create, edit, preview, and
+>     delete private wallet-owned provider-listing drafts; these
 >     durable provider-listing drafts are not published, discoverable, or transactable, and provider
 >     publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid
 >     non-economic booking-approval draft, but
->     it does not create booking-approval drafts. Hosted Stele MCP is keyless and exposes exactly two
+>     it does not create booking-approval drafts. Inspection is read-only and non-economic: the public web
+>     exposes no booking, payment, settlement, or other economic controls. Hosted Stele MCP is keyless and
+>     exposes exactly two
 >     OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. It
 >     does not create or access provider-listing drafts, and hosted booking-draft preparation is unavailable
 >     without a published listing. A separately installed local Stele MCP exposes exactly three read/status
@@ -267,7 +272,7 @@ The simplest way to understand the category is this:
 
 > *The moment an AI assistant can say, "Send me 50 USDC to complete this task," the agent-commerce era has started.*
 
-In the target architecture, that would not give the agent unlimited authority. A user could give an agent a dedicated account, budget, and policy; the agent could request funds or prepare a bounded action, while a released wallet and activated protocol enforced the user's rules. Current Stele integrations do not give an assistant a wallet or transaction tool: hosted MCP is keyless, the isolated local MCP is read/status-only, and economic actions remain user-approved previews.
+In the target architecture, that would not give the agent unlimited authority. A user could give an agent a dedicated account, budget, and policy; the agent could request funds or prepare a bounded action, while a released wallet and activated protocol enforced the user's rules. Current Stele integrations do not give an assistant a wallet or transaction tool: hosted MCP is keyless, the isolated local MCP is read/status-only, booking-approval drafts are non-economic review records, and booking, payment, and settlement controls are unavailable.
 
 This is different from AI-assisted checkout. A checkout protocol lets an assistant help a user buy from a single merchant. Monolythium's surface is broader: an assistant can have an economic account and operate under user-defined rules across many services, across many providers, without depending on any individual marketplace.
 
@@ -1361,14 +1366,14 @@ The intended safety property is a bridge from natural language to a constrained,
 
 ### 18.10 Stele product boundary
 
-**Stele's release architecture is a standalone public web product, not a marketplace embedded in the desktop wallet.** As of 2026-07-16, the public preview is live at [stele.monolythium.com](https://stele.monolythium.com), and its catalog contains zero published services. Browser Wallet v0.4.5 is a prerelease; it owns identity proof, while Stele's hosted services never receive a seed phrase or private key. The public web authenticates users through Browser Wallet. Its wallet-authenticated Provider Studio can create, edit, preview, and delete private wallet-owned provider-listing drafts. These durable provider-listing drafts are not published, discoverable, or transactable, and provider publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid non-economic booking-approval draft, but it does not create booking-approval drafts.
+**Stele's release architecture is a standalone public web product, not a marketplace embedded in the desktop wallet.** As of 2026-07-16, the public preview is live at [stele.monolythium.com](https://stele.monolythium.com), and its catalog contains zero published services. Browser Wallet v0.4.5 is a prerelease, while Stele's hosted services never receive a seed phrase or private key. The public web authenticates users through Browser Wallet. That authentication proves only current control of the selected wallet address; it does not prove a human or legal identity, durable ownership, credentials, or authority. Its wallet-authenticated Provider Studio at [stele.monolythium.com/studio](https://stele.monolythium.com/studio) can create, edit, preview, and delete private wallet-owned provider-listing drafts. These durable provider-listing drafts are not published, discoverable, or transactable, and provider publication remains off. Booking-approval drafts are separate: the web can inspect an existing valid non-economic booking-approval draft, but it does not create booking-approval drafts. Inspection is read-only and non-economic: the public web exposes no booking, payment, settlement, or other economic controls.
 
 | Surface | Public release boundary | Separately gated target |
 |---|---|---|
-| Public web | Live public preview; browse the empty public catalog; authenticate through Browser Wallet; use Provider Studio to create, edit, preview, and delete private wallet-owned provider-listing drafts; inspect an existing valid non-economic booking-approval draft; the web does not create booking-approval drafts | Provider publication, private rooms, settlement, disputes, and reviews |
+| Public web | Live public preview; browse the empty public catalog; authenticate through Browser Wallet with proof limited to current control of the selected address; use Provider Studio at [stele.monolythium.com/studio](https://stele.monolythium.com/studio) to create, edit, preview, and delete private wallet-owned provider-listing drafts; inspect an existing valid non-economic booking-approval draft; the web does not create booking-approval drafts and exposes no booking, payment, settlement, or other economic controls | Provider publication, private rooms, settlement, disputes, and reviews |
 | Hosted Stele MCP | Exactly two keyless, OAuth-protected tools: public catalog search and bounded non-economic booking-draft preparation; hosted booking-draft preparation is unavailable without a published listing; hosted MCP does not create or access provider-listing drafts | Status as a third MCP tool; wallet custody, signing, broadcast, settlement, or autonomous spending |
 | Isolated local Stele MCP | Exactly three read/status tools in the current package | Any transaction tool requires a separately reviewed local signer/SDK contract and explicit user authorization |
-| Browser wallet | v0.4.5 prerelease: authenticate the user and retain human authority | Display and sign a released, versioned economic transaction only after protocol activation |
+| Browser wallet | v0.4.5 prerelease: prove current control of the selected wallet address and retain human authority; authentication does not prove human or legal identity, durable ownership, credentials, or authority | Display and sign a released, versioned economic transaction only after protocol activation |
 | Desktop wallet | Target product line retires the Stele marketplace surface; generic wallet functions remain independent | Legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal and migration ship |
 
 The two draft classes are independent. A provider-listing draft is a durable server-side, wallet-owned candidate service record created in Provider Studio; it can exist while the catalog is empty and has no publication or transaction action. Here, *private* means access-controlled to the authenticated wallet and absent from the public catalog, not local-only storage or end-to-end encryption. A booking-approval draft is a separate, short-lived, non-economic review record prepared through hosted MCP for an existing published listing. Provider Studio does not create it, hosted MCP does not create or access provider-listing drafts, and the review surface cannot publish a listing or make a transaction.
