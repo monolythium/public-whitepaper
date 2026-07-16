@@ -1,0 +1,4 @@
+# Exact historical false positives: prose describing the algorithms used by an
+# encrypted keystore. These fingerprints contain no credential or secret value.
+5c2a6ddebd1aac948f28cb09eb78e9142dfb9916:2026/may/monolythium-lightpaper-v5.0.md:generic-api-key:260
+68fe9f286a0a5c514ddc264b1e24bab43803047c:2026/may/monolythium-lightpaper-v5.0.html:generic-api-key:780

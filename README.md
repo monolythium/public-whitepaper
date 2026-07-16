@@ -39,6 +39,13 @@ public-whitepaper/
 
 Each release is dated and lives under its own folder. The newest release is linked above.
 
+## Public release boundary
+
+This repository contains only publishable source and release artifacts. Draft or private working
+material belongs outside the repository. The release gate rejects unpublished markers, local filesystem
+paths, office documents, and PDFs other than the two explicitly approved artifacts listed above. See
+[`tools/README.md`](tools/README.md) for the build, boundary, and secret-scan commands.
+
 ## License
 
 The whitepaper text is published under the **Creative Commons Attribution-ShareAlike 4.0 International License** (CC BY-SA 4.0). See [`LICENSE.md`](LICENSE.md) for the full terms.

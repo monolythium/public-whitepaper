@@ -54,6 +54,10 @@ Release history of the Monolythium public whitepaper.
 >   read/status tools and no transaction tool. Legacy or unreconciled desktop builds may retain a gated
 >   historical surface until reviewed removal and migration are released. The reserved production
 >   hostname is not published as a live link until the actual deployment passes its release gates.
+> - **The public artifact boundary is now fail-closed.** Unpublished working drafts are kept outside the
+>   public repository. The build rejects internal filesystem paths, publication-blocking draft markers,
+>   office documents, and PDFs outside the explicit release allowlist. PDF cross-document annotations
+>   resolve against the public repository so clean builds are independent of checkout location.
 > - **The registered public-network identity was reachable but stale on 2026-07-16.** Repeated RPC checks
 >   remained at height 74,907 with latest timestamp 2026-07-08T22:39:05Z. Registration and topology are not
 >   liveness or production-settlement evidence.

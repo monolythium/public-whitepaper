@@ -1,0 +1,23 @@
+name: Public repository boundary
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Enforce public capability claims
+        run: python3 tools/check_truth.py
+      - name: Enforce public-only artifact boundary
+        run: python3 tools/check_public_boundary.py

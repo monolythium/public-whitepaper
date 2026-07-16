@@ -28,6 +28,7 @@ from pathlib import Path
 import markdown
 from weasyprint import HTML as WeasyHTML
 
+from check_public_boundary import main as check_public_boundary
 from check_truth import main as check_public_truth
 
 
@@ -39,6 +40,9 @@ TOOLS = Path(__file__).resolve().parent
 REPO = TOOLS.parent
 FONTS_DIR = TOOLS / "fonts"
 RELEASES = REPO / "2026" / "may"
+PUBLIC_REPOSITORY_BLOB_ROOT = (
+    "https://github.com/monolythium/public-whitepaper/blob/main/"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -595,7 +599,13 @@ def build_doc(doc: Doc, fonts_css: str) -> tuple[Path, Path]:
 
     out_html.write_text(html_str, encoding="utf-8")
 
-    WeasyHTML(string=html_str, base_url=str(doc.src.parent)).write_pdf(
+    # A local checkout path here becomes a clickable local-file annotation in the
+    # PDF whenever Markdown contains a relative cross-document link. Resolve
+    # those annotations against the stable public repository instead so output
+    # bytes never depend on where the repository was checked out.
+    release_directory = doc.src.parent.relative_to(REPO).as_posix()
+    pdf_base_url = f"{PUBLIC_REPOSITORY_BLOB_ROOT}{release_directory}/"
+    WeasyHTML(string=html_str, base_url=pdf_base_url).write_pdf(
         str(out_pdf),
         presentational_hints=True,
     )
@@ -628,6 +638,9 @@ def main() -> None:
             print(f"  SKIP {doc.slug}: source missing ({doc.src})", file=sys.stderr)
             continue
         build_doc(doc, fonts_css)
+
+    if check_public_boundary() != 0:
+        raise SystemExit("refusing to keep artifacts that cross the public boundary")
 
     print("done", file=sys.stderr)
 
