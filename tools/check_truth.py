@@ -13,6 +13,11 @@ DOCUMENTS = (
     ROOT / "2026/may/monolythium-whitepaper-v5.0.md",
     ROOT / "2026/may/monolythium-lightpaper-v5.0.md",
 )
+STELE_STATUS_DOCUMENTS = (
+    *DOCUMENTS,
+    ROOT / "README.md",
+    ROOT / "CHANGELOG.md",
+)
 
 FORBIDDEN = {
     "agent suite presented as shipped": re.compile(
@@ -33,10 +38,6 @@ FORBIDDEN = {
     ),
     "hosted MCP status presented as a third capability": re.compile(
         r"\bHosted Stele MCP\s*\|\s*Keyless catalog search, status\b",
-        re.IGNORECASE,
-    ),
-    "live Stele link before deployment gate": re.compile(
-        r"(?:\]\(|<)https://stele\.monolythium\.com(?:/)?(?:\)|>)",
         re.IGNORECASE,
     ),
     "current USDC agent-payment route": re.compile(
@@ -66,6 +67,26 @@ FORBIDDEN = {
     ),
 }
 
+STALE_STELE_DEPLOYMENT = {
+    "Stele hostname still described as reserved": re.compile(
+        r"\b(?:"
+        r"reserved(?:\s+canonical)?(?:\s+production)?\s+hostname|"
+        r"(?:canonical\s+)?production\s+hostname\s+is\s+reserved|"
+        r"reserved\s+Stele(?:\s+production)?\s+hostname"
+        r")\b",
+        re.IGNORECASE,
+    ),
+    "Stele deployment still described as unavailable": re.compile(
+        r"\b(?:"
+        r"does\s+not\s+publish(?:\s+it)?\s+as\s+a\s+live\s+link|"
+        r"intentionally\s+not\s+(?:a\s+live\s+link|linked)|"
+        r"not\s+published\s+as\s+a\s+live\s+link|"
+        r"publication\s+of.{0,160}?live\s+destination\s+remains\s+gated"
+        r")\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
 REQUIRED = (
     "target agent-commerce",
     "standalone public web product",
@@ -76,9 +97,28 @@ REQUIRED = (
     "public catalog search",
     "booking-draft preparation",
     "legacy or unreconciled desktop builds",
-    "live link",
-    "actual deployment",
 )
+
+STELE_STATUS_REQUIRED = (
+    "public preview is live at",
+    "https://stele.monolythium.com",
+    "zero published services",
+    "Browser Wallet v0.4.5 is a prerelease",
+    "Hosted Stele MCP",
+    "exactly two OAuth-protected tools",
+    "local Stele MCP",
+    "exactly three read/status tools",
+    "no transaction tool",
+    "economic writes",
+    "transaction signing",
+    "mainnet remain off",
+)
+
+
+def folded_prose(text: str) -> str:
+    """Normalize Markdown wrapping before checking required prose anchors."""
+    without_quote_prefixes = re.sub(r"(?m)^>\s?", "", text)
+    return " ".join(without_quote_prefixes.casefold().split())
 
 
 def main() -> int:
@@ -90,11 +130,25 @@ def main() -> int:
             if match:
                 line = text.count("\n", 0, match.start()) + 1
                 failures.append(f"{path.relative_to(ROOT)}:{line}: {label}")
-        folded = text.casefold()
+        folded = folded_prose(text)
         for phrase in REQUIRED:
             if phrase.casefold() not in folded:
                 failures.append(
                     f"{path.relative_to(ROOT)}: missing capability anchor {phrase!r}"
+                )
+
+    for path in STELE_STATUS_DOCUMENTS:
+        text = path.read_text(encoding="utf-8")
+        for label, pattern in STALE_STELE_DEPLOYMENT.items():
+            match = pattern.search(text)
+            if match:
+                line = text.count("\n", 0, match.start()) + 1
+                failures.append(f"{path.relative_to(ROOT)}:{line}: {label}")
+        folded = folded_prose(text)
+        for phrase in STELE_STATUS_REQUIRED:
+            if phrase.casefold() not in folded:
+                failures.append(
+                    f"{path.relative_to(ROOT)}: missing Stele status anchor {phrase!r}"
                 )
 
     if failures:

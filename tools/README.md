@@ -19,12 +19,15 @@ python tools/build.py
 
 The build first runs `tools/check_truth.py`, which fails closed if public copy regresses to presenting
 the target agent-commerce suite, spending-policy/USDC agent-payment routes, Stele-in-desktop, current
-economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also requires the
-legacy-desktop and deployment-gated-link qualifications. It can be run directly without the rendering
-dependencies:
+economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also rejects stale
+Stele hostname-reservation or unavailable-deployment language. Every public status surface must preserve
+the dated live-preview link, zero-service catalog, Browser Wallet v0.4.5 prerelease label, exact hosted
+and local MCP tool counts, and the economic-write, transaction-signing, and mainnet-off gates. It can be
+run directly without the rendering dependencies:
 
 ```bash
 python tools/check_truth.py
+python -m unittest discover -s tools -p 'test_*.py'
 ```
 
 After rendering, `tools/check_public_boundary.py` inspects the candidate file set and compressed PDF
