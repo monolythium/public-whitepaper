@@ -436,6 +436,39 @@ body {
 </section>
 
 <article class="wp-body">
+<blockquote>
+<p><strong>Erratum — v2 (LythiumDAG-BFT) testnet status.</strong> Seven constructions described in this v5.1 text
+have changed with the Monolythium v2 re-genesis, and the running chain no longer matches those
+sections. A full v6 edition will re-scope the text; this note is the interim factual correction.</p>
+<ol>
+<li><strong>The encrypted mempool (&ldquo;LythiumSeal&rdquo;, §12.5) has been removed.</strong> v2 runs a plaintext
+   mempool; transaction-ordering fairness is addressed at the DAG-consensus layer. The LythiumSeal
+   sealing scheme is no longer part of the protocol.</li>
+<li><strong>The application-layer Groth16-BN254 zero-knowledge verifier (§12.6; the &ldquo;Zero-knowledge
+   verification&rdquo; table rows) is disabled at genesis.</strong> The direction is a post-quantum recursive-STARK
+   verifier (the &ldquo;keystone&rdquo;), which ships gated off until it is ready; until then no Groth16 verifier
+   is reachable on the value path. As stated in §12.4, consensus finality remains pure ML-DSA-65 and
+   was never dependent on the application-layer verifier.</li>
+<li><strong>Wallet recovery (§13.3) no longer uses the &ldquo;PQM-1&rdquo; mnemonic format.</strong> The PQM-1 format has been
+   dropped. Wallets and the <code>@monolythium/core-sdk</code> now use a standard 24-word BIP-39 mnemonic, with
+   the seed re-derived for ML-DSA-65 as
+   <code>mldsa_seed = SHAKE256("monolythium.mldsa65.v1" || bip39_pbkdf2_seed(mnemonic, ""))[0:32]</code>.
+   There is no algorithm-tag/version byte header, and the <code>"monolythium.pqm1.v1.mldsa65"</code> domain
+   string and seed-layout table in §13.3 are <strong>superseded</strong>. The §13.3 scheme must not be used to
+   derive addresses; a third-party wallet implementing it would compute the wrong address.</li>
+<li><strong>Testnet topology (§12.4) is no longer single-cluster.</strong> The running testnet is a 2×10 DVT fleet
+   (two clusters of ten operators, 7-of-10 each) plus two relays — 22 nodes total — not the single
+   cluster of ten described in §12.4. The bandwidth figures in §12.4 are still correct <em>per cluster</em>.</li>
+<li><strong>Confidential amounts / amount-hiding (§19 and the privacy discussion in §5) are disabled at
+   genesis.</strong> Confidential transactions are not on the value path; stealth-address recipient privacy
+   is retained, but amount confidentiality is not active on the live chain.</li>
+<li><strong>The on-chain prover market, GPU proof market, and service-tier oracle-feed payments
+   (§16.3, §17.3, §17.4) are gated off at genesis</strong> and are not reachable on the live chain.</li>
+<li><strong>The ZK / light-client bridge routes and the SP1 bridge verifier (§20.3) are draft/paused and
+   gated off.</strong> They should not be treated as live capabilities.</li>
+</ol>
+<p><em>&ldquo;Sovereignty is not given; it is verified by the silicon and the math.&rdquo;</em></p>
+</blockquote>
 <h2 id="abstract">Abstract</h2>
 <p>Monolythium is a Layer 1 blockchain designed as a settlement layer for the autonomous economy — a future in which humans, companies, AI agents, machines, and software services transact directly on open rails.</p>
 <p>The chain is built around six positions:</p>
