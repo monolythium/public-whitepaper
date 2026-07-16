@@ -49,6 +49,10 @@ OFFICE_SUFFIXES = frozenset(
 )
 
 PRIVATE_PATH_TOKENS = frozenset({"draft", "drafts", "internal", "private"})
+PRIVATE_COMPOUND_ENDING = re.compile(
+    r"(?:drafts?|internal|private)"
+    r"(?:docs?|notes?|plans?|files?|materials?|work(?:ing)?)?$"
+)
 PRIVATE_HIDDEN_PATH_PARTS = frozenset(
     {".claude", ".codex", ".cursor", ".idea", ".local"}
 )
@@ -103,6 +107,13 @@ def is_private_path_part(part: str) -> bool:
     folded = separated.casefold().lstrip(".")
     tokens = set(re.findall(r"[a-z0-9]+", folded))
     if tokens & PRIVATE_PATH_TOKENS:
+        return True
+
+    # All-cap and all-lower compound names have no recoverable camel boundary.
+    # Match only known private markers with a narrow terminal work-product
+    # suffix so words such as ``internalization`` and ``privateer`` stay public.
+    compact = re.sub(r"[^a-z0-9]+", "", folded)
+    if PRIVATE_COMPOUND_ENDING.search(compact):
         return True
 
     return bool(

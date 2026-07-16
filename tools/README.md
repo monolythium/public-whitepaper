@@ -21,9 +21,11 @@ The build first runs `tools/check_truth.py`, which fails closed if public copy r
 the target agent-commerce suite, spending-policy/USDC agent-payment routes, Stele-in-desktop, current
 economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also rejects stale
 Stele hostname-reservation or unavailable-deployment language. Every public status surface must preserve
-the dated live-preview and exact Provider Studio links, zero-service catalog, Browser Wallet v0.4.5
-prerelease label, address-control-only authentication boundary, exact hosted and local MCP tool counts,
-and the economic-write, transaction-signing, provider-publication, and mainnet-off gates.
+the dated live-preview and canonical
+`[stele.monolythium.com/studio](https://stele.monolythium.com/studio)` Markdown destination, zero-service
+catalog, Browser Wallet v0.4.5 prerelease label, address-control-only authentication boundary, exact
+hosted and local MCP tool counts, and the economic-write, transaction-signing, provider-publication, and
+mainnet-off gates. A Studio destination with a path suffix, query, or fragment fails the gate.
 
 The Stele draft gate treats the two released record types separately. It requires the public web's
 wallet-authenticated Provider Studio at `https://stele.monolythium.com/studio` to be described as
@@ -35,7 +37,8 @@ or other economic controls. Correct anchors do not mask conflicting copy:
 generic claims that the web creates no drafts, claims that the web creates booking-approval drafts,
 hosted-MCP access to provider-listing drafts, hosted signing or broadcast, draft-class conflation,
 public-web publication or economic controls, nonzero inventory, wrong tool counts, a transaction-capable
-local MCP, identity overclaims, or any enabled gated capability each fail the build. It can be
+local MCP, identity overclaims, the retired economic-action-preview claim, or any enabled gated capability
+each fail the build. It can be
 run directly without the rendering dependencies:
 
 ```bash
@@ -46,8 +49,9 @@ python -m unittest discover -s tools -p 'test_*.py'
 After rendering, `tools/check_public_boundary.py` inspects the candidate file set and compressed PDF
 streams. It reads Git index stages and modes so absent or uninitialized gitlinks, symlinks, unmerged
 entries, and missing regular worktree files fail closed. It normalizes Unicode, combining/format
-characters, camel case, and acronym boundaries before rejecting draft/private/internal variants and
-private tooling directories. It also rejects unpublished markers, local filesystem paths, disguised
+characters, camel case, acronym boundaries, and narrow all-case private-work compounds before rejecting
+draft/private/internal variants and private tooling directories. It also rejects unpublished markers,
+local filesystem paths, disguised
 office containers, office files, and every PDF not explicitly allowlisted. The two release PDFs are the
 only current allowlist entries. Run it directly with:
 

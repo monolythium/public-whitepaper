@@ -23,6 +23,9 @@ class PrivatePathTests(unittest.TestCase):
             "SteleInternal",
             "INTERNALDocs",
             "SteleINTERNALDocs",
+            "INTERNALDOCS",
+            "SteleINTERNALDOCS",
+            "Steleinternaldocs",
             "İnternal",
             "Steleİnternal",
             "In\u200bternalDocs",
@@ -204,24 +207,37 @@ class BoundaryScanTests(unittest.TestCase):
                 "tracked regular file is missing: tracked-release.md", failures
             )
 
-    def test_real_git_index_rejects_acronym_private_path(self) -> None:
+    def test_real_git_index_rejects_private_path_variants(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = self.make_git_root(Path(temporary))
-            candidate = root / "notes" / "SteleINTERNALDocs" / "release.md"
-            candidate.parent.mkdir(parents=True)
-            candidate.write_text("public-looking text\n", encoding="utf-8")
-            self.git(root, "add", "notes/SteleINTERNALDocs/release.md")
+            private_parts = (
+                "SteleINTERNALDocs",
+                "INTERNALDOCS",
+                "SteleINTERNALDOCS",
+                "Steleinternaldocs",
+                "İnternal",
+                "Steleİnternal",
+                "In\u200bternalDocs",
+                "Ｐｒｉｖａｔｅ",
+            )
+            for part in private_parts:
+                candidate = root / "notes" / part / "release.md"
+                candidate.parent.mkdir(parents=True)
+                candidate.write_text("public-looking text\n", encoding="utf-8")
+            self.git(root, "add", "--all")
 
             with mock.patch.object(
                 check_public_boundary, "ALLOWED_PDFS", frozenset()
             ):
                 failures, file_count = check_public_boundary.scan(root)
 
-            self.assertEqual(2, file_count)
-            self.assertIn(
-                "private path is tracked: notes/SteleINTERNALDocs/release.md",
-                failures,
-            )
+            self.assertEqual(len(private_parts) + 1, file_count)
+            for part in private_parts:
+                with self.subTest(part=part):
+                    self.assertIn(
+                        f"private path is tracked: notes/{part}/release.md",
+                        failures,
+                    )
 
 
 if __name__ == "__main__":

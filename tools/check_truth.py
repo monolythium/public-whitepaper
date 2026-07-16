@@ -18,6 +18,7 @@ STELE_STATUS_DOCUMENTS = (
     ROOT / "README.md",
     ROOT / "CHANGELOG.md",
 )
+CANONICAL_STUDIO_MARKDOWN_DESTINATION = "](https://stele.monolythium.com/studio)"
 
 FORBIDDEN = {
     "agent suite presented as shipped": re.compile(
@@ -102,7 +103,6 @@ REQUIRED = (
 STELE_STATUS_REQUIRED = (
     "public preview is live at",
     "https://stele.monolythium.com",
-    "https://stele.monolythium.com/studio",
     "zero published services",
     "Browser Wallet v0.4.5 is a prerelease",
     "public web authenticates users through Browser Wallet",
@@ -275,13 +275,32 @@ IDENTITY_OVERCLAIMS = {
         r"(?:(?![.!?]).){0,180}?\b(?:"
         r"owns?\s+(?:the\s+)?identity\s+proof|"
         r"(?:can|does|now|currently)\s+(?!not\b)"
-        r"(?:prove|verify|establish)\w*\s+(?:an?\s+|the\s+|user(?:'s)?\s+){0,3}"
+        r"(?:prove|verify|establish|confirm|certify|demonstrate)\w*\s+(?:"
+        r"(?:an?\s+|the\s+|user(?:['’]s)?\s+){0,3}"
         r"(?:human\s+|legal\s+|real-world\s+)?(?:identity|credentials|authority|ownership)|"
-        r"(?<!not\s)(?<!never\s)(?:proves|verifies|establishes)\s+"
-        r"(?:an?\s+|the\s+|user(?:'s)?\s+){0,3}"
-        r"(?:human\s+|legal\s+|real-world\s+)?(?:identity|credentials|authority|ownership)"
+        r"who\s+(?:the\s+)?user\s+is)|"
+        r"(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:proves|verifies|establishes|confirms|certifies|demonstrates)\s+(?:"
+        r"(?:an?\s+|the\s+|user(?:['’]s)?\s+){0,3}"
+        r"(?:human\s+|legal\s+|real-world\s+)?(?:identity|credentials|authority|ownership)|"
+        r"who\s+(?:the\s+)?user\s+is)"
         r")\b",
         re.IGNORECASE | re.DOTALL,
+    ),
+}
+
+STUDIO_LINK_VIOLATIONS = {
+    "non-canonical Provider Studio URL": re.compile(
+        r"\bhttps://stele\.monolythium\.com/studio(?:/[^)\s]*|\?[^)\s]*|#[^)\s]*)",
+        re.IGNORECASE,
+    ),
+}
+
+STALE_ECONOMIC_PREVIEW = {
+    "retired economic-preview claim": re.compile(
+        r"\beconomic\s+actions?\s+remain\s+user-approved\s+previews?\b",
+        re.IGNORECASE,
     ),
 }
 
@@ -297,6 +316,14 @@ PUBLIC_WEB_FORBIDDEN_CAPABILITIES = {
         r"(?<!may\s)(?<!might\s)(?<!to\s)"
         r"(?:supports?|enables?|offers?|provides?|exposes?|includes?|has)"
         r"\s+(?!no\b|not\b)(?:provider\s+publication|publication\s+controls?)\b"
+        r"|(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:lets?|allows?)\s+(?!no\b|not\b)(?:providers?|users?)\s+"
+        r"(?:to\s+)?publish\w*\s+(?:(?:provider|service)\s+)?listings?\b"
+        r"|(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:has|contains?|shows?|exposes?)\s+(?!no\b|not\b)(?:an?\s+)?"
+        r"publish[- ]listing\s+(?:button|control|action)\b"
         r")",
         re.IGNORECASE | re.DOTALL,
     ),
@@ -312,7 +339,7 @@ PUBLIC_WEB_FORBIDDEN_CAPABILITIES = {
         r"(?:(?![.!?]).){0,180}?\b(?:"
         r"(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
         r"(?<!may\s)(?<!might\s)(?<!to\s)"
-        r"(?:includes?|offers?|provides?|exposes?|supports?|enables?|has)"
+        r"(?:includes?|contains?|offers?|provides?|exposes?|supports?|enables?|has)"
         r"\s+(?!no\b|not\b)(?:(?![.!?]).){0,120}?\b"
         r"(?:booking|payment|settlement|economic)\s+"
         r"(?:controls?|actions?|buttons?|workflows?)\b|"
@@ -320,6 +347,16 @@ PUBLIC_WEB_FORBIDDEN_CAPABILITIES = {
         r"(?<!may\s)(?<!might\s)(?<!to\s)"
         r"(?:supports?|enables?|offers?|provides?|handles?)"
         r"\s+(?!no\b|not\b)(?:bookings?|payments?|settlements?)\b|"
+        r"(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:accepts?)\s+(?!no\b|not\b)bookings?\b|"
+        r"(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:lets?|allows?)\s+(?!no\b|not\b)(?:users?|customers?)\s+"
+        r"(?:to\s+)?(?:book|pay|purchase|settle)\b|"
+        r"(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)(?<!or\s)"
+        r"(?:process(?:es)?\s+payments?|settles?\s+bookings?)\b|"
         r"(?:can|does|now|currently)\s+(?!not\b)"
         r"(?:book|pay|settle|purchase|execute)\w*\b"
         r")",
@@ -340,14 +377,24 @@ HOSTED_TRANSACTION_ENABLED = {
     "hosted Stele MCP claims transaction capability": re.compile(
         r"\b(?:can|does|now|currently)\s+(?!not\b)"
         r"(?:create|prepare|sign|broadcast|submit|settle|execute)\w*\b"
-        r"(?:(?![.!?]).){0,120}?\b(?:transactions?|payments?|settlements?)\b|"
+        r"(?:(?![.!?]).){0,120}?\b"
+        r"(?:transactions?|payments?|settlements?|wallet\s+payloads?|payloads?)\b|"
         r"\b(?<!not\s)(?<!never\s)(?:signs|broadcasts|submits|settles|executes)\b"
-        r"(?:(?![.!?]).){0,100}?\b(?:transactions?|payments?|settlements?)\b|"
+        r"(?:(?![.!?]).){0,100}?\b"
+        r"(?:transactions?|payments?|settlements?|wallet\s+payloads?|payloads?)\b|"
         r"\b(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
         r"(?<!may\s)(?<!might\s)(?<!to\s)"
-        r"(?:supports?|enables?|offers?|provides?)\s+"
-        r"(?!no\b|not\b)(?:hosted\s+|wallet\s+|transaction\s+){0,3}"
-        r"(?:signing|broadcast|submission|settlement|transaction\s+tools?)\b|"
+        r"(?:supports?|enables?|offers?|provides?|exposes?)\s+"
+        r"(?!no\b|not\b)(?:an?\s+)?(?:hosted\s+|wallet\s+|transaction\s+){0,3}"
+        r"(?:signer|signing|broadcast|submission|settlement|transaction\s+tools?)\b|"
+        r"\b(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"performs?\s+(?!no\b|not\b)(?:transaction\s+)?"
+        r"(?:signing|broadcast)(?:\s+and\s+(?:broadcast|signing))?\b|"
+        r"\b(?<!not\s)(?<!never\s)(?<!will\s)(?<!could\s)(?<!would\s)"
+        r"(?<!may\s)(?<!might\s)(?<!to\s)"
+        r"(?:relays?|forwards?|sends?)\s+(?!no\b|not\b)(?:signed\s+)?"
+        r"(?:transactions?|wallet\s+payloads?|payloads?)\b|"
         r"\bhosted\s+(?:transaction\s+)?(?:signing|broadcast)\s+"
         r"(?:is|remains?)\s+(?:now\s+)?(?:available|enabled|live|active|operational)\b|"
         r"\b(?<!not\s)(?<!never\s)(?:has|holds|keeps)\s+"
@@ -455,6 +502,8 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
         BOOKING_DRAFT_WITHOUT_LISTING,
         PROVIDER_DRAFT_BOUNDARY,
         IDENTITY_OVERCLAIMS,
+        STUDIO_LINK_VIOLATIONS,
+        STALE_ECONOMIC_PREVIEW,
         PUBLIC_WEB_FORBIDDEN_CAPABILITIES,
     ):
         for label, pattern in patterns.items():
@@ -498,6 +547,11 @@ def main() -> int:
 
     for path in STELE_STATUS_DOCUMENTS:
         text = path.read_text(encoding="utf-8")
+        if CANONICAL_STUDIO_MARKDOWN_DESTINATION not in text:
+            failures.append(
+                f"{path.relative_to(ROOT)}: missing exact Provider Studio Markdown destination "
+                f"{CANONICAL_STUDIO_MARKDOWN_DESTINATION!r}"
+            )
         for label, pattern in STALE_STELE_DEPLOYMENT.items():
             match = pattern.search(text)
             if match:

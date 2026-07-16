@@ -53,7 +53,9 @@ class SteleDeploymentTruthTests(unittest.TestCase):
 > v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet.
 > That authentication proves only current control of the selected wallet address; it does not prove
 > a human or legal identity, durable ownership, credentials, or authority.
-> Provider Studio at https://stele.monolythium.com/studio can create, edit, preview, and delete
+> Provider Studio at
+> [stele.monolythium.com/studio](https://stele.monolythium.com/studio)
+> can create, edit, preview, and delete
 > private wallet-owned provider-listing
 > drafts. These durable provider-listing drafts are not published, discoverable, or transactable,
 > and provider publication remains off.
@@ -74,6 +76,7 @@ class SteleDeploymentTruthTests(unittest.TestCase):
             if phrase.casefold() not in searchable
         ]
         self.assertEqual([], missing)
+        self.assertIn(check_truth.CANONICAL_STUDIO_MARKDOWN_DESTINATION, current)
         self.assertFalse(
             any(
                 pattern.search(current)
@@ -101,6 +104,10 @@ class SteleDeploymentTruthTests(unittest.TestCase):
             "Hosted Stele MCP supports transaction submission.",
             "Hosted MCP offers hosted signing.",
             "Hosted Stele MCP has wallet custody.",
+            "Hosted Stele MCP signs wallet payloads and sends them on-chain.",
+            "Hosted Stele MCP exposes a transaction signer.",
+            "Hosted Stele MCP performs signing and broadcast.",
+            "Hosted Stele MCP relays signed transactions.",
         )
         for sample in samples:
             with self.subTest(sample=sample):
@@ -134,6 +141,30 @@ class SteleDeploymentTruthTests(unittest.TestCase):
                 "Settlement controls are live on the Stele web.",
                 "booking, payment, settlement, or economic controls assigned to public web",
             ),
+            (
+                "The public web lets providers publish listings.",
+                "public web claims provider-publication authority",
+            ),
+            (
+                "The public web has a Publish listing button.",
+                "public web claims provider-publication authority",
+            ),
+            (
+                "The public web accepts bookings.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "The public web lets users book and pay.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "The public web processes payments and settles bookings.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "The public web contains payment controls.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
         )
         for sample, expected in samples:
             with self.subTest(sample=sample):
@@ -145,6 +176,10 @@ class SteleDeploymentTruthTests(unittest.TestCase):
             "Browser Wallet proves human identity.",
             "Wallet authentication verifies legal identity.",
             "That authentication establishes authority.",
+            "Browser Wallet confirms the user’s identity.",
+            "Wallet authentication certifies legal identity.",
+            "That authentication demonstrates ownership.",
+            "Browser Wallet proves who the user is.",
         )
         for sample in samples:
             with self.subTest(sample=sample):
@@ -152,15 +187,47 @@ class SteleDeploymentTruthTests(unittest.TestCase):
                     sample, "wallet authentication presented as identity proof"
                 )
 
+    def test_retired_economic_preview_claim_is_rejected(self) -> None:
+        self.assert_contradiction(
+            "Economic actions remain user-approved previews.",
+            "retired economic-preview claim",
+        )
+
+    def test_noncanonical_provider_studio_urls_are_rejected(self) -> None:
+        samples = (
+            "https://stele.monolythium.com/studio/evil",
+            "https://stele.monolythium.com/studio?draft=private",
+            "https://stele.monolythium.com/studio#draft=private",
+        )
+        for sample in samples:
+            with self.subTest(sample=sample):
+                self.assert_contradiction(
+                    f"Provider Studio is at {sample}.",
+                    "non-canonical Provider Studio URL",
+                )
+
     def test_historical_future_gated_and_negative_copy_is_allowed(self) -> None:
         samples = (
             "Hosted Stele MCP does not sign or broadcast transactions.",
             "A future Hosted Stele MCP could support transaction signing after a separate release.",
+            "Hosted Stele MCP does not sign wallet payloads or send them on-chain.",
+            "A future Hosted Stele MCP could expose a transaction signer after review.",
+            "A future Hosted Stele MCP could perform signing and broadcast after activation.",
+            "The retired Hosted Stele MCP exposed a transaction signer.",
+            "Hosted Stele MCP signing and broadcast remain separately gated.",
             "The public web exposes no booking, payment, settlement, or other economic controls.",
             "The public web will support payments only after protocol activation.",
             "The retired public web used to offer payment controls.",
+            "The public web does not accept bookings or process payments.",
+            "The public web has no Publish listing button.",
+            "A future public web may let providers publish listings after activation.",
+            "The retired public web accepted bookings.",
             "Provider publication could be available through a future public web after release.",
             "Wallet authentication does not prove human identity or authority.",
+            "Browser Wallet does not confirm the user's identity.",
+            "A future wallet could certify credentials only after a separate identity release.",
+            "The retired Browser Wallet claimed to confirm identity.",
+            "A retired prototype described economic previews as user-approved.",
         )
         for sample in samples:
             with self.subTest(sample=sample):
@@ -377,8 +444,98 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
             "README.md",
             "https://stele.monolythium.com/studio",
             "https://stele.monolythium.com/providers",
-            "missing Stele status anchor 'https://stele.monolythium.com/studio'",
+            "missing exact Provider Studio Markdown destination "
+            f"{check_truth.CANONICAL_STUDIO_MARKDOWN_DESTINATION!r}",
         )
+
+    def test_main_rejects_every_second_review_truth_bypass(self) -> None:
+        samples = (
+            (
+                "Hosted Stele MCP signs wallet payloads and sends them on-chain.",
+                "hosted Stele MCP claims transaction capability",
+            ),
+            (
+                "Hosted Stele MCP exposes a transaction signer.",
+                "hosted Stele MCP claims transaction capability",
+            ),
+            (
+                "Hosted Stele MCP performs signing and broadcast.",
+                "hosted Stele MCP claims transaction capability",
+            ),
+            (
+                "Hosted Stele MCP relays signed transactions.",
+                "hosted Stele MCP claims transaction capability",
+            ),
+            (
+                "The public web lets providers publish listings.",
+                "public web claims provider-publication authority",
+            ),
+            (
+                "The public web has a Publish listing button.",
+                "public web claims provider-publication authority",
+            ),
+            (
+                "The public web accepts bookings.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "The public web lets users book and pay.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "The public web processes payments and settles bookings.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "The public web contains payment controls.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "Economic actions remain user-approved previews.",
+                "retired economic-preview claim",
+            ),
+            (
+                "Browser Wallet confirms the user’s identity.",
+                "wallet authentication presented as identity proof",
+            ),
+            (
+                "Wallet authentication certifies legal identity.",
+                "wallet authentication presented as identity proof",
+            ),
+            (
+                "That authentication demonstrates ownership.",
+                "wallet authentication presented as identity proof",
+            ),
+            (
+                "Browser Wallet proves who the user is.",
+                "wallet authentication presented as identity proof",
+            ),
+        )
+        for sample, expected in samples:
+            with self.subTest(sample=sample):
+                self.run_mutation(
+                    "README.md",
+                    "Economic writes, transaction signing, and mainnet remain off.",
+                    "Economic writes, transaction signing, and mainnet remain off. "
+                    + sample,
+                    expected,
+                )
+
+    def test_main_rejects_noncanonical_provider_studio_destinations(self) -> None:
+        destinations = (
+            "https://stele.monolythium.com/studio/evil",
+            "https://stele.monolythium.com/studio?draft=private",
+            "https://stele.monolythium.com/studio#draft=private",
+        )
+        canonical_destination = "https://stele.monolythium.com/studio)"
+        for destination in destinations:
+            with self.subTest(destination=destination):
+                self.run_mutation(
+                    "README.md",
+                    canonical_destination,
+                    f"{destination})",
+                    "non-canonical Provider Studio URL",
+                )
 
 
 if __name__ == "__main__":
