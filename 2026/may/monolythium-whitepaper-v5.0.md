@@ -85,6 +85,21 @@
 >     remains and is disclosed in §12.3 — the peer-to-peer transport's node-identity keys, which
 >     authenticate network connections and never consensus or state. The honest claim is **no classical
 >     primitive in the protocol path**, not "no classical code anywhere in the build."
+> 12. **Two long-standing descriptions of the cryptography were wrong and are corrected: the
+>     peer-to-peer handshake, and the argument against hybrid signatures.** §12.3 described the
+>     operator-to-operator handshake as "the Noise XX handshake" with ML-KEM-768 replacing X25519. It is
+>     not Noise XX and it is not a stock Noise pattern at all: libp2p's Noise implementation hardcodes
+>     X25519 with no plug-point for a different key exchange, so the chain ships a **self-contained
+>     KEM-Noise IK-style handshake of its own composition**, which has **not yet had an independent
+>     cryptographic review** — that review is a tracked release gate before mainnet. §12.3 now says so,
+>     names the actual construction, and discloses the two classical artefacts that remain at the
+>     transport layer (a linked-but-never-invoked X25519, and the ed25519 key libp2p requires for
+>     `PeerId`). Separately, §7's first argument against hybrid signatures was unsound: it defined
+>     hybrid as consensus "accepting either" signature but then described a forgery that only makes
+>     sense against a scheme requiring **both** — and that forgery does not work against that scheme,
+>     because a stale post-quantum signature does not verify over a new message. The conclusion (pure
+>     post-quantum, no hybrid) is unchanged; the reasoning now treats the two hybrid shapes separately
+>     and states honestly which risk a classical half would and would not hedge.
 
 > *"Sovereignty is not given; it is verified by the silicon and the math."*
 
@@ -477,7 +492,7 @@ Cryptographic posture is end-to-end:
 | User signatures | **ML-DSA-65** (FIPS 204) | Every user-signed transaction |
 | Consensus signatures | **ML-DSA-65** (FIPS 204) | Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig of independent operator signatures |
 | Emergency recovery (removed) | **None at launch — ML-DSA-65-only** | The SLH-DSA hash-based backup key, the emergency-key registry, and in-protocol algorithm rotation are **removed**; a cross-family backup + rotation is a future capability for a subsequent genesis (reconciliation note, item 10) |
-| Key encapsulation | **ML-KEM** (FIPS 203) | Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation |
+| Key encapsulation | **ML-KEM** (FIPS 203) | Peer-to-peer handshakes (§12.3), RPC TLS, stealth-address derivation |
 | Zero-knowledge verification (gated off) | **Post-quantum FRI/STARK — intended direction** | Application-layer proof verification is **disabled at genesis**. The earlier SP1 zkVM + Groth16-BN254 verifier is not enabled; the direction is a post-quantum FRI/STARK verifier that ships gated off until ready. Consensus finality is pure ML-DSA-65 and never depended on it |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
 
@@ -489,11 +504,15 @@ Three properties of this stack are worth highlighting because they reflect desig
 
 ### Why pure post-quantum, not hybrid
 
-The temptation in this transition era is to ship "hybrid" mode — a transaction signed by both ECDSA and a post-quantum signature, with consensus accepting either. Hybrid is appealing because it preserves user-experience continuity and offers theoretical defense in depth.
+The temptation in this transition era is to ship "hybrid" mode — a transaction carrying both an ECDSA and a post-quantum signature. Hybrid comes in two shapes that behave very differently: consensus can accept **either** signature, or it can require **both**. Hybrid is appealing because it preserves user-experience continuity and offers theoretical defense in depth.
 
 Monolythium rejects hybrid for three reasons.
 
-**First**, the defense-in-depth argument is structurally weak. A hybrid signature is only as strong as its **weakest** component, not its strongest. If ECDSA is broken on a sufficiently large quantum computer and an adversary can forge ECDSA signatures, the adversary can forge hybrid signatures by forging the ECDSA half and reusing the genuine post-quantum half from a previous transaction. Hybrid does not protect against the threat the post-quantum primitive was supposed to protect against.
+**First**, the defense-in-depth argument does not survive either shape.
+
+If consensus accepts **either** signature, the scheme is only as strong as its **weakest** component. An adversary able to forge ECDSA on a sufficiently large quantum computer simply presents an ECDSA-signed transaction; the post-quantum half is never examined. That is not defense in depth — it is a standing downgrade path, and it defeats precisely the threat the post-quantum primitive was added to address.
+
+If consensus requires **both**, that attack fails: a quantum adversary who forges the ECDSA half still cannot produce an ML-DSA-65 signature over the new message. But then the post-quantum primitive is already carrying the entire quantum defense on its own, and the ECDSA half is not hedging the quantum threat at all. What it hedges is the *opposite* risk — a classical break of the lattice assumption. That risk is real and worth naming plainly: ML-DSA-65 is younger than ECDSA and has absorbed less cryptanalysis. Monolythium's answer to it is process rather than a permanent second signature on every transaction — the emergency freeze (§23.2) pauses admission while a primitive migration is coordinated, as described under "The quantum hedge" below. A standing classical path would buy that hedge at the price of two code paths, two keys per account, and a second verifier maintained forever, against an event that would be visible in the literature well before it was exploitable.
 
 **Second**, hybrid creates audit ambiguity. Two acceptance paths means two code paths. Two code paths means twice the surface for implementation bugs, twice the surface for downgrade attacks (an adversary suppresses the post-quantum half and forces verification through the classical path), and twice the verifier complexity. With one signature primitive, the verifier does one thing; the audit story is "ML-DSA-65 verification is correct" rather than "the verifier correctly handles three combinations of two signature types." This is a meaningful simplification.
 
@@ -686,7 +705,7 @@ This section specifies the cryptographic primitive set in implementation detail.
 | User signatures | **ML-DSA-65** (FIPS 204, Dilithium Level 3) | Every user-signed transaction |
 | Consensus signatures | **ML-DSA-65** (FIPS 204, Dilithium Level 3) | Per-operator vertex signing; cluster quorum = 7-of-10 bitmap multisig of independent operator signatures |
 | Emergency backup signatures (removed) | **None at launch — ML-DSA-65-only** | The SLH-DSA hash-based backup and the emergency-key registry are **removed**; a cross-family backup + in-protocol rotation is a future-genesis capability (§23.1; reconciliation note item 10) |
-| Key encapsulation | **ML-KEM-768** (FIPS 203, Module-Lattice KEM) | Peer-to-peer Noise handshakes; RPC TLS; stealth-address derivation |
+| Key encapsulation | **ML-KEM-768** (FIPS 203, Module-Lattice KEM) | Peer-to-peer handshakes (a KEM-Noise IK-style construction of our own, pending cryptographer review); RPC TLS; stealth-address derivation |
 | Zero-knowledge verification (gated off) | **Post-quantum FRI/STARK — intended direction** | Application-layer proof verification is **disabled at genesis**; the earlier SP1 zkVM + Groth16-BN254 verifier is not enabled (§12.6). Consensus finality is pure ML-DSA-65 and never depended on it |
 | Hash | **BLAKE3** | State-tree leaves, Merkle commitments, content-addressed proofs, address derivation |
 
@@ -706,7 +725,11 @@ There is no Ed25519 acceptance path. There is no hybrid signature mode. The prot
 
 ML-KEM-768 is used wherever a key encapsulation is needed:
 
-- **Peer-to-peer Noise handshakes.** Operator-to-operator connections use ML-KEM-768 for the Noise XX handshake, replacing the classical X25519 default.
+- **Peer-to-peer handshakes.** Operator-to-operator connections use ML-KEM-768 for a KEM-Noise **IK-style** mutual handshake: two ML-KEM-768 encapsulations — one under each side's long-lived static key — feeding an HKDF-SHA-256 key schedule bound to a transcript hash, with an HMAC-SHA-256 transcript MAC and a ChaCha20-Poly1305 record layer. It replaces the classical X25519 ECDH of libp2p's stock Noise upgrade, which is bypassed entirely; there is no hybrid stage and no classical fallback.
+
+    **This is our own construction, and it has not yet had an independent cryptographic review.** It is not a stock Noise pattern: libp2p's Noise implementation hardcodes X25519 with no plug-point for a different key exchange, so rather than fork it we ship a self-contained handshake satisfying the same libp2p upgrade contract. The KEM-Noise key schedule, the transcript-MAC construction, and the nonce discipline are composed by us. A senior-cryptographer review of the wire protocol and its test vectors is owed before mainnet and is tracked as a release gate; until it closes, the running testnet's transport should be read as unreviewed.
+
+    Two classical artefacts remain at this layer, and neither authenticates consensus or state. `x25519-dalek` is still linked through libp2p's Noise crate but is never invoked — the handshake slot is occupied by the post-quantum upgrade — and an ed25519 keypair is retained solely to derive the transport-layer `PeerId`, whose format libp2p hardcodes.
 - **RPC TLS.** Public RPC endpoints serve TLS certificates with ML-KEM-encapsulated session keys. Wallet, indexer, and explorer connections to nodes use post-quantum TLS.
 - **Stealth addresses.** The privacy denomination's stealth-address scheme uses ML-KEM end-to-end for one-time-address derivation.
 

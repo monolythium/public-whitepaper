@@ -482,6 +482,13 @@ surrounding narrative. What changed, and why:</p>
     fallback&rdquo;, no hybrid) are therefore now true of the code and not only of the admission gate. One
     classical dependency remains: the peer-to-peer transport&rsquo;s node-identity keys, which authenticate
     network connections and never consensus or state.</li>
+<li><strong>The peer-to-peer handshake is not &ldquo;Noise XX&rdquo;, and the argument against hybrid signatures was
+    unsound.</strong> The operator-to-operator handshake is a <strong>self-contained KEM-Noise IK-style
+    construction of our own</strong>, not a stock Noise pattern, and it has <strong>not yet had an independent
+    cryptographic review</strong> (a tracked gate before mainnet). The case against hybrid also mis-stated
+    itself — it defined hybrid as accepting <em>either</em> signature but argued against a scheme requiring
+    <em>both</em>. The conclusion (pure post-quantum, no hybrid) is unchanged; see whitepaper §7 and §12.3
+    for the corrected reasoning.</li>
 </ol>
 </blockquote>
 <h2 id="tldr">TL;DR</h2>
@@ -590,7 +597,7 @@ surrounding narrative. What changed, and why:</p>
 <p>The chain&rsquo;s identity is the product of the six commitments below. Each is structural, not parameterised.</p>
 <h3 id="51-post-quantum-accounts-by-default">5.1 Post-quantum accounts by default</h3>
 <p>ML-DSA-65 (NIST FIPS 204, Dilithium Level 3) is the only signature primitive accepted at transaction admission. No classical fallback. No hybrid mode. No ECDSA acceptance path &ldquo;for compatibility.&rdquo; Every account signs every transaction with a post-quantum primitive from the chain&rsquo;s first block.</p>
-<p>Hybrid is rejected for three reasons: a hybrid signature is only as strong as its weakest component, hybrid creates audit ambiguity and downgrade-attack surface, and hybrid postpones the migration twice (once now, once later) instead of doing it once at genesis when there is no installed base of classical-only wallets to support.</p>
+<p>Hybrid is rejected for three reasons. If consensus accepts <strong>either</strong> signature, the scheme is only as strong as its weakest component — a quantum adversary forges the classical half and the post-quantum half is never examined. If consensus requires <strong>both</strong>, the post-quantum primitive is already carrying the whole quantum defense alone, and the classical half hedges the opposite risk (a classical break of the lattice assumption), which Monolythium answers with process — emergency freeze plus a coordinated migration — rather than a second signature on every transaction forever. Hybrid also creates audit ambiguity and downgrade-attack surface, and it postpones the migration twice (once now, once later) instead of doing it once at genesis when there is no installed base of classical-only wallets to support.</p>
 <p>The cost of pure post-quantum is signature size — ML-DSA-65 signatures are ~3,309 bytes versus ECDSA&rsquo;s 64 bytes. The cost is real and paid in storage and bandwidth. The alternative is paying the migration cost twice.</p>
 <table>
 <thead>
@@ -614,7 +621,7 @@ surrounding narrative. What changed, and why:</p>
 <tr>
 <td>Key encapsulation</td>
 <td><strong>ML-KEM-768</strong> (FIPS 203)</td>
-<td>Peer-to-peer Noise handshakes, RPC TLS, stealth-address derivation</td>
+<td>Peer-to-peer handshakes (a KEM-Noise IK-style construction of our own, pending cryptographer review), RPC TLS, stealth-address derivation</td>
 </tr>
 <tr>
 <td>Consensus signatures</td>
