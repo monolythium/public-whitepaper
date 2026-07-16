@@ -47,9 +47,13 @@ Release history of the Monolythium public whitepaper.
 > - **Agent commerce is a target architecture, not an activated public-network suite.** Service listings,
 >   escrow, arbitration, bilateral reputation, protocol spending policy, economic runbooks, and autonomous
 >   signing require separately versioned protocol, SDK, wallet, privacy, and migration releases.
-> - **Stele is a standalone web product, not a desktop-wallet marketplace.** Public catalog browsing and
->   wallet-owned non-economic approval previews are separate from execution. Hosted MCP is keyless; the
->   isolated local Stele MCP currently exposes three read/status tools and no transaction tool.
+> - **Stele's target product architecture is standalone web, not a desktop-wallet marketplace.** Public
+>   catalog browsing and wallet-owned non-economic approval previews are separate from execution. Hosted
+>   MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded,
+>   non-economic booking-draft preparation. The isolated local Stele MCP currently exposes three
+>   read/status tools and no transaction tool. Legacy or unreconciled desktop builds may retain a gated
+>   historical surface until reviewed removal and migration are released. The reserved production
+>   hostname is not published as a live link until the actual deployment passes its release gates.
 > - **The registered public-network identity was reachable but stale on 2026-07-16.** Repeated RPC checks
 >   remained at height 74,907 with latest timestamp 2026-07-08T22:39:05Z. Registration and topology are not
 >   liveness or production-settlement evidence.

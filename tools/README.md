@@ -18,8 +18,10 @@ python tools/build.py
 ```
 
 The build first runs `tools/check_truth.py`, which fails closed if public copy regresses to presenting
-the target agent-commerce suite, Stele-in-desktop, current economic fees, or a transaction-capable MCP
-as shipped. It can also be run directly without the rendering dependencies:
+the target agent-commerce suite, spending-policy/USDC agent-payment routes, Stele-in-desktop, current
+economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also requires the
+legacy-desktop and deployment-gated-link qualifications. It can be run directly without the rendering
+dependencies:
 
 ```bash
 python tools/check_truth.py

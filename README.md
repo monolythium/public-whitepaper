@@ -10,7 +10,7 @@ Settlement Layer for the Autonomous Economy. Rust/RISC-V execution, post-quantum
 
 **Monolythium Lightpaper v5.0 — May 2026, reconciled 2026-07-16** &nbsp;·&nbsp; [Markdown](2026/may/monolythium-lightpaper-v5.0.md) &nbsp;·&nbsp; [Web](2026/may/monolythium-lightpaper-v5.0.html) &nbsp;·&nbsp; [PDF](2026/may/monolythium-lightpaper-v5.0.pdf)
 
-A condensed read of the whitepaper. It distinguishes activated protocol facts, target architecture, and the standalone Stele web/MCP product boundary; it is not an API reference or proof of current network liveness.
+A condensed read of the whitepaper. It distinguishes activated protocol facts, target architecture, and the standalone Stele web/MCP product boundary; it is not an API reference or proof of current network liveness. The reserved Stele production hostname is intentionally not linked from this release until the actual deployment passes its health, privacy, and release gates.
 
 ## Formats
 

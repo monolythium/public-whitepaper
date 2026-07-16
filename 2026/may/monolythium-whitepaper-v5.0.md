@@ -106,13 +106,17 @@
 >     availability, escrow, arbitration, bilateral reputation, agent spending policy, economic
 >     runbooks, or autonomous signing. Section 18 now states this boundary explicitly. Its detailed
 >     state machines and method names are design requirements, not a current ABI or integration guide.
-> 14. **Stele is a standalone web product, not an embedded desktop-wallet marketplace.** Its public
->     catalog and wallet-authenticated approval previews can be released independently of economic
->     execution. Human authority stays in the browser wallet. Hosted Stele MCP is keyless and may only
->     search or prepare a bounded, non-economic draft; a separately installed local MCP currently
->     exposes three read/status tools and no transaction tool. E2EE rooms, provider writes, settlement,
->     disputes, reviews, policy-controlled agent signing, and mainnet remain separately gated. See
->     [stele.monolythium.com](https://stele.monolythium.com) and §18.10 for the product boundary.
+> 14. **Stele's target product architecture is standalone web, not an embedded desktop-wallet
+>     marketplace.** Its public catalog and wallet-authenticated approval previews can be released
+>     independently of economic execution. Human authority stays in the browser wallet. Hosted Stele
+>     MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded,
+>     non-economic booking-draft preparation. A separately installed local MCP currently exposes three
+>     read/status tools and no transaction tool. The current product line retires embedded Stele, but
+>     legacy or unreconciled desktop builds may retain a gated historical surface until their separately
+>     reviewed removal and migration are released. E2EE rooms, provider writes, settlement, disputes,
+>     reviews, policy-controlled agent signing, and mainnet remain separately gated. The canonical
+>     production hostname is reserved as `stele.monolythium.com`, but this paper does not publish it as
+>     a live link until deployment health and release gates pass. See §18.10 for the product boundary.
 >
 > **Dated network-status note — 2026-07-16.** The registered v0.4.0 public development-network
 > identity remained reachable, but its public RPC reported height 74,907 with latest timestamp
@@ -141,7 +145,7 @@ Monolythium is not designed to be another EVM-compatible chain, and it is not de
 
 The public position is:
 
-> *Monolythium is not EVM-compatible at execution. It is EVM-connected at the liquidity edge. And it is composable underneath every major agent-payment standard at the settlement edge.*
+> *Monolythium is not EVM-compatible at execution. Its target architecture connects at the liquidity edge and aims to become composable underneath compatible agent-payment standards after each required integration is released.*
 
 The target architecture allows assets to arrive through independently released external-provider or issuer integrations; the chain no longer ships an in-tree cross-chain bridge. Agent-payment standards and the eight agent-commerce primitives describe the intended composition layer. They are not activated settlement paths on the current public development network.
 
@@ -279,7 +283,7 @@ The market is already converging on standardized payment handshakes for AI agent
 
 They do not solve four problems that are unavoidable once agents operate against more than trivial workflows:
 
-- **Enforceable principal-level spending policy** — caps, allow-lists, time-of-day rules, expiry, revocation — that the agent itself cannot bypass. A wrapper around a card or a custodial wallet enforces policy at the wrapper; if the agent is granted the wrapper's credentials it inherits its full authority. The chain enforces policy at admission, in consensus state, on a sub-account the principal controls and the agent cannot rewrite.
+- **Enforceable principal-level spending policy** — caps, allow-lists, time-of-day rules, expiry, revocation — that the agent itself cannot bypass. A wrapper around a card or a custodial wallet enforces policy at the wrapper; if the agent is granted the wrapper's credentials it inherits its full authority. The unactivated vNext design would enforce policy at admission, in consensus state, on a sub-account the principal controls and the agent cannot rewrite.
 - **Escrow with counter-offer flow and pluggable arbiters** for non-trivial work — the deliverable-against-payment use case that defines real services. A paid-API handshake does not negotiate timelines, attach penalty clauses, or arbitrate disputes; an escrow primitive does.
 - **Portable cross-platform reputation tied to the agent identity** — speed, quality, communication, accuracy — that survives the agent switching model providers, runtimes, or wallets. A closed platform's reputation cannot follow the agent off the platform.
 - **Chain-anchored consent records** the principal can revoke instantly, leaving in-flight commitments grandfathered. A consent stored in a vendor's database can be overwritten by the vendor; a consent stored on-chain has the principal's signature on it.
@@ -380,7 +384,7 @@ The chain has spot markets. The chain does not have, and is not building, perpet
 
 The reason is product identity. Once a chain becomes a perpetuals venue, the design pressure on every other surface bends towards the perpetuals product — oracle dependencies, liquidation engines, funding-rate disputes, MEV around liquidations, leverage-driven liquidity, and a regulator audience that classifies the chain as a derivatives exchange whether it likes it or not.
 
-Spot markets, payments, NFTs, agent-service settlement, cross-chain swaps, and conservative DeFi primitives are a deep ecosystem on their own. They are also, in this paper's view, a better foundation for agent commerce — agents do not need to trade perpetuals to settle real-world tasks. They need bounded budgets, predictable spot liquidity, escrow, and clean settlement.
+Activated spot markets, payments, NFTs, cross-chain routes, and conservative DeFi primitives can form a deep ecosystem on their own. Agent-service settlement, bounded budgets, escrow, and delegated policy remain unactivated vNext targets; they must not be inferred from those existing primitives.
 
 This refusal also reduces the audit surface dramatically. A perpetuals venue is one of the most complex artifacts in DeFi; the chain removes that complexity entirely from the consensus-critical surface.
 
@@ -404,7 +408,7 @@ This is the most defensible privacy posture available to a general-purpose L1. I
 
 ### 4.5 No bundled AI model
 
-The chain does not bundle a particular AI model with the protocol. Agent identity is chain-native, but the model behind any agent is the user's choice. Runbooks are typed and signed; they are not "AI prompts." The chain is model-agnostic on principle, and is built to be useful for agents driven by open-source models, frontier proprietary models, narrow domain-specific systems, and non-AI software agents alike.
+The chain does not bundle a particular AI model with the protocol. The unactivated vNext design makes agent identity provider-independent and requires typed, signed runbooks rather than "AI prompts"; neither agent sub-accounts nor economic runbooks are current public-network capabilities. The architecture remains model-agnostic so that a later activated surface can support open-source models, proprietary models, narrow domain-specific systems, and non-AI software agents alike.
 
 This refusal matters because it preserves the chain's neutrality. A protocol that bundled a specific lab's model would tie its reputation, longevity, and credibility to a single vendor's roadmap. The agent economy needs the opposite — a substrate the model providers can plug into rather than one that picks the winning model in advance.
 
@@ -620,7 +624,7 @@ Monolythium does not have a perfect mirror competitor.
 - Ethereum and EVM-compatible chains compete on liquidity and developer familiarity.
 - High-performance non-EVM chains compete on throughput and consumer applications.
 - High-performance trading chains compete for low-latency derivatives flow.
-- Open agent-payment standards (x402, AP2, ACP, MCP) compete for the payment handshake — Monolythium composes underneath them rather than against them (§3).
+- Open agent-payment standards (x402, AP2, ACP, MCP) compete for the payment handshake; Monolythium's unactivated target architecture aims to compose underneath compatible released integrations rather than compete at that handshake (§3).
 
 Monolythium's differentiated combination is:
 
@@ -634,7 +638,7 @@ Monolythium's differentiated combination is:
 - structurally non-fungible public/private denomination;
 - a public cluster marketplace with distributed validator technology;
 - a lean, post-quantum core that keeps the highest-risk surfaces out of consensus — cross-chain interop runs through an external provider, and application-layer zero-knowledge verification ships gated off pending a post-quantum FRI/STARK verifier rather than a live Groth16 verifier;
-- direct composition with the major agent-payment standards as the chain-anchored trust and settlement layer.
+- a target path to composition with compatible agent-payment standards after the required protocol, SDK, wallet, asset, and connector releases exist.
 
 If the market only wants another EVM chain, Monolythium has chosen the harder path. If the market wants safer open settlement for agents, payments, spot markets, and long-lived digital identities, the chain has a distinct position. The bet is not that EVM disappears — it will not, for at least a decade. The bet is that the settlement layer for the next decade's most interesting workloads will not be a copy of the chain that hosts the last decade's.
 
@@ -644,7 +648,7 @@ A large company can build infrastructure. That does not automatically make its i
 
 For agent commerce, neutrality matters because agents transact across companies, model providers, wallets, jurisdictions, and service providers. A payment rail owned by one AI lab or one platform may work inside that platform, but it is less credible as a universal settlement substrate. A bank or a fintech that wants its agent flow to interoperate with the rest of the agent economy needs a substrate that is not owned by a competitor.
 
-Monolythium's value to large participants is that it provides shared settlement rules, verifiable state, portable agent identity, portable reputation, common market standards, open infrastructure participation, and a network where counterparties do not need to trust one company's private ledger. Large participants may still run clusters, build applications, issue assets, operate provers, or provide liquidity. The point is that joining the shared network is more useful than fragmenting into private chains.
+Monolythium's current value proposition to large participants is shared settlement rules, verifiable state, common market standards, and open infrastructure participation. Portable agent identity, portable reputation, spending policy, and agent settlement are unactivated vNext objectives that require the §18 release stack. Large participants may still run clusters, build applications, issue assets, operate provers, or provide liquidity. The intended benefit is a shared network rather than fragmented private ledgers, without presenting the gated agent layer as delivered.
 
 ---
 
@@ -850,15 +854,15 @@ Bech32m addresses are unmistakable but not memorable. Monolythium ships a hierar
 Naming structure:
 
 - **Charset.** Lowercase ASCII letters, digits, and the hyphen. No mixed case, no Unicode confusables, no scripted characters at the protocol level.
-- **Hierarchy.** Names live under the `.mono` namespace and resolve to one of five structural categories. A bare `<name>.mono` is a **human** (personal) account. An agent is registered **beneath its human principal** as `<name>.agent.<human>.mono`, so the naming hierarchy mirrors the agent-as-sub-account model directly. Clusters, deployed contracts, and protocol/system entities take `<name>.cluster.mono`, `<name>.contract.mono`, and `<name>.system.mono` respectively; the `system` category is foundation-only and closed to public registration.
+- **Hierarchy.** Names live under the `.mono` namespace and resolve to structural categories. A bare `<name>.mono` is a **human** (personal) account. The unactivated vNext agent design reserves `<name>.agent.<human>.mono` for an agent beneath its principal; this is a target namespace, not evidence that agent sub-accounts or their registration ABI are live. Clusters, deployed contracts, and protocol/system entities use their released categories; any closed `system` namespace remains subject to the activated registry contract.
 - **Pricing.** A U-curve pricing schedule discourages both squatting (short, premium names cost meaningfully more) and clutter (very long names cost a small administrative fee). The pricing curve is constitutional; it is not adjustable through any signaling mechanism.
 - **Transfer.** Names transfer through a propose-accept flow with a 24-hour acceptance window. The recipient must affirmatively accept the transfer; the sender cannot push a name to an unwilling recipient.
 - **Reserved prefixes.** The registry refuses to register names that begin with the chain's bech32m human-readable prefixes (`mono`, `monos`, `monoc`, `monok`, `monom`, `monox`, and additional reserved prefixes), or with `0x`. This prevents the registry from minting names that could be confused with raw addresses.
-- **Cascade.** When an agent identity is transferred to a new principal, any names registered against the agent are cascaded according to the transfer rules. Names cannot become orphaned silently.
+- **Cascade target.** A future agent-identity transfer must define deterministic handling for subordinate names so they cannot become orphaned silently. No current agent-transfer behavior is asserted.
 
 The Monolythium Foundation seeds the registry at genesis with a reserve of category-defining and protocol-relevant names. The reserve is published, not sold; reserved names are released into the open market on a schedule that is also published.
 
-The result is that a person is addressed as `alex-rivera.mono`, an agent owned by that person as `support-bot.agent.alex-rivera.mono`, a cluster as `northstar.cluster.mono`, a deployed contract as `monoswap.contract.mono`, and a protocol entity as `name-registry.system.mono`. The bech32m address is still the canonical underlying identifier; the name is a human-readable alias that resolves to it.
+Illustratively, a person could be addressed as `alex-rivera.mono`, while the vNext target would represent an agent as `support-bot.agent.alex-rivera.mono`. Cluster, contract, and system examples depend on the activated registry categories. The bech32m address remains the canonical underlying identifier; a released name is only a human-readable alias that resolves to it.
 
 ---
 
@@ -866,7 +870,7 @@ The result is that a person is addressed as `alex-rivera.mono`, an agent owned b
 
 The execution environment is a **Rust/RISC-V-native smart contract runtime**. The chain does not target Solidity or EVM bytecode for mainnet. The execution layer has three tiers:
 
-1. **Native protocol modules** for hot and security-critical primitives — token balances, NFTs, multi-assets, spot markets, delegation, agent-commerce registries, spending policy, name registry, privacy cordons, and emergency recovery.
+1. **Native protocol modules** for activated hot and security-critical primitives. Agent-commerce registries and spending-policy enforcement are unactivated vNext targets and are not members of the current public capability set.
 2. **Rust/RISC-V contracts** for application-specific programmable logic.
 3. **zkVM-proven computation** *(gated off at genesis — see §12.6)* — a future application-layer verifier for high-cost off-chain verification and, when armed, verified-matching swaps and zkML attestations. It is not reachable today, and cross-chain interop is handled by an external provider (§20) rather than by in-tree bridge proofs.
 
@@ -965,7 +969,7 @@ The design reduces duplication and audit burden. A common asset standard should 
 
 ### Markets and NFTs
 
-The native order book is universal market infrastructure: compute, data, agent services, real-world assets, stablecoin pairs, and token pairs all settle through the same primitive. Perpetuals and margin remain explicitly removed (§4.2). Automated market makers can be implemented either as native modules or Rust/RISC-V contracts if the risk surface is accepted by the application.
+The native order book is intended as general market infrastructure for released assets and markets. Agent-service settlement is an unactivated vNext use case, not a current order-book or Stele capability. Perpetuals and margin remain explicitly removed (§4.2). Automated market makers can be implemented either as native modules or Rust/RISC-V contracts if the risk surface is accepted by the application.
 
 MRC-721 and MRC-1155 provide native ownership, metadata, transfer, approval, and marketplace event shapes. Marketplace settlement can be native for the common case and contract-based for custom auction or game logic.
 
@@ -973,7 +977,7 @@ MRC-721 and MRC-1155 provide native ownership, metadata, transfer, approval, and
 
 A common concern with native-module-heavy chains is that pushing primitives into consensus code grows the protocol's attack surface compared to a "thin L1 + many contracts" design. The opposite is true in practice for the workloads Monolythium serves.
 
-A thin-L1 design spreads the financial primitives across thousands of independently authored contracts, each of which can be wrong in its own way. A token standard reimplemented incorrectly in a single application contract has produced losses many times in EVM history. The chain's design pulls the heaviest financial logic — token accounting, NFT ownership, order-book settlement, spending-policy enforcement — into a small set of native modules audited at the protocol layer. Applications compose against those modules. The audit work happens once. The bug surface in user code shrinks because user code does not implement what the native module already provides.
+A thin-L1 design spreads financial primitives across thousands of independently authored contracts, each of which can be wrong in its own way. A token standard reimplemented incorrectly in a single application contract has produced losses many times in EVM history. Activated native modules can centralize review for token accounting, NFT ownership, and released market behavior. Spending-policy enforcement remains an unactivated vNext module and has no current protocol-audit or composability claim. Applications may compose only against modules exposed by the pinned activated protocol version.
 
 Native modules add to the consensus-critical line count. They subtract from the ecosystem-wide attack surface by far more. The chain pays the larger native module footprint to gain a much smaller composite surface across the applications that run on it.
 
@@ -1060,7 +1064,7 @@ LYTH accrues utility across the entire chain surface, not only at the gas layer.
 - **Delegation tracking.** Delegators do not lock LYTH (liquid bonding), but their delegated balance is tracked against the per-wallet cap and earns reward distributions proportional to the cluster's performance.
 - **Reward distribution.** The 8% inflation cap funds operator and delegator rewards. Service-tier revenue is direct to the providing operator; consensus rewards distribute through the cluster pool.
 
-The composite effect is that LYTH is the economic primitive of the chain, regardless of what asset settles in the body of any given transaction. Agents paying USDC for an API call still pay LYTH gas; value arriving through the external interop provider still pays LYTH gas once it transacts on-chain; clusters serving traffic still earn LYTH. The token captures the chain's economic activity at every layer above the payment-asset itself.
+The target economic thesis is that an activated transaction consumes LYTH-denominated protocol resources regardless of the asset moved. If a future, separately released agent-payment integration settles an approved asset for an API call on Monolythium, that resulting on-chain transaction would require LYTH gas. No current USDC agent-payment route, hosted-MCP payment flow, interop settlement, or service-yield path is asserted here.
 
 ### 16.4 Canonical LYTH
 
@@ -1351,17 +1355,17 @@ The intended safety property is a bridge from natural language to a constrained,
 
 ### 18.10 Stele product boundary
 
-**Stele is the standalone public web product at [stele.monolythium.com](https://stele.monolythium.com), not a marketplace embedded in the desktop wallet.** The browser wallet owns identity proof and any eventual signature. Stele's hosted services never receive a seed phrase or private key.
+**Stele's release architecture is a standalone public web product, not a marketplace embedded in the desktop wallet.** The reserved canonical production hostname is `stele.monolythium.com`; this paper intentionally does not publish it as a live link until the deployment passes health, privacy, and release gates. The browser wallet owns identity proof and any eventual signature. Stele's hosted services never receive a seed phrase or private key.
 
 | Surface | Public release boundary | Separately gated target |
 |---|---|---|
 | Public web | Browse and inspect public catalog data; create a non-economic approval preview after browser-wallet authentication | Provider publication, private rooms, settlement, disputes, and reviews |
-| Hosted Stele MCP | Keyless catalog search, status, and bounded non-economic draft preparation | Wallet custody, signing, broadcast, settlement, or autonomous spending |
+| Hosted Stele MCP | Exactly two keyless, OAuth-protected tools: public catalog search and bounded non-economic booking-draft preparation | Status as a third MCP tool; wallet custody, signing, broadcast, settlement, or autonomous spending |
 | Isolated local Stele MCP | Exactly three read/status tools in the current package | Any transaction tool requires a separately reviewed local signer/SDK contract and explicit user authorization |
 | Browser wallet | Authenticate the user and retain human authority | Display and sign a released, versioned economic transaction only after protocol activation |
-| Desktop wallet | No Stele marketplace surface | General wallet functions remain independent of Stele |
+| Desktop wallet | Target product line retires the Stele marketplace surface; generic wallet functions remain independent | Legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal and migration ship |
 
-Catalog records and approval drafts do not prove on-chain listings, availability, price, escrow, reputation, or settlement. E2EE rooms, provider writes, economic execution, mainnet, and policy-controlled autonomous signing remain off until their independent release gates are satisfied. No hosted component may hold wallet secrets or convert a preview into a transaction.
+Catalog records and approval drafts do not prove on-chain listings, availability, price, escrow, reputation, or settlement. E2EE rooms, provider writes, economic execution, mainnet, and policy-controlled autonomous signing remain off until their independent release gates are satisfied. No hosted component may hold wallet secrets or convert a preview into a transaction. Publication of the reserved Stele hostname as a live destination remains gated on the actual deployment, not on this paper or a passing local build.
 
 ---
 
@@ -1521,7 +1525,7 @@ The chain does not promise:
 - that an external interop provider will never be exploited — instead, keeping interop outside consensus bounds the damage to the provider and the assets that transited it, and wallets surface the provider's trust model before a user relies on it;
 - that smart contracts will not have bugs — instead, native modules carry the audited primitives and contracts are sandboxed;
 - that cryptography will work forever — instead, a future ML-DSA-65 break is handled by a coordinated migration (the emergency freeze in §23.2 plus a hard fork); the earlier in-protocol emergency-key registry and algorithm rotation were removed and are a future-genesis capability, not a present-tense one;
-- that no user will lose funds to social engineering — instead, wallet UX surfaces risk and the chain's runbook + spending-policy model bounds delegated authority.
+- that no user will lose funds to social engineering — a future released wallet and activated runbook/spending-policy model would only bound delegated authority; neither is a current Stele or hosted-MCP guarantee.
 
 Honesty about limits is part of the threat model. A chain that claims invulnerability is a chain whose users are unprepared when invulnerability fails.
 
@@ -1773,7 +1777,7 @@ The Monolythium protocol is the product of years of design work, research, and e
 - the BIP-39 wordlist and bech32m encoding conventions;
 - the FRI-based proof-system family and the broader zero-knowledge research community;
 - the BLAKE3 hash function;
-- the open agent-payment standards that the chain composes against — x402, AP2, ACP, and MCP — whose existence makes the settlement-layer wedge concrete and addressable.
+- the open agent-payment standards that the target architecture may compose against after compatible integrations are released — x402, AP2, ACP, and MCP — whose existence makes the settlement-layer wedge concrete and addressable.
 
 This whitepaper is a synthesis of those contributions into a specific Layer-1 architecture. Errors are the authors'. Attribution should be given to the project, not to the underlying primitives whose authors deserve their own citation.
 

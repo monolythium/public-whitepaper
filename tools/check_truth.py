@@ -31,14 +31,53 @@ FORBIDDEN = {
         r"\b(?:spending-policy registration.{0,100}pays? a small|escrow (?:opening|& dispute fees?).{0,100}(?:all )?settle(?:s)? in LYTH)\b",
         re.IGNORECASE,
     ),
+    "hosted MCP status presented as a third capability": re.compile(
+        r"\bHosted Stele MCP\s*\|\s*Keyless catalog search, status\b",
+        re.IGNORECASE,
+    ),
+    "live Stele link before deployment gate": re.compile(
+        r"(?:\]\(|<)https://stele\.monolythium\.com(?:/)?(?:\)|>)",
+        re.IGNORECASE,
+    ),
+    "current USDC agent-payment route": re.compile(
+        r"\bAgents paying USDC for an API call still pay LYTH gas\b",
+        re.IGNORECASE,
+    ),
+    "agent-commerce modules presented as current": re.compile(
+        r"\bNative protocol modules[^\n]*agent-commerce registries, spending policy\b",
+        re.IGNORECASE,
+    ),
+    "spending policy presented as currently audited": re.compile(
+        r"\bspending-policy enforcement\s+—\s+into a small set of native modules audited at the protocol layer\b",
+        re.IGNORECASE,
+    ),
+    "agent identity presented as current": re.compile(
+        r"\bAgent identity is chain-native\b", re.IGNORECASE
+    ),
+    "economic runbooks presented as current": re.compile(
+        r"\bRunbooks are typed and signed\b", re.IGNORECASE
+    ),
+    "spending policy presented as currently enforced": re.compile(
+        r"\bThe chain enforces policy at admission\b", re.IGNORECASE
+    ),
+    "categorical desktop removal claim": re.compile(
+        r"\bThe desktop wallet has no Stele marketplace surface\b",
+        re.IGNORECASE,
+    ),
 }
 
 REQUIRED = (
     "target agent-commerce",
-    "standalone web product",
+    "standalone public web product",
     "three read/status tools",
     "no transaction tool",
     "degraded/stale",
+    "exactly two OAuth-protected tools",
+    "public catalog search",
+    "booking-draft preparation",
+    "legacy or unreconciled desktop builds",
+    "live link",
+    "actual deployment",
 )
 
 

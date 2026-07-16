@@ -71,11 +71,16 @@
 >     arbitration, bilateral reputation, protocol spending policy, economic runbooks, and autonomous
 >     signing are not activated on the current public development network. The methods and state
 >     machines below are design requirements, not a current ABI.
-> 15. **Stele is a standalone web product, not a desktop-wallet feature.** Public discovery and
->     wallet-owned approval previews are separate from economic execution. Hosted MCP is keyless; the
->     isolated local Stele MCP currently has three read/status tools and no transaction tool. Provider
->     writes, E2EE rooms, settlement, disputes, reviews, agent signing, and mainnet are gated. See
->     [stele.monolythium.com](https://stele.monolythium.com).
+> 15. **Stele's target product architecture is standalone web, not a desktop-wallet feature.** Public
+>     discovery and wallet-owned approval previews are separate from economic execution. Hosted MCP is
+>     keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded,
+>     non-economic booking-draft preparation. The isolated local Stele MCP currently has three
+>     read/status tools and no transaction tool. The current product line retires embedded Stele, but
+>     legacy or unreconciled desktop builds may retain a gated historical surface until reviewed
+>     removal and migration are released. Provider writes, E2EE rooms, settlement, disputes, reviews,
+>     agent signing, and mainnet are gated. The canonical production hostname is reserved as
+>     `stele.monolythium.com`, but this paper does not publish it as a live link until deployment health
+>     and release gates pass.
 >
 > **Dated network-status note — 2026-07-16.** The registered v0.4.0 development-network endpoint was
 > reachable but stalled at height 74,907 with latest timestamp 2026-07-08T22:39:05Z during repeated
@@ -305,7 +310,7 @@ These are not current SDK methods or MCP transaction tools. The intended safety 
 
 ### Stele boundary
 
-Stele is a standalone public web product. Public catalog browsing and wallet-authenticated, non-economic approval previews can ship independently. Hosted MCP is keyless; the isolated local Stele MCP currently exposes exactly three read/status tools. Neither holds a wallet, signs, broadcasts, or settles. Provider writes, E2EE rooms, economic execution, disputes, reviews, mainnet, and autonomous signing remain separately gated. The desktop wallet has no Stele marketplace surface.
+Stele's release architecture is a standalone public web product. Public catalog browsing and wallet-authenticated, non-economic approval previews can ship independently. Hosted MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. The isolated local Stele MCP currently exposes exactly three read/status tools. Neither holds a wallet, signs, broadcasts, or settles. Provider writes, E2EE rooms, economic execution, disputes, reviews, mainnet, and autonomous signing remain separately gated. The target desktop product line retires the Stele marketplace surface; legacy or unreconciled desktop builds may retain a gated historical surface until reviewed removal and migration are released. The reserved production hostname `stele.monolythium.com` is intentionally not a live link in this paper until the actual deployment passes its health, privacy, and release gates.
 
 ---
 
