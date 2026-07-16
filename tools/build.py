@@ -107,11 +107,29 @@ def font_face_css() -> str:
 # ---------------------------------------------------------------------------
 
 def md_to_body_html(md_text: str) -> str:
-    """Strip the markdown's title/cover front-matter and convert the rest."""
+    """Convert the markdown body, dropping only the title/cover front-matter.
+
+    The front-matter above the opening H2 is the cover (title, authors, date) and
+    is rendered separately by `cover_html`. It may also carry a leading blockquote
+    — the reconciliation notice recording where the text has been corrected against
+    the running chain. That notice is *content*, not cover furniture: dropping it
+    publishes the uncorrected claims while the corrections live only in the
+    markdown source. It is preserved and rendered at the head of the body.
+    """
     body_match = re.search(r"^## (Abstract|TL;DR|TLDR)", md_text, flags=re.MULTILINE)
     if not body_match:
         sys.exit("could not find an opening H2 (Abstract/TL;DR) in source")
+    front_matter = md_text[: body_match.start()]
     body_md = md_text[body_match.start():]
+
+    # Every blockquote run in the front-matter is prose the source intends a
+    # reader to see — the reconciliation notice, and the lightpaper's "condensed
+    # read" note. The cover renders neither (its title and tagline are supplied
+    # by `Doc`), so anything dropped here is published nowhere. Keep them all, in
+    # document order, at the head of the body.
+    notices = re.findall(r"(?:^>[^\n]*\n?)+", front_matter, flags=re.MULTILINE)
+    if notices:
+        body_md = "\n\n".join(n.rstrip() for n in notices) + "\n\n" + body_md
 
     md = markdown.Markdown(
         extensions=["extra", "sane_lists", "smarty", "toc"],
