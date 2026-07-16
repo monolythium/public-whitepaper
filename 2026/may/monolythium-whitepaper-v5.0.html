@@ -533,17 +533,19 @@ edition will re-scope the surrounding narrative. What changed relative to v5.1, 
     availability, escrow, arbitration, bilateral reputation, agent spending policy, economic
     runbooks, or autonomous signing. Section 18 now states this boundary explicitly. Its detailed
     state machines and method names are design requirements, not a current ABI or integration guide.</li>
-<li><strong>Stele&rsquo;s target product architecture is standalone web, not an embedded desktop-wallet
-    marketplace.</strong> Its public catalog and wallet-authenticated approval previews can be released
-    independently of economic execution. Human authority stays in the browser wallet. Hosted Stele
-    MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded,
-    non-economic booking-draft preparation. A separately installed local MCP currently exposes three
-    read/status tools and no transaction tool. The current product line retires embedded Stele, but
+<li><strong>Stele&rsquo;s product architecture is standalone web, not an embedded desktop-wallet marketplace.</strong>
+    As of 2026-07-16, the public preview is live at
+    <a href="https://stele.monolythium.com">stele.monolythium.com</a> with zero published services. Browser Wallet
+    v0.4.5 is a prerelease and owns identity proof; Stele&rsquo;s hosted services never receive wallet
+    secrets. The public web authenticates users through Browser Wallet and can inspect an existing valid
+    non-economic approval preview; it does not create drafts. Hosted Stele MCP is keyless and exposes
+    exactly two OAuth-protected tools: public catalog search and bounded, non-economic booking-draft
+    preparation. Draft preparation is unavailable without a published listing. A separately installed
+    local Stele MCP exposes exactly three read/status tools and no transaction tool. Economic writes,
+    transaction signing, and mainnet remain off. The current product line retires embedded Stele, but
     legacy or unreconciled desktop builds may retain a gated historical surface until their separately
-    reviewed removal and migration are released. E2EE rooms, provider writes, settlement, disputes,
-    reviews, policy-controlled agent signing, and mainnet remain separately gated. The canonical
-    production hostname is reserved as <code>stele.monolythium.com</code>, but this paper does not publish it as
-    a live link until deployment health and release gates pass. See §18.10 for the product boundary.</li>
+    reviewed removal and migration are released. E2EE rooms, provider publication, settlement,
+    disputes, and reviews remain separately gated. See §18.10 for the product boundary.</li>
 </ol>
 <p><strong>Dated network-status note — 2026-07-16.</strong> The registered v0.4.0 public development-network
 identity remained reachable, but its public RPC reported height 74,907 with latest timestamp
@@ -1717,7 +1719,7 @@ revert(code, data)
 </ul>
 <p>The intended safety property is a bridge from natural language to a constrained, human-authorized workflow. It depends on the wallet and activated protocol validating the same versioned schema. Until that contract exists, an application must not present any name above as executable.</p>
 <h3 id="1810-stele-product-boundary">18.10 Stele product boundary</h3>
-<p><strong>Stele&rsquo;s release architecture is a standalone public web product, not a marketplace embedded in the desktop wallet.</strong> The reserved canonical production hostname is <code>stele.monolythium.com</code>; this paper intentionally does not publish it as a live link until the deployment passes health, privacy, and release gates. The browser wallet owns identity proof and any eventual signature. Stele&rsquo;s hosted services never receive a seed phrase or private key.</p>
+<p><strong>Stele&rsquo;s release architecture is a standalone public web product, not a marketplace embedded in the desktop wallet.</strong> As of 2026-07-16, the public preview is live at <a href="https://stele.monolythium.com">stele.monolythium.com</a>, and its catalog contains zero published services. Browser Wallet v0.4.5 is a prerelease; it owns identity proof, while Stele&rsquo;s hosted services never receive a seed phrase or private key. The public web authenticates users through Browser Wallet and can inspect an existing valid non-economic approval preview; it does not create drafts.</p>
 <table>
 <thead>
 <tr>
@@ -1729,12 +1731,12 @@ revert(code, data)
 <tbody>
 <tr>
 <td>Public web</td>
-<td>Browse and inspect public catalog data; create a non-economic approval preview after browser-wallet authentication</td>
+<td>Live public preview; browse the empty public catalog, authenticate through Browser Wallet, and inspect an existing valid non-economic approval preview; the web does not create drafts</td>
 <td>Provider publication, private rooms, settlement, disputes, and reviews</td>
 </tr>
 <tr>
 <td>Hosted Stele MCP</td>
-<td>Exactly two keyless, OAuth-protected tools: public catalog search and bounded non-economic booking-draft preparation</td>
+<td>Exactly two keyless, OAuth-protected tools: public catalog search and bounded non-economic booking-draft preparation; draft preparation is unavailable without a published listing</td>
 <td>Status as a third MCP tool; wallet custody, signing, broadcast, settlement, or autonomous spending</td>
 </tr>
 <tr>
@@ -1744,7 +1746,7 @@ revert(code, data)
 </tr>
 <tr>
 <td>Browser wallet</td>
-<td>Authenticate the user and retain human authority</td>
+<td>v0.4.5 prerelease: authenticate the user and retain human authority</td>
 <td>Display and sign a released, versioned economic transaction only after protocol activation</td>
 </tr>
 <tr>
@@ -1754,7 +1756,7 @@ revert(code, data)
 </tr>
 </tbody>
 </table>
-<p>Catalog records and approval drafts do not prove on-chain listings, availability, price, escrow, reputation, or settlement. E2EE rooms, provider writes, economic execution, mainnet, and policy-controlled autonomous signing remain off until their independent release gates are satisfied. No hosted component may hold wallet secrets or convert a preview into a transaction. Publication of the reserved Stele hostname as a live destination remains gated on the actual deployment, not on this paper or a passing local build.</p>
+<p>The live deployment establishes only public-preview availability: zero published services means it does not evidence a provider market or on-chain listing registry. Preview creation belongs to hosted MCP or the private API, not the public web, and remains bounded to an existing published listing. Draft preparation is unavailable without a published listing; with zero published services, no valid draft can currently be prepared. Catalog records and approval drafts do not prove on-chain listings, availability, price, escrow, reputation, or settlement. E2EE rooms, provider publication, economic writes, transaction signing, and mainnet remain off until their independent release gates are satisfied. No hosted component may hold wallet secrets or convert a preview into a transaction.</p>
 <hr>
 <h2 id="19-privacy-cordon">19. Privacy Cordon</h2>
 <p>The bifurcated denomination (§5) is enforced by a native <strong>caller-origin cordon</strong> in the execution layer.</p>

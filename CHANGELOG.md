@@ -47,13 +47,16 @@ Release history of the Monolythium public whitepaper.
 > - **Agent commerce is a target architecture, not an activated public-network suite.** Service listings,
 >   escrow, arbitration, bilateral reputation, protocol spending policy, economic runbooks, and autonomous
 >   signing require separately versioned protocol, SDK, wallet, privacy, and migration releases.
-> - **Stele's target product architecture is standalone web, not a desktop-wallet marketplace.** Public
->   catalog browsing and wallet-owned non-economic approval previews are separate from execution. Hosted
->   MCP is keyless and exposes exactly two OAuth-protected tools: public catalog search and bounded,
->   non-economic booking-draft preparation. The isolated local Stele MCP currently exposes three
->   read/status tools and no transaction tool. Legacy or unreconciled desktop builds may retain a gated
->   historical surface until reviewed removal and migration are released. The reserved production
->   hostname is not published as a live link until the actual deployment passes its release gates.
+> - **Stele's product architecture is standalone web, not a desktop-wallet marketplace.** As of
+>   2026-07-16, the public preview is live at
+>   [stele.monolythium.com](https://stele.monolythium.com) with zero published services. Browser Wallet
+>   v0.4.5 is a prerelease. The public web authenticates users through Browser Wallet and can inspect an
+>   existing valid non-economic approval preview; it does not create drafts. Hosted Stele MCP is keyless
+>   and exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic
+>   booking-draft preparation. Draft preparation is unavailable without a published listing. The
+>   isolated local Stele MCP exposes exactly three read/status tools and no transaction tool. Economic
+>   writes, transaction signing, and mainnet remain off. Legacy or unreconciled desktop builds may retain
+>   a gated historical surface until reviewed removal and migration are released.
 > - **The public artifact boundary is now fail-closed.** Unpublished working drafts are kept outside the
 >   public repository. The build rejects internal filesystem paths, publication-blocking draft markers,
 >   office documents, and PDFs outside the explicit release allowlist. PDF cross-document annotations
