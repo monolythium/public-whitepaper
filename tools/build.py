@@ -607,7 +607,10 @@ def build_doc(doc: Doc, fonts_css: str) -> tuple[Path, Path]:
     pdf_base_url = f"{PUBLIC_REPOSITORY_BLOB_ROOT}{release_directory}/"
     WeasyHTML(string=html_str, base_url=pdf_base_url).write_pdf(
         str(out_pdf),
-        presentational_hints=True,
+        # Release Markdown is rendered through our own stylesheet. Enabling
+        # untrusted HTML presentational hints expands the CSS parser surface
+        # and is unnecessary for these controlled artifacts.
+        presentational_hints=False,
     )
 
     rel_html = out_html.relative_to(REPO)
