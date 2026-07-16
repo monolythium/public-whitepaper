@@ -17,6 +17,14 @@ pip install -r tools/requirements.txt
 python tools/build.py
 ```
 
+The build first runs `tools/check_truth.py`, which fails closed if public copy regresses to presenting
+the target agent-commerce suite, Stele-in-desktop, current economic fees, or a transaction-capable MCP
+as shipped. It can also be run directly without the rendering dependencies:
+
+```bash
+python tools/check_truth.py
+```
+
 System libraries WeasyPrint needs (Debian / Ubuntu):
 
 ```bash
@@ -32,7 +40,8 @@ The script writes outputs **in place** next to each markdown source. Review the 
 ```
 tools/
 ├── README.md            — this file
-├── build.py             — the generator (single file, no project dependencies)
+├── build.py             — the HTML/PDF generator
+├── check_truth.py       — public capability-boundary regression gate (standard library only)
 ├── requirements.txt     — pinned Python deps
 └── fonts/               — bundled IBM Plex woff2 (OFL 1.1)
     ├── ibm-plex-sans-latin-{400,500,600,700}-normal.woff2

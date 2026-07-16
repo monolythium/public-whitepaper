@@ -44,6 +44,18 @@ Release history of the Monolythium public whitepaper.
 >   allows no signature or KEM exception. One classical dependency remains and is disclosed: the
 >   peer-to-peer transport's node-identity keys, which authenticate network connections and never consensus
 >   or state.
+> - **Agent commerce is a target architecture, not an activated public-network suite.** Service listings,
+>   escrow, arbitration, bilateral reputation, protocol spending policy, economic runbooks, and autonomous
+>   signing require separately versioned protocol, SDK, wallet, privacy, and migration releases.
+> - **Stele is a standalone web product, not a desktop-wallet marketplace.** Public catalog browsing and
+>   wallet-owned non-economic approval previews are separate from execution. Hosted MCP is keyless; the
+>   isolated local Stele MCP currently exposes three read/status tools and no transaction tool.
+> - **The registered public-network identity was reachable but stale on 2026-07-16.** Repeated RPC checks
+>   remained at height 74,907 with latest timestamp 2026-07-08T22:39:05Z. Registration and topology are not
+>   liveness or production-settlement evidence.
+> - **Tokenomics values remain design parameters unless independently observable in finalized state.** The
+>   paper no longer presents target service fees, registry bonds, agent-commerce economics, or wallet UX as
+>   activated machine facts.
 
 ## v5.0 — May 2026
 
@@ -88,7 +100,7 @@ Whitepaper PDF: 81 pages. Lightpaper PDF: 34 pages.
 
 ### Operations and primitives
 
-- Eight agent-commerce primitives: attestation, consent, issuer registry, discovery, reputation, availability, escrow + arbiter, spending policy.
+- Eight proposed agent-commerce primitives: attestation, consent, issuer registry, discovery, reputation, availability, escrow + arbiter, spending policy. _(Reconciled — this is target architecture, not an activated public-network suite.)_
 - Cluster operations — distributed validator technology, standby capacity, GPU prover service tier separation, service-tier revenue direct to operators.
 - Privacy cordon — native caller-origin enforcement of denomination non-fungibility.
 
