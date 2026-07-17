@@ -108,6 +108,9 @@ class SteleDeploymentTruthTests(unittest.TestCase):
             "Hosted Stele MCP exposes a transaction signer.",
             "Hosted Stele MCP performs signing and broadcast.",
             "Hosted Stele MCP relays signed transactions.",
+            "Hosted Stele MCP is a transaction signer.",
+            "Hosted Stele MCP has a transaction tool.",
+            "Hosted Stele MCP includes transaction signing.",
         )
         for sample in samples:
             with self.subTest(sample=sample):
@@ -165,6 +168,14 @@ class SteleDeploymentTruthTests(unittest.TestCase):
                 "The public web contains payment controls.",
                 "public web claims booking, payment, settlement, or economic controls",
             ),
+            (
+                "The public web processes bookings.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "The public web operates payment workflows.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
         )
         for sample, expected in samples:
             with self.subTest(sample=sample):
@@ -180,6 +191,8 @@ class SteleDeploymentTruthTests(unittest.TestCase):
             "Wallet authentication certifies legal identity.",
             "That authentication demonstrates ownership.",
             "Browser Wallet proves who the user is.",
+            "Browser Wallet authenticates the user’s legal identity.",
+            "Wallet authentication attests the user’s identity.",
         )
         for sample in samples:
             with self.subTest(sample=sample):
@@ -215,16 +228,29 @@ class SteleDeploymentTruthTests(unittest.TestCase):
             "A future Hosted Stele MCP could perform signing and broadcast after activation.",
             "The retired Hosted Stele MCP exposed a transaction signer.",
             "Hosted Stele MCP signing and broadcast remain separately gated.",
+            "Hosted Stele MCP is not a transaction signer.",
+            "Hosted Stele MCP has no transaction tool.",
+            "Hosted Stele MCP does not include transaction signing.",
+            "A future Hosted Stele MCP could include transaction signing after review.",
+            "The retired Hosted Stele MCP included transaction signing.",
             "The public web exposes no booking, payment, settlement, or other economic controls.",
             "The public web will support payments only after protocol activation.",
             "The retired public web used to offer payment controls.",
             "The public web does not accept bookings or process payments.",
+            "The public web does not process bookings or operate payment workflows.",
+            "The public web processes booking-approval draft records for read-only inspection.",
             "The public web has no Publish listing button.",
             "A future public web may let providers publish listings after activation.",
+            "A future public web will operate payment workflows only after activation.",
             "The retired public web accepted bookings.",
+            "The retired public web processed bookings and operated payment workflows.",
             "Provider publication could be available through a future public web after release.",
             "Wallet authentication does not prove human identity or authority.",
             "Browser Wallet does not confirm the user's identity.",
+            "Browser Wallet does not authenticate the user's legal identity.",
+            "Wallet authentication does not attest the user's identity.",
+            "A future Browser Wallet could authenticate legal identity after a separate release.",
+            "The retired Browser Wallet authenticated legal identity.",
             "A future wallet could certify credentials only after a separate identity release.",
             "The retired Browser Wallet claimed to confirm identity.",
             "A retired prototype described economic previews as user-approved.",
@@ -535,6 +561,47 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
                     canonical_destination,
                     f"{destination})",
                     "non-canonical Provider Studio URL",
+                )
+
+    def test_main_rejects_every_third_review_truth_bypass(self) -> None:
+        samples = (
+            (
+                "Hosted Stele MCP is a transaction signer.",
+                "hosted Stele MCP claims transaction capability",
+            ),
+            (
+                "Hosted Stele MCP has a transaction tool.",
+                "hosted Stele MCP claims transaction capability",
+            ),
+            (
+                "Hosted Stele MCP includes transaction signing.",
+                "hosted Stele MCP claims transaction capability",
+            ),
+            (
+                "The public web processes bookings.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "The public web operates payment workflows.",
+                "public web claims booking, payment, settlement, or economic controls",
+            ),
+            (
+                "Browser Wallet authenticates the user’s legal identity.",
+                "wallet authentication presented as identity proof",
+            ),
+            (
+                "Wallet authentication attests the user’s identity.",
+                "wallet authentication presented as identity proof",
+            ),
+        )
+        for sample, expected in samples:
+            with self.subTest(sample=sample):
+                self.run_mutation(
+                    "README.md",
+                    "Economic writes, transaction signing, and mainnet remain off.",
+                    "Economic writes, transaction signing, and mainnet remain off. "
+                    + sample,
+                    expected,
                 )
 
 
