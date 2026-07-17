@@ -25,7 +25,9 @@ the dated live-preview and canonical
 `[stele.monolythium.com/studio](https://stele.monolythium.com/studio)` Markdown destination, zero-service
 catalog, Browser Wallet v0.4.5 prerelease label, address-control-only authentication boundary, exact
 hosted and local MCP tool counts, and the economic-write, transaction-signing, provider-publication, and
-mainnet-off gates. A Studio destination with a path suffix, query, or fragment fails the gate.
+mainnet-off gates. A Studio destination that is external, relative, scheme-relative, schemeless,
+uses the wrong scheme or an alternate route, or adds a literal/encoded suffix, query, or fragment
+fails the gate; only the exact canonical HTTPS Studio destination is accepted.
 
 The Stele draft gate treats the two released record types separately. It requires the public web's
 wallet-authenticated Provider Studio at `https://stele.monolythium.com/studio` to be described as
@@ -38,8 +40,19 @@ generic claims that the web creates no drafts, claims that the web creates booki
 hosted-MCP access to provider-listing drafts, hosted signing or broadcast, draft-class conflation,
 public-web publication or economic controls, nonzero inventory, wrong tool counts, a transaction-capable
 local MCP, identity overclaims, the retired economic-action-preview claim, or any enabled gated capability
-each fail the build. It can be
-run directly without the rendering dependencies:
+each fail the build.
+
+The checker evaluates these as predicate-local assertions. Coordinators, contrast markers, punctuation,
+relative clauses, parentheticals, and suffixes bound the polarity and time markers that actually govern
+the matched predicate, so an unrelated denial, history note, or future clause cannot mask a current
+contradiction. It preserves explicit false-claim/warning copy and evaluates semantic negation parity,
+including double-negative activation claims, without rejecting ordinary single-negative controls.
+Tool, endpoint, inventory, and Studio-destination counts are typed assertions rather than nearby-token
+matches. Studio links additionally reject ambiguous duplicate reference definitions (renderers disagree
+about which duplicate wins), arbitrary action destinations, and encoded or non-HTTP schemes while still
+allowing canonical, documentation, historical, and explicitly rejected links.
+
+It can be run directly without the rendering dependencies:
 
 ```bash
 python tools/check_truth.py
