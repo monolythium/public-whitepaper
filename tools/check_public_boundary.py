@@ -100,8 +100,8 @@ def is_private_path_part(part: str) -> bool:
         return True
 
     # Preserve lower-to-upper and acronym-to-title boundaries before folding so
-    # ``SteleInternal`` and ``SteleINTERNALDocs`` receive the same treatment as
-    # ``stele-internal``.
+    # generic camel-case and acronym-heavy private-path variants receive the
+    # same treatment as their separator-delimited forms.
     separated = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "-", normalized)
     separated = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "-", separated)
     folded = separated.casefold().lstrip(".")
