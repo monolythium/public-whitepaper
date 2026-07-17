@@ -208,6 +208,34 @@ TOOL_COUNT_REVERSED_AFTER_SURFACE = re.compile(
     rf"up\s+to|about|approximately)\s+)?(?P<count>{TOOL_COUNT_TOKEN})\b",
     re.IGNORECASE,
 )
+NEGATED_TOOL_COUNT_AFTER_SURFACE = re.compile(
+    rf"\b(?:"
+    rf"(?:tool|endpoint|capability)\s+count\s*(?:is|=|:)\s*not\s+"
+    rf"(?P<count_direct>{TOOL_COUNT_TOKEN})|"
+    rf"(?:tool|endpoint|capability)\s+count\s+"
+    rf"(?:differs?\s+from|is\s+(?:different\s+from|other\s+than))\s+"
+    rf"(?P<count_diff>{TOOL_COUNT_TOKEN})|"
+    rf"(?:does\s+not|doesn['’]t|cannot)\s+"
+    rf"(?:have|expose|provide|offer|include)\s+"
+    rf"(?:(?:the\s+)?required\s+|exactly\s+|only\s+)?"
+    rf"(?P<count_verb>{TOOL_COUNT_TOKEN})\s+"
+    rf"(?:tools?|endpoints?|capabilit(?:y|ies))"
+    rf")\b",
+    re.IGNORECASE,
+)
+NO_TOOL_SURFACE_AFTER_MCP = re.compile(
+    r"\b(?:"
+    r"(?:has|offers?|provides?|exposes?|includes?)\s+no\s+"
+    r"(?:tools?|endpoints?|capabilit(?:y|ies))|"
+    r"lacks?\s+(?:all\s+)?(?:tools?|endpoints?|capabilit(?:y|ies))"
+    r")\b",
+    re.IGNORECASE,
+)
+TOOL_ABSENCE_EXCEPTION_SUFFIX = re.compile(
+    rf"^\s+(?:beyond|besides|other\s+than|except(?:\s+for)?|apart\s+from|outside)"
+    rf"\s+(?:(?:its|the)\s+)?(?:exactly\s+)?(?P<count>{TOOL_COUNT_TOKEN})\b",
+    re.IGNORECASE,
+)
 MCP_SURFACE_REVERSE_COUNT = re.compile(
     rf"\b(?:(?:there\s+(?:is|are)|the\s+surface\s+has)\s+)?"
     rf"(?:(?P<qualifier>exactly|only|at\s+least|more\s+than|fewer\s+than|"
@@ -221,8 +249,9 @@ UNRELATED_TOOL_COUNT_SUBJECT = re.compile(
     r"\b(?:(?:another|other|separate|unrelated|the)\s+)?"
     r"(?:API|website|system|application|server|client|agent|product|surface|"
     r"Provider\s+Studio|public\s+web|Browser\s+Wallet|Desktop\s+Wallet)\b"
-    r"(?:(?![,;.!?]).){0,60}?\b(?:has|exposes?|offers?|uses?|includes?|"
-    r"provides?|reports?|lists?)\b",
+    r"(?:(?![,;.!?]).){0,60}?\b(?:(?:"
+    r"has|exposes?|offers?|uses?|includes?|provides?|reports?|lists?"
+    r")\b|(?:tool|endpoint|capability)\s+count\s*(?:is\b|=|:))",
     re.IGNORECASE,
 )
 PUBLISHED_SERVICE_COUNT = re.compile(
@@ -304,8 +333,29 @@ GATED_CAPABILITY_ACTIVATION = {
         re.IGNORECASE,
     ),
 }
-ENABLED_STATE = r"(?:on|enabled|live|active|available|operational|permitted)"
-REVERSE_ENABLED_STATE = r"(?:enabled|live|active|available|operational|permitted)"
+ENABLED_STATE = r"(?:on|enabled|live|active|available|operational|permitted|open|ready)"
+REVERSE_ENABLED_STATE = (
+    r"(?:enabled|live|active|available|operational|permitted|open|ready)"
+)
+DISABLED_STATE = r"(?:off|gated|unavailable|disabled|inactive|closed|blocked)"
+STATE_TIME_MODIFIER = r"(?:(?:now|currently|today|already|presently)\s+)?"
+STATE_COPULA = (
+    rf"(?:is|are|remains?|(?:has|have)\s+{STATE_TIME_MODIFIER}been)"
+)
+NEGATED_DISABLED_RELATION = (
+    rf"(?:"
+    rf"{STATE_COPULA}\s+{STATE_TIME_MODIFIER}"
+    rf"(?:not|never|no\s+longer)\s+{STATE_TIME_MODIFIER}"
+    rf"(?:still\s+)?{DISABLED_STATE}|"
+    rf"(?:isn['’]t|aren['’]t)\s+{STATE_TIME_MODIFIER}(?:still\s+)?"
+    rf"{DISABLED_STATE}|"
+    rf"(?:has|have)\s+{STATE_TIME_MODIFIER}"
+    rf"(?:not|never|no\s+longer)\s+{STATE_TIME_MODIFIER}been\s+"
+    rf"{STATE_TIME_MODIFIER}(?:still\s+)?{DISABLED_STATE}|"
+    rf"(?:hasn['’]t|haven['’]t)\s+{STATE_TIME_MODIFIER}been\s+"
+    rf"{STATE_TIME_MODIFIER}(?:still\s+)?{DISABLED_STATE}"
+    rf")"
+)
 
 PUBLIC_WEB_BOOKING_DRAFT_CREATION = {
     "public web claims booking-approval draft creation": re.compile(
@@ -927,7 +977,7 @@ CLAIM_DENIAL = re.compile(
     r"\b(?:no|not|never|cannot|neither|nor|lacks?|refuses?|blocks?|bars?|"
     r"fails?|rejects?|forbids?|prevents?|denies?|unavailable|gated|off|empty|"
     r"false|invalid|incorrect|wrong|misleading|obsolete|avoid|unsafe|untrue|"
-    r"deprecated)\b|"
+    r"deprecated|disabled|inactive|closed|blocked)\b|"
     r"n['’]t\b",
     re.IGNORECASE,
 )
@@ -1340,7 +1390,7 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
         segment_end = min(next_surface, surface.end() + 600)
         for claim in TOOL_COUNT_CLAIM.finditer(prose, surface.end(), segment_end):
             if UNRELATED_TOOL_COUNT_SUBJECT.search(
-                prose[surface.end() : claim.start()]
+                prose[surface.end() : claim.end()]
             ):
                 continue
             record_tool_count(
@@ -1353,7 +1403,7 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
             prose, surface.end(), segment_end
         ):
             if UNRELATED_TOOL_COUNT_SUBJECT.search(
-                prose[surface.end() : claim.start()]
+                prose[surface.end() : claim.end()]
             ):
                 continue
             record_tool_count(
@@ -1366,7 +1416,7 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
             prose, surface.end(), segment_end
         ):
             if UNRELATED_TOOL_COUNT_SUBJECT.search(
-                prose[surface.end() : claim.start()]
+                prose[surface.end() : claim.end()]
             ):
                 continue
             record_tool_count(
@@ -1375,6 +1425,50 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
                 claim.group("count"),
                 claim.group("qualifier"),
             )
+        expected_count = 2 if kind == "hosted" else 3
+        for claim in NEGATED_TOOL_COUNT_AFTER_SURFACE.finditer(
+            prose, surface.end(), segment_end
+        ):
+            if UNRELATED_TOOL_COUNT_SUBJECT.search(
+                prose[surface.end() : claim.end()]
+            ):
+                continue
+            count_token = (
+                claim.group("count_direct")
+                or claim.group("count_diff")
+                or claim.group("count_verb")
+            )
+            if count_value(count_token) == expected_count and claim_is_current_semantic(
+                prose, claim.start(), claim.end()
+            ):
+                contradictions.append(
+                    (
+                        claim.start(),
+                        f"{kind} Stele MCP denies its required {expected_count}-tool surface",
+                    )
+                )
+        for claim in NO_TOOL_SURFACE_AFTER_MCP.finditer(
+            prose, surface.end(), segment_end
+        ):
+            if UNRELATED_TOOL_COUNT_SUBJECT.search(
+                prose[surface.end() : claim.end()]
+            ):
+                continue
+            _, assertion_end = claim_assertion_bounds(
+                prose, claim.start(), claim.end()
+            )
+            exception = TOOL_ABSENCE_EXCEPTION_SUFFIX.match(
+                prose[claim.end() : assertion_end]
+            )
+            if exception and count_value(exception.group("count")) == expected_count:
+                continue
+            if claim_is_current_semantic(prose, claim.start(), claim.end()):
+                contradictions.append(
+                    (
+                        claim.start(),
+                        f"{kind} Stele MCP denies its required {expected_count}-tool surface",
+                    )
+                )
 
         if kind == "hosted":
             segment = prose[surface.start() : segment_end]
@@ -1458,14 +1552,20 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
     for label, capability in GATED_CAPABILITIES.items():
         forward = re.compile(
             rf"\b{capability}\b(?:(?![.!?]).){{0,90}}?\b"
-            rf"(?:is|are|remains?|has\s+been)\s+(?:now\s+)?{ENABLED_STATE}\b",
+            rf"{STATE_COPULA}\s+{STATE_TIME_MODIFIER}{ENABLED_STATE}\b",
             re.IGNORECASE | re.DOTALL,
         )
         reverse = re.compile(
-            rf"\b{REVERSE_ENABLED_STATE}\s+(?:Stele\s+)?{capability}\b",
+            rf"\b{STATE_TIME_MODIFIER}{REVERSE_ENABLED_STATE}\s+"
+            rf"(?:Stele\s+)?{capability}\b",
             re.IGNORECASE,
         )
-        for pattern in (forward, reverse):
+        negated_disabled = re.compile(
+            rf"\b{capability}\b(?:(?![.!?]).){{0,90}}?\b"
+            rf"{NEGATED_DISABLED_RELATION}\b",
+            re.IGNORECASE | re.DOTALL,
+        )
+        for pattern in (forward, reverse, negated_disabled):
             for match in pattern.finditer(prose):
                 if claim_is_current_affirmative(prose, match.start(), match.end()):
                     contradictions.append(

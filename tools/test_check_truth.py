@@ -657,6 +657,34 @@ TYPED_COUNT_FRESH_CONTRADICTIONS = (
         "Hosted Stele MCP exposes\nthree endpoints.",
         "hosted Stele MCP claims 3 tools; expected exactly 2",
     ),
+    (
+        "Hosted Stele MCP tool count is not two.",
+        "hosted Stele MCP denies its required 2-tool surface",
+    ),
+    (
+        "Local Stele MCP tool count is not three.",
+        "local Stele MCP denies its required 3-tool surface",
+    ),
+    (
+        "Hosted Stele MCP has no tools.",
+        "hosted Stele MCP denies its required 2-tool surface",
+    ),
+    (
+        "Local Stele MCP has no tools.",
+        "local Stele MCP denies its required 3-tool surface",
+    ),
+    (
+        "Hosted Stele MCP lacks tools.",
+        "hosted Stele MCP denies its required 2-tool surface",
+    ),
+    (
+        "Hosted Stele MCP has no tools beyond imagination.",
+        "hosted Stele MCP denies its required 2-tool surface",
+    ),
+    (
+        "Local Stele MCP lacks tools other than four tools.",
+        "local Stele MCP denies its required 3-tool surface",
+    ),
 )
 
 TYPED_COUNT_FRESH_TRUTHFUL_CONTROLS = (
@@ -676,6 +704,132 @@ TYPED_COUNT_FRESH_TRUTHFUL_CONTROLS = (
     "Hosted Stele MCP exposes exactly two tools and another API exposes three tools.",
     "Hosted Stele MCP exposes exactly two tools, while the website exposes three tools.",
     "Hosted Stele MCP exposes exactly two tools.\nAnother API exposes three tools.",
+    "Hosted Stele MCP tool count is not three.",
+    "Local Stele MCP tool count is not two.",
+    "Hosted Stele MCP has no third tool.",
+    "The claim that Hosted Stele MCP tool count is not two is false.",
+    "A future Hosted Stele MCP may have no tools before release.",
+    "Hosted Stele MCP exposes exactly two tools. Another API has no tools.",
+    "Hosted Stele MCP exposes exactly two tools. Another API tool count is not two.",
+    "Hosted Stele MCP exposes exactly two tools. Another API tool count: not two.",
+    "Hosted Stele MCP has no tools beyond the two OAuth-protected tools.",
+    "Hosted Stele MCP lacks tools other than its two OAuth-protected tools.",
+)
+
+GATED_STATE_FRESH_CONTRADICTIONS = (
+    (
+        "Provider publication is no longer gated.",
+        "Stele provider publication incorrectly presented as enabled",
+    ),
+    (
+        "Transaction signing is no longer unavailable.",
+        "Stele transaction signing incorrectly presented as enabled",
+    ),
+    (
+        "Economic writes are not disabled.",
+        "Stele economic writes incorrectly presented as enabled",
+    ),
+    (
+        "Mainnet is not gated.",
+        "Stele mainnet incorrectly presented as enabled",
+    ),
+    (
+        "Provider publication is open.",
+        "Stele provider publication incorrectly presented as enabled",
+    ),
+    (
+        "Transaction signing is ready.",
+        "Stele transaction signing incorrectly presented as enabled",
+    ),
+    (
+        "Economic writes are permitted.",
+        "Stele economic writes incorrectly presented as enabled",
+    ),
+    (
+        "Mainnet is operational.",
+        "Stele mainnet incorrectly presented as enabled",
+    ),
+    (
+        "Provider publication isn't gated.",
+        "Stele provider publication incorrectly presented as enabled",
+    ),
+    (
+        "Transaction signing hasn't been unavailable.",
+        "Stele transaction signing incorrectly presented as enabled",
+    ),
+    (
+        "Economic writes aren't disabled.",
+        "Stele economic writes incorrectly presented as enabled",
+    ),
+    (
+        "Mainnet has not been closed.",
+        "Stele mainnet incorrectly presented as enabled",
+    ),
+)
+
+GATED_STATE_FRESH_TRUTHFUL_CONTROLS = (
+    "Provider publication remains gated.",
+    "Transaction signing remains unavailable.",
+    "Economic writes are disabled.",
+    "Mainnet is gated.",
+    "Provider publication is not open.",
+    "Transaction signing is not ready.",
+    "A future mainnet will be operational only after release.",
+    "The retired prototype had open provider publication.",
+    "The claim that transaction signing is ready is false.",
+    "Economic writes are not permitted.",
+    "Mainnet is not operational.",
+    "Provider publication is open only after activation.",
+    "Transaction signing is ready, but only after activation.",
+    "Economic writes are not disabled only after activation.",
+    "Mainnet isn't closed only after activation.",
+)
+
+GATED_STATE_MATRIX_CAPABILITIES = (
+    (
+        "Provider publication",
+        "is",
+        "Stele provider publication incorrectly presented as enabled",
+    ),
+    (
+        "Transaction signing",
+        "is",
+        "Stele transaction signing incorrectly presented as enabled",
+    ),
+    (
+        "Economic writes",
+        "are",
+        "Stele economic writes incorrectly presented as enabled",
+    ),
+    ("Mainnet", "is", "Stele mainnet incorrectly presented as enabled"),
+)
+GATED_STATE_MATRIX_ENABLED = (
+    "on",
+    "enabled",
+    "live",
+    "active",
+    "available",
+    "operational",
+    "permitted",
+    "open",
+    "ready",
+)
+GATED_STATE_MATRIX_DISABLED = (
+    "off",
+    "gated",
+    "unavailable",
+    "disabled",
+    "inactive",
+    "closed",
+    "blocked",
+)
+GATED_STATE_MATRIX_TIME_MODIFIERS = (
+    "",
+    "now ",
+    "currently ",
+    "today ",
+    "already ",
+    "presently ",
 )
 
 
@@ -846,6 +1000,55 @@ class SteleDeploymentTruthTests(unittest.TestCase):
         for sample in TYPED_COUNT_FRESH_TRUTHFUL_CONTROLS:
             with self.subTest(sample=sample):
                 self.assertEqual([], check_truth.stele_status_contradictions(sample))
+
+    def test_fresh_gated_state_contradictions_are_rejected(self) -> None:
+        for sample, expected in GATED_STATE_FRESH_CONTRADICTIONS:
+            with self.subTest(sample=sample):
+                self.assert_contradiction(sample, expected)
+
+    def test_fresh_gated_state_truthful_controls_are_allowed(self) -> None:
+        for sample in GATED_STATE_FRESH_TRUTHFUL_CONTROLS:
+            with self.subTest(sample=sample):
+                self.assertEqual([], check_truth.stele_status_contradictions(sample))
+
+    def test_gated_state_cross_product_is_rejected(self) -> None:
+        for capability, copula, expected in GATED_STATE_MATRIX_CAPABILITIES:
+            contraction = "aren't" if copula == "are" else "isn't"
+            perfect = "have" if copula == "are" else "has"
+            for state in GATED_STATE_MATRIX_ENABLED:
+                for modifier in GATED_STATE_MATRIX_TIME_MODIFIERS:
+                    sample = f"{capability} {copula} {modifier}{state}."
+                    with self.subTest(sample=sample):
+                        self.assert_contradiction(sample, expected)
+            for state in GATED_STATE_MATRIX_DISABLED:
+                samples = (
+                    f"{capability} {copula} not {state}.",
+                    f"{capability} {copula} no longer {state}.",
+                    f"{capability} {contraction} {state}.",
+                    f"{capability} {perfect} not been {state}.",
+                )
+                for sample in samples:
+                    with self.subTest(sample=sample):
+                        self.assert_contradiction(sample, expected)
+
+    def test_gated_state_cross_product_truthful_controls_are_allowed(self) -> None:
+        for capability, copula, _ in GATED_STATE_MATRIX_CAPABILITIES:
+            for state in GATED_STATE_MATRIX_DISABLED:
+                sample = f"{capability} {copula} {state}."
+                with self.subTest(sample=sample):
+                    self.assertEqual(
+                        [], check_truth.stele_status_contradictions(sample)
+                    )
+            for state in GATED_STATE_MATRIX_ENABLED:
+                samples = (
+                    f"{capability} {copula} not {state}.",
+                    f"{capability} {copula} {state} only after activation.",
+                )
+                for sample in samples:
+                    with self.subTest(sample=sample):
+                        self.assertEqual(
+                            [], check_truth.stele_status_contradictions(sample)
+                        )
 
     def test_subordinate_history_does_not_mask_a_current_claim(self) -> None:
         samples = (
@@ -1669,6 +1872,19 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
 
     def test_main_allows_fresh_typed_count_truthful_controls(self) -> None:
         for sample in TYPED_COUNT_FRESH_TRUTHFUL_CONTROLS:
+            with self.subTest(sample=sample):
+                result, stdout, stderr = self.run_append_check(sample)
+                self.assertEqual(0, result, msg=stderr or stdout)
+
+    def test_main_rejects_fresh_gated_state_corpus(self) -> None:
+        for sample, expected in GATED_STATE_FRESH_CONTRADICTIONS:
+            with self.subTest(sample=sample):
+                result, stdout, stderr = self.run_append_check(sample)
+                self.assertEqual(1, result, msg=stdout)
+                self.assertIn(expected, stderr)
+
+    def test_main_allows_fresh_gated_state_truthful_controls(self) -> None:
+        for sample in GATED_STATE_FRESH_TRUTHFUL_CONTROLS:
             with self.subTest(sample=sample):
                 result, stdout, stderr = self.run_append_check(sample)
                 self.assertEqual(0, result, msg=stderr or stdout)
