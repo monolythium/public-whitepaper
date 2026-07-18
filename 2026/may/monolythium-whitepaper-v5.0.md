@@ -128,6 +128,17 @@
 >     current product line retires embedded Stele, but legacy or unreconciled desktop builds may retain a
 >     gated historical surface until their separately reviewed removal and migration are released. E2EE
 >     rooms, settlement, disputes, and reviews remain separately gated. See §18.10 for the product boundary.
+> 15. **Consensus leader selection is a deterministic round-robin schedule.** The leader-selection
+>     design is the Starfish pacemaker's round-robin: the wave leader is
+>     `wave number mod active-cluster-count`, computed from public DAG state with no seed and no
+>     separate leader-selection signature. §11 previously carried a second, contradicting description —
+>     a "post-quantum leader-seed beacon" derived from a BLAKE3 hash of the quorum certificate — as a
+>     superseded design that the text never removed; §11 and §22.3 are corrected to the round-robin
+>     design. Its honest anti-grinding property is that there is no aggregate seed for an adversary to
+>     bias — leader-grinding is foreclosed by construction — but leadership is **public and
+>     predictable**, so the earlier "unforgeable leader selection" framing is dropped, and transaction
+>     ordering within a leader's proposal is named as a separate consideration the schedule does not
+>     foreclose.
 >
 > **Dated network-status note — 2026-07-16.** The registered v0.4.0 public development-network
 > identity remained reachable, but its public RPC reported height 74,907 with latest timestamp
@@ -687,9 +698,7 @@ Liveness holds under partial synchrony — the standard BFT assumption that mess
 
 ### Leader selection
 
-Wave leadership is assigned by a **post-quantum leader-seed beacon**: a domain-separated, chain-id-bound BLAKE3 hash of the ML-DSA-65 quorum certificate that already finalizes each anchor. Every cluster derives the same wave leader by hashing that certificate together with the wave number and the active cluster set, so the seed is a pure function of public, post-quantum-agreed state and every honest cluster computes the same assignment from the same DAG state. The certificate forms before the leader for the next wave is known, and an adversary cannot forge or grind it because it is a post-quantum signature object the quorum already committed; there is no separate seed to influence and no separate leader-selection signature to withhold.
-
-This is the leader rule the Starfish family specifies, with the seed sourced from the post-quantum quorum certificate.
+Wave leadership is assigned by a **deterministic round-robin schedule** over the active cluster set: the leader of a wave is the `(wave number mod active-cluster-count)`-th cluster in the canonical active ordering. Every honest cluster computes the same leader from the same public DAG state — the wave number and the active set — with no seed, no beacon, and no separate leader-selection signature. This is the pacemaker schedule the Starfish family specifies: leadership rotates predictably, so liveness depends only on eventually reaching an honest leader rather than on agreeing a shared random beacon.
 
 Round-robin removes a class of grinding and seed-manipulation risk by construction: there is no seed for an adversary to bias by withholding or selectively releasing a partial signature, because there is no aggregate seed at all. Leadership is a schedule, not a lottery. If a scheduled leader fails to be committed within its timeout, the linearizer executes a skip round and the next scheduled leader's commit covers the skipped wave (see Liveness, above).
 
@@ -1547,10 +1556,10 @@ Honesty about limits is part of the threat model. A chain that claims invulnerab
 MEV — value extracted by privileged actors who can reorder, insert, or censor transactions — is bounded structurally by the chain's design.
 
 - **Plaintext mempool.** The mempool is plaintext, so a transaction body — including a CLOB order — is visible before inclusion. Mempool-visibility front-running is therefore not foreclosed at the mempool layer; it is bounded instead by deterministic DAG ordering and the native order book, below.
-- **Unforgeable leader selection.** Wave leadership is derived from the post-quantum leader-seed beacon (§11): a domain-separated, chain-id-bound BLAKE3 hash of the ML-DSA-65 quorum certificate the quorum already committed. Operators cannot influence the assignment through block-content selection, and there is no separate seed to grind or leader-selection signature to withhold.
+- **No leader seed to grind.** Wave leadership is a deterministic round-robin schedule over the active cluster set (§11), not a seed-derived lottery. Because there is no aggregate seed, there is nothing for an adversary to bias by withholding or selectively releasing a partial signature — the leader-grinding class is foreclosed by construction. The trade-off is stated plainly: leadership is fully **public and predictable**, so a scheduled leader knows in advance that it will propose. That is a deliberate property of the pacemaker schedule, not a claim of unforgeability; transaction ordering *within* a leader's proposal is a separate consideration that predictable leadership does not by itself foreclose.
 - **Native order book.** The native CLOB settles orders deterministically. Sequencer-style MEV games against an order book are bounded by the consensus order, which is determined by the DAG linearization rather than by a single sequencer's discretion.
 
-MEV is not zero, and the chain does not claim it is. Some MEV (backrunning of public events, arbitrage between markets, latency-based capture) exists wherever transactions are visible, and the mempool is plaintext. The chain's design forecloses the leader-grinding and sequencer-discretion categories through the post-quantum leader-seed beacon and deterministic DAG ordering, and leaves the remainder as a competitive market that benefits ordinary users through tight spreads.
+MEV is not zero, and the chain does not claim it is. Some MEV (backrunning of public events, arbitrage between markets, latency-based capture) exists wherever transactions are visible, and the mempool is plaintext. The chain's design forecloses the leader-grinding and sequencer-discretion categories through the seedless round-robin leader schedule and deterministic DAG ordering, and leaves the remainder as a competitive market that benefits ordinary users through tight spreads.
 
 ---
 
