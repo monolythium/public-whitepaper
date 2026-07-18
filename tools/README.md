@@ -21,13 +21,15 @@ The build first runs `tools/check_truth.py`, which fails closed if public copy r
 the target agent-commerce suite, spending-policy/USDC agent-payment routes, Stele-in-desktop, current
 economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also rejects stale
 Stele hostname-reservation or unavailable-deployment language. Every public status surface must preserve
-the dated live-preview and canonical
-`[stele.monolythium.com/studio](https://stele.monolythium.com/studio)` Markdown destination, zero-service
+the dated live-preview and a visible canonical
+`https://stele.monolythium.com/studio` product link, zero-service
 catalog, Browser Wallet v0.4.5 prerelease label, address-control-only authentication boundary, exact
 hosted and local MCP tool counts, and the economic-write, transaction-signing, provider-publication, and
 mainnet-off gates. A Studio destination that is external, relative, scheme-relative, schemeless,
 uses the wrong scheme or an alternate route, or adds a literal/encoded suffix, query, or fragment
-fails the gate; only the exact canonical HTTPS Studio destination is accepted.
+fails the gate; only the exact canonical HTTPS Studio destination is accepted. Required status anchors
+come from rendered, visible prose and resolved links: HTML comments, fenced code, hidden HTML, and
+reference definitions alone cannot satisfy them.
 
 The Stele draft gate treats the two released record types separately. It requires the public web's
 wallet-authenticated Provider Studio at `https://stele.monolythium.com/studio` to be described as
@@ -48,11 +50,60 @@ the matched predicate, so an unrelated denial, history note, or future clause ca
 contradiction. It preserves explicit false-claim/warning copy and evaluates semantic negation parity,
 including double-negative activation claims, without rejecting ordinary single-negative controls.
 Tool, endpoint, inventory, and Studio-destination counts are typed assertions rather than nearby-token
-matches. Studio links additionally reject ambiguous duplicate reference definitions (renderers disagree
-about which duplicate wins), arbitrary action destinations, and encoded or non-HTTP schemes while still
-allowing canonical, documentation, historical, and explicitly rejected links.
+matches. Tool counts include aggregate atoms, ordinal additions, pair/trio/dozen units, symbolic
+multiplication/addition, and exactness qualifiers. Studio links are resolved by the pinned Markdown
+renderer before inspection, so inline, full/collapsed/shortcut reference, multiline-label,
+entity-decoded, raw-HTML, and image links share publication semantics. Heading hierarchy, list ancestry,
+the prose that introduces an action list, and visible image alt labels remain attached to their link, so
+an action cannot evade the destination check by crossing a Markdown block or ordered step. The gate
+additionally rejects ambiguous duplicate reference definitions (renderers disagree about which duplicate
+wins), arbitrary action destinations, and encoded or non-HTTP schemes while still allowing canonical,
+documentation, historical, and explicitly rejected links. Destination bytes are excluded from assertion
+polarity, so a hostname containing words such as `invalid` or `unsafe` cannot masquerade as a denial.
 
-It can be run directly without the rendering dependencies:
+The frozen families include progressive, service/wallet-attributed, and adjacent-sentence anaphoric
+hosted-transaction claims, contracted and uncontracted double-negative transaction activation,
+forward and reverse existential catalog counts, generally-available gated states,
+collapsed Markdown references, optional published-listing prerequisites, bare desktop-wallet possession,
+and passive Provider Studio escrow attribution. Conditional release warnings, next-release statements,
+transaction work assigned to a distinct role-qualified, third-party, or externally controlled wallet
+actors, ordinary single-negative absence claims, and typed zero-transaction-tool claims remain valid
+controls.
+
+Named hosted-tool and catalog inventories are checked as grouped current assertions, including
+comma/coordination variants and shared item nouns. Hosted-MCP pronouns remain attributed across clause
+punctuation unless a different actor intervenes, and chained absence denials use full odd/even negation
+parity. Contextual Studio labels such as “delete their draft” bind to Provider Studio only when the same
+assertion identifies providers as the actor. Rejected multi-claim quotations, archived audit reports,
+retired Studio links, and fixtures that model an endpoint count remain reporting or test ownership—not
+live product assertions. Historical state is classified over the complete actor-local proposition,
+including date ranges, past-perfect/passive forms, appositives, and retirement predicates after a link;
+Markdown, reference, and raw-HTML spellings receive the same disposition. A later return-to-service or
+current action overrides that historical control. Documentary wording likewise stops being a control
+when its own label or assertion launches or identifies the live product. Studio link ownership remains
+actor-local: a nested unrelated product or recording-studio heading resets a parent Provider Studio
+section, while headings, action lists, ordered steps, bounded sentence gaps, and image-link labels retain
+genuine Studio ownership. Explicitly
+rejected quotations remain controls only when the outer rejection frame is affirmative; a negated
+rejection, later truth reversal, or separate current action still requires the exact canonical
+destination.
+
+Wallet attribution is contextual: an explicit statement that hosted MCP is acting as a named role keeps
+that role's wallet attributed to hosted MCP, including across the next sentence, while otherwise distinct
+role, external, hardware, browser, and self-custodial wallets bound a separate actor. Transaction-tool and
+signing nouns must form a complete capability assertion; documentation, warning, restriction, policy, and
+other capability-meta compounds are not treated as tools. Catalog counts bind the count subject, current
+relation, and catalog location inside one predicate. The count grammar supports sets, symbolic and grouped
+multiplication, inventory copulas, current-time modifiers, hostname locations, and location-first
+existentials without crossing coordinators into a zero-count predicate or treating catalog documentation,
+fixtures, archived simulations, and quoted examples as live inventory.
+
+This is a bounded semantic regression gate over enumerated capability, predicate, count, state, and
+destination families tied to the canonical release assertions. It does not prove arbitrary
+natural-language prose truthful or complete. Human review remains required for every public-copy change,
+especially new phrasing outside the frozen regression families.
+
+With `tools/requirements.txt` installed, it can be run directly without building HTML or PDF artifacts:
 
 ```bash
 python tools/check_truth.py
@@ -103,7 +154,7 @@ tools/
 ├── build.py             — the HTML/PDF generator
 ├── check_public_boundary.py — public-only path/content/artifact gate (standard library only)
 ├── test_check_public_boundary.py — boundary normalization and symlink regression tests
-├── check_truth.py       — public capability-boundary regression gate (standard library only)
+├── check_truth.py       — public capability-boundary regression gate (pinned Markdown renderer)
 ├── test_check_truth.py  — deployment-truth regression tests
 ├── requirements.txt     — pinned Python deps
 └── fonts/               — bundled IBM Plex woff2 (OFL 1.1)
