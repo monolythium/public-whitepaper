@@ -11,9 +11,9 @@ permissions:
 jobs:
   boundary:
     runs-on: ubuntu-24.04
-    # The expanded semantic regression suite exceeded 15 minutes on a hosted
-    # runner. Keep roughly 2x margin without weakening the fail-closed gate.
-    timeout-minutes: 30
+    # The expanded semantic regression suite exceeded the prior 30-minute cap
+    # on a hosted runner. Keep a 45-minute budget without weakening the gate.
+    timeout-minutes: 45
     steps:
       - name: Check out source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683

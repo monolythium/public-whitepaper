@@ -60,10 +60,15 @@ Release history of the Monolythium public whitepaper.
 >   inspect an existing valid non-economic
 >   booking-approval draft, but it does not create booking-approval drafts. Inspection is read-only and
 >   non-economic: the public web exposes no booking, payment, settlement, or other economic controls.
->   Hosted Stele MCP is keyless and
->   exposes exactly two OAuth-protected tools: public catalog search and bounded, non-economic
->   booking-draft preparation. Hosted booking-draft preparation is unavailable without a published listing,
->   and hosted MCP does not create or access provider-listing drafts. The isolated local Stele MCP exposes
+>   Hosted Stele MCP is keyless and OAuth-protected. Its authenticated `tools/list` response is the
+>   authoritative inventory for that session. Its baseline tools provide public catalog search and bounded,
+>   non-economic booking-draft preparation; hosted booking-draft preparation is unavailable without a
+>   published listing. The gated `stele_create_provider_listing_draft` tool exists only when that exact name
+>   appears in authenticated `tools/list`. When listed, each successful
+>   `stele_create_provider_listing_draft` operation creates exactly one new private wallet-owned unpublished
+>   provider-listing draft. An idempotent replay returns the same draft without creating another. The tool
+>   cannot list, read, update, delete, or publish an existing draft. Hosted MCP does not sign, submit,
+>   broadcast, or settle transactions. The isolated local Stele MCP exposes
 >   exactly three read/status tools and no transaction tool. Economic writes, transaction signing, and
 >   mainnet remain off. Legacy or unreconciled desktop builds may retain a gated historical surface until
 >   reviewed removal and migration are released.

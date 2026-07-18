@@ -78,7 +78,10 @@ class _RenderedMarkdownParser(HTMLParser):
         "td",
         "th",
     }
-    _NON_PROSE_TAGS = {"code", "noscript", "pre", "script", "style", "template"}
+    # Inline code is visible publication prose and is commonly the only exact
+    # spelling of a tool or protocol method. A surrounding <pre> still suppresses
+    # fenced/indented code, so examples cannot satisfy release anchors.
+    _NON_PROSE_TAGS = {"noscript", "pre", "script", "style", "template"}
     _VOID_TAGS = {
         "area",
         "base",
@@ -388,7 +391,8 @@ REQUIRED = (
     "three read/status tools",
     "no transaction tool",
     "degraded/stale",
-    "exactly two OAuth-protected tools",
+    "authenticated tools/list response is the authoritative inventory",
+    "stele_create_provider_listing_draft",
     "public catalog search",
     "booking-draft preparation",
     "legacy or unreconciled desktop builds",
@@ -412,10 +416,16 @@ STELE_STATUS_REQUIRED = (
     "does not create booking-approval drafts",
     "public web exposes no booking, payment, settlement, or other economic controls",
     "Hosted Stele MCP",
-    "exactly two OAuth-protected tools",
+    "authenticated tools/list response is the authoritative inventory for that session",
+    "baseline tools provide public catalog search",
     "booking-draft preparation",
-    "does not create or access provider-listing drafts",
     "Hosted booking-draft preparation is unavailable without a published listing",
+    "stele_create_provider_listing_draft",
+    "exists only when that exact name appears in authenticated tools/list",
+    "each successful stele_create_provider_listing_draft operation creates exactly one new private wallet-owned unpublished provider-listing draft",
+    "an idempotent replay returns the same draft without creating another",
+    "cannot list, read, update, delete, or publish an existing draft",
+    "does not sign, submit, broadcast, or settle transactions",
     "local Stele MCP",
     "exactly three read/status tools",
     "no transaction tool",
@@ -526,8 +536,19 @@ MCP_META_OBJECT_PREFIX = re.compile(
     r"(?:(?:conformance|end[- ]to[- ]end|integration|regression|system|unit)\s+)?"
     r"test|SDK\s+(?:example|fixture|sample)|documentation|docs?|example|fixture|"
     r"mockup|sample|simulation"
-    r")\s+(?:about|covering|for|of)\s+(?:the\s+)?$",
+    r")\s+(?:about|covering|for|of)\s+(?:the\s+)?$|"
+    r"\b(?:(?:conformance|end[- ]to[- ]end|integration|regression|system|unit)\s+)?"
+    r"(?:documentation|docs?|example|fixture|mockup|sample|simulation|test)\s+"
+    r"(?:asserts?|says?|states?|reports?|records?|shows?|depicts?|documents?)\s+"
+    r"(?:that\s+)?$",
     re.IGNORECASE,
+)
+MCP_META_OBJECT_AFTER_SURFACE = re.compile(
+    r"^\s+(?:documentation|docs?|example|fixture|mockup|sample|simulation|"
+    r"SDK\s+(?:example|fixture|sample)|"
+    r"(?:(?:conformance|end[- ]to[- ]end|integration|regression|system|unit)\s+)?"
+    r"test(?:\s+(?:fixture|harness|case|server))?)\b(?:(?![.!?;]).){0,100}$",
+    re.IGNORECASE | re.DOTALL,
 )
 MCP_COUNT_ANAPHORIC_PREDICATE = re.compile(
     r"[.!?;]\s+(?:it|this\s+(?:service|surface|MCP)|the\s+(?:service|surface|MCP))"
@@ -604,7 +625,8 @@ MCP_SURFACE_REVERSE_COUNT = re.compile(
 MCP_AFTER_TYPED_COUNT = re.compile(
     r"^\s+(?:(?:is|are|remain)\s+"
     r"(?:(?:now|currently|today|presently)\s+)?"
-    r"(?:available|exposed|offered|provided|listed|reported)\s+)?"
+    r"(?:(?:not\s+)?(?:available|exposed|offered|provided|listed|reported)|"
+    r"unavailable|absent|missing)\s+)?"
     r"(?:in|on|at|through|from|for|by)\s+(?:the\s+)?"
     r"(?:(?P<hosted>Hosted)\s+|(?P<local>local)\s+)(?:Stele\s+)?MCP\b",
     re.IGNORECASE,
@@ -626,7 +648,7 @@ ALTERNATE_ROLE_WORD = (
     + ROLE_WORD
 )
 ALTERNATE_WALLET_KIND = (
-    r"(?:browser|desktop|external|externally[- ](?:owned|managed|administered|"
+    r"(?:browser(?:[- ]extension)?|desktop|external|externally[- ](?:owned|managed|administered|"
     r"controlled)|hardware|independently[- ](?:owned|managed|administered|"
     r"controlled)|local|mobile|replacement|separately[- ](?:owned|managed|"
     r"administered|controlled)|self[- ]custodial|successor|third[- ]party)"
@@ -643,7 +665,7 @@ ALTERNATE_WALLET_ACTOR = (
     r"(?:role[- ]specific|external(?:ly)?[- ](?:controlled|owned|managed|"
     r"administered)|external|third[- ]party|separate(?:ly[- ]administered)?|"
     r"independent(?:ly[- ]administered)?|another|replacement|successor|hardware|"
-    r"browser|desktop|local|mobile|self[- ]custodial)\s+wallet)"
+    r"browser(?:[- ]extension)?|desktop|local|mobile|self[- ]custodial)\s+wallet)"
 )
 HOSTED_ROLE_ASSIGNMENT = re.compile(
     rf"\b(?:is|becomes?|represents?|(?:acts?|is\s+acting)\s+as|serves?\s+as|"
@@ -749,9 +771,10 @@ INTERVENING_ROLE_ACTOR = re.compile(
 HOSTED_ANAPHORIC_REFERENT = (
     r"(?:It|"
     r"Its\s+(?:(?:same|public|hosted|Stele|service|MCP|[a-z][a-z-]{2,})\s+){0,2}"
-    r"(?:service|MCP|wallet|signer)|"
+    r"(?:API|endpoint|interface|service|MCP|wallet|signer)|"
     r"(?:This|That|The)\s+(?:(?:same|public|hosted|Stele)\s+){0,2}"
-    r"(?:service|MCP|wallet|signer)(?:(?:['’]s)?\s+(?:wallet|signer))?"
+    r"(?:API|endpoint|interface|service|MCP|wallet|signer)"
+    r"(?:(?:['’]s)?\s+(?:wallet|signer))?"
     r")"
 )
 HOSTED_ANAPHORIC_REFERENCE = re.compile(
@@ -769,8 +792,10 @@ INTERVENING_UNRELATED_ASSERTION_SUBJECT = re.compile(
     r"(?:(?:the|an?)\s+)?(?:(?:another|current|distinct|new|other|replacement|"
     r"separate|unrelated)\s+)?(?:"
     r"API|system|application|server|worker|client|agent|product|surface|"
-    r"Provider\s+Studio|public\s+web|Stele\s+web|web\s+app|Browser\s+Wallet|"
+    r"Provider\s+Studio|Studio|public\s+web|Stele\s+web|web\s+app|Browser\s+Wallet|"
     r"Desktop\s+Wallet|desktop\s+wallet|Mobile\s+Wallet|mobile\s+wallet|catalog|"
+    r"(?:browser[- ]extension|hardware|provider|self[- ]custodial|user)\s+wallet|"
+    r"(?:external|hardware|separate)\s+signer|"
     r"(?:account|buyer|client|customer|service)\s+portal|"
     r"customer(?:[- ]account|[- ]service)?\s+portal|buyers?|clients?|customers?"
     r")|"
@@ -1053,8 +1078,13 @@ CATALOG_REVERSE_ENABLED = {
     ),
 }
 
+HOSTED_DYNAMIC_INVENTORY_ERROR = (
+    "hosted Stele MCP presents a fixed tool inventory; "
+    "authenticated tools/list is authoritative"
+)
+
 HOSTED_TOOL_INVENTORY_OVERCLAIMS = {
-    "hosted Stele MCP claims more than exactly two tools": re.compile(
+    "hosted Stele MCP presents an unconditional third capability": re.compile(
         r"\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?]).){0,180}?\b(?:"
         r"(?:exposes?|has|offers?|provides?)\s+(?:an?\s+)?pair\s+of\s+tools?\s+"
         r"plus\s+(?:an?\s+)?(?:status|third)\b|"
@@ -1072,6 +1102,57 @@ HOSTED_TOOL_INVENTORY_OVERCLAIMS = {
         re.IGNORECASE | re.DOTALL,
     ),
 }
+
+# Public copy must remain true while hosted provider-draft availability transitions.
+# A fixed total is therefore stale even if it happens to match one deployment at
+# publication time; authenticated tools/list is the only session-specific inventory
+# authority.
+HOSTED_FIXED_INVENTORY_CLAIM = re.compile(
+    rf"\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?]).){{0,220}}?\b(?:"
+    rf"(?:exposes?|has|offers?|provides?|includes?|lists?|reports?|shows?)\s+"
+    rf"(?:(?:exactly|only|at\s+least|more\s+than|fewer\s+than|up\s+to|"
+    rf"about|approximately)\s+)?(?:{TOOL_COUNT_TOKEN}|pairs?|couples?|trios?|dozens?)\s+"
+    rf"(?:(?:[a-z][a-z0-9/-]*)(?:,\s*|\s+)){{0,6}}(?:tools?|endpoints?|capabilit(?:y|ies))|"
+    rf"(?:tool|endpoint|capability)\s+count\s*(?:is|=|:)\s*"
+    rf"(?:(?:exactly|only)\s+)?{TOOL_COUNT_TOKEN}"
+    rf")\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+HOSTED_ORDINAL_TOOL_ABSENCE_AFTER_SURFACE = re.compile(
+    r"\b(?:"
+    r"(?:has|offers?|provides?|exposes?|includes?)\s+no\s+"
+    r"(?:additional\s+)?(?:second|third|fourth|fifth|sixth|seventh|eighth|"
+    r"ninth|tenth)\s+(?:(?:status|OAuth[- ]protected|read[- ]only)\s+){0,3}"
+    r"(?:tools?|endpoints?|capabilit(?:y|ies))|"
+    r"lacks?\s+(?:(?:an?|the|its)\s+)?(?:additional\s+)?"
+    r"(?:second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+"
+    r"(?:(?:status|OAuth[- ]protected|read[- ]only)\s+){0,3}"
+    r"(?:tools?|endpoints?|capabilit(?:y|ies))|"
+    r"(?:does\s+not|doesn['’]t|cannot)\s+"
+    r"(?:have|expose|offer|provide|include|list)\s+(?:(?:an?|the)\s+)?"
+    r"(?:additional\s+)?(?:second|third|fourth|fifth|sixth|seventh|eighth|"
+    r"ninth|tenth)\s+(?:(?:status|OAuth[- ]protected|read[- ]only)\s+){0,3}"
+    r"(?:tools?|endpoints?|capabilit(?:y|ies))|"
+    r"is\s+without\s+(?:(?:an?|the)\s+)?(?:additional\s+)?"
+    r"(?:second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+"
+    r"(?:(?:status|OAuth[- ]protected|read[- ]only)\s+){0,3}"
+    r"(?:tools?|endpoints?|capabilit(?:y|ies))"
+    r")\b",
+    re.IGNORECASE,
+)
+
+HOSTED_REVERSE_TOOL_ABSENCE = re.compile(
+    r"\bno\s+(?:(?:additional\s+)?(?:second|third|fourth|fifth|sixth|"
+    r"seventh|eighth|ninth|tenth)\s+)?"
+    r"(?:(?:status|OAuth[- ]protected|read[- ]only)\s+){0,3}"
+    r"(?:tools?|endpoints?|capabilit(?:y|ies))\s+"
+    r"(?:is|are|remain|exists?)\s+(?:(?:currently|now|today)\s+)?"
+    r"(?:(?:available|exposed|offered|provided|listed|present)\s+)?"
+    r"(?:in|on|at|through|from|for|by)\s+(?:the\s+)?Hosted\s+"
+    r"(?:Stele\s+)?MCP\b",
+    re.IGNORECASE,
+)
 
 MCP_NAMED_CAPABILITY_CLAIM = re.compile(
     r"\b(?:exposes?|has|includes?|lists?|offers?|provides?|supports?)\s+"
@@ -1247,7 +1328,7 @@ PROVIDER_DRAFT_BOUNDARY = {
         r")\b|"
         r"\b(?:private\s+|wallet-owned\s+){0,3}provider[- ]listing\s+drafts?\b"
         r"(?:(?![.!?,;]|\b(?:and|or|but|however|yet|while|whereas|though)\b).)"
-        r"{0,60}?\b(?:publishes|publish|lists?|submits?|broadcasts?|transacts?)\b|"
+        r"{0,60}?\b(?:publishes|publish|(?<!/)lists?|submits?|broadcasts?|transacts?)\b|"
         r"\b(?:publishes|lists|submits|broadcasts|transacts)\s+"
         r"(?:private\s+|wallet-owned\s+){0,3}provider[- ]listing\s+drafts?\b)",
         re.IGNORECASE | re.DOTALL,
@@ -1279,16 +1360,439 @@ PROVIDER_DRAFT_BOUNDARY = {
 HOSTED_PROVIDER_DRAFT_AUTHORITY = {
     "hosted MCP claims provider-listing draft authority": re.compile(
         r"\b(?:"
-        r"(?:can|does|will|now|currently)\s+(?!not\b)"
-        r"(?:create|prepare|access|manage|read|fetch|retrieve|load|view|inspect|"
-        r"query|update|edit|delete|write)|"
-        r"(?<!not\s)(?:creates|prepares|accesses|manages|reads|fetches|retrieves|"
-        r"loads|views|inspects|queries|updates|edits|deletes|writes)|"
+        r"(?:can|does|will|may|now|currently)\s+(?!not\b)"
+        r"(?:access|manage|list|read|fetch|retrieve|load|view|inspect|"
+        r"query|update|edit|delete|publish|write)|"
+        r"(?<!not\s)(?:accesses|manages|lists|reads|fetches|retrieves|"
+        r"loads|views|inspects|queries|updates|edits|deletes|publishes|writes)|"
         r"(?:is|remains?)\s+(?!not\b)(?:reading|fetching|retrieving|loading|"
-        r"viewing|inspecting|querying|updating|editing|deleting|writing)|"
+        r"viewing|inspecting|querying|updating|editing|deleting|publishing|writing)|"
         r"(?:has|have)\s+(?!not\b)(?:read|fetched|retrieved|loaded|viewed|"
-        r"inspected|queried|updated|edited|deleted|written)"
-        r")\s+(?:private\s+|wallet-owned\s+){0,3}provider[- ]listing\s+drafts?\b",
+        r"inspected|queried|updated|edited|deleted|published|written)"
+        r")\s+(?:an?\s+|the\s+|existing\s+|private\s+|wallet-owned\s+){0,5}"
+        r"provider[- ]listing\s+drafts?\b|"
+        r"\b(?:provides?|offers?|supports?|enables?|exposes?|includes?|has)\s+"
+        r"(?!no\b|not\b)(?:(?:the|an?)\s+)?(?:existing\s+)?"
+        r"(?:private\s+|wallet-owned\s+){0,3}provider[- ]listing\s+drafts?\s+"
+        r"(?:access|management|listing|reading|retrieval|loading|viewing|"
+        r"inspection|querying|updates?|editing|deletion|publication|writing)\b|"
+        r"\b(?:provides?|offers?|supports?|enables?|exposes?|includes?|has)\s+"
+        r"(?!no\b|not\b)(?:(?:the|an?)\s+)?"
+        r"(?:access|management|listing|reading|retrieval|loading|viewing|"
+        r"inspection|querying|updates?|editing|deletion|publication|writing)\s+"
+        r"(?:of|for|to)\s+(?:(?:the|an?)\s+)?(?:existing\s+)?"
+        r"(?:private\s+|wallet-owned\s+){0,3}provider[- ]listing\s+drafts?\b|"
+        r"\b(?:allows?|enables?|lets?|permits?|supports?|offers?)\s+"
+        r"(?:(?:clients?|users?|providers?|agents?)\s+)?(?:to\s+)?"
+        r"(?:access|accessing|manage|managing|list|listing|read|reading|fetch|"
+        r"fetching|retrieve|retrieving|load|loading|view|viewing|inspect|inspecting|"
+        r"query|querying|update|updating|edit|editing|delete|deleting|publish|"
+        r"publishing|write|writing)\s+(?:(?:the|an?)\s+)?"
+        r"(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+        r"provider[- ]listing\s+drafts?\b|"
+        r"\b(?:provides?|offers?|supports?|enables?|exposes?|includes?|has)\s+"
+        r"(?:(?:the|an?)\s+)?(?:tool|endpoint|capability|facility|support)\s+for\s+"
+        r"(?:accessing|managing|listing|reading|fetching|retrieving|loading|viewing|"
+        r"inspecting|querying|updating|editing|deleting|publishing|writing)\s+"
+        r"(?:(?:the|an?)\s+)?(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+        r"provider[- ]listing\s+drafts?\b|"
+        r"\b(?:makes?|renders?)\s+(?:(?:the|an?)\s+)?(?:existing\s+)?"
+        r"(?:private\s+|wallet-owned\s+){0,3}provider[- ]listing\s+drafts?\s+"
+        r"(?:access|management|listing|reading|retrieval|loading|viewing|"
+        r"inspection|querying|updates?|editing|deletion|publication|writing)\s+"
+        r"available\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
+HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR = (
+    "hosted provider-draft tool availability is not tools/list-conditional"
+)
+HOSTED_PROVIDER_DRAFT_LOOKALIKE_ERROR = (
+    "hosted MCP exposes a noncanonical provider-draft tool name"
+)
+CANONICAL_PROVIDER_DRAFT_TOOL_NAME = "stele_create_provider_listing_draft"
+CANONICAL_PROVIDER_DRAFT_TOOL = r"\bstele_create_provider_listing_draft\b"
+# Gate acceptance is deliberately case-sensitive even inside regexes compiled
+# with ``re.IGNORECASE``. MCP tool identifiers are exact protocol names, so a
+# display-normalized or lookalike spelling cannot establish availability.
+CANONICAL_PROVIDER_DRAFT_TOOL_GATE = (
+    r"(?-i:\bstele_create_provider_listing_draft\b)"
+)
+PROVIDER_DRAFT_TOOL_IDENTIFIER = re.compile(
+    r"\bstele_(?=[a-z0-9_]*(?:provider|listing))"
+    r"(?=[a-z0-9_]*draft)[a-z0-9_]+\b",
+    re.IGNORECASE,
+)
+AUTHENTICATED_TOOLS_LIST = r"(?:authenticated\s+)?`?tools/list`?"
+PROVIDER_DRAFT_CREATE_NOMINAL = (
+    r"(?:"
+    r"(?:provider[- ]listing|provider)[- ]draft\s+"
+    r"(?:creation|preparation|authoring|generation|production)|"
+    r"(?:creation|preparation|authoring|generation|production)\s+of\s+"
+    r"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+){0,4}"
+    r"(?:provider[- ]listing|provider)[- ]drafts?"
+    r")"
+)
+
+HOSTED_PROVIDER_DRAFT_CREATE_CAPABILITY = re.compile(
+    rf"\b(?:"
+    rf"(?:provides?|offers?|supports?|enables?|exposes?|includes?|has|allows?|permits?)\s+"
+    rf"(?!no\b|not\b)(?:(?:the|an?)\s+)?"
+    rf"(?:bounded\s+|conditional\s+|gated\s+){{0,2}}"
+    rf"{PROVIDER_DRAFT_CREATE_NOMINAL}|"
+    rf"(?:supports?|enables?|allows?|lets?|permits?|offers?)\s+"
+    rf"(?:(?:clients?|users?|providers?|agents?)\s+)?(?:to\s+)?"
+    rf"(?:create|prepare|author|generate|produce|creating|preparing|authoring|"
+    rf"generating|producing)\s+"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|an?\s+|the\s+){{0,5}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\b"
+    rf"|(?:provides?|offers?|supports?|enables?|exposes?|includes?|has)\s+"
+    rf"(?:(?:the|an?)\s+)?(?:tool|endpoint|capability|facility|support)\s+for\s+"
+    rf"(?:creating|preparing|authoring|generating|producing)\s+"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+){{0,4}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\b"
+    rf"|(?:provides?|offers?|has)\s+(?:(?:the|an?)\s+)?"
+    rf"(?:ability|authorization|capability|facility|permission)\s+to\s+"
+    rf"(?:create|prepare|author|generate|produce)\s+"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+){{0,4}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\b"
+    rf"|(?:makes?|renders?)\s+{PROVIDER_DRAFT_CREATE_NOMINAL}\s+available\b"
+    rf"|(?:"
+    rf"(?:can|does|may|could|will|now|currently)\s+(?!not\b)"
+    rf"(?:create|prepare|author|generate|produce)|"
+    rf"(?:is|remains?)\s+(?!not\b)(?:allowed|authorized|permitted|able)\s+to\s+"
+    rf"(?:create|prepare|author|generate|produce)|"
+    rf"(?<!not\s)(?<!never\s)(?:creates|prepares|authors|generates|produces)"
+    rf")\s+(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|an?\s+|the\s+){{0,6}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\b"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+HOSTED_PROVIDER_DRAFT_REVERSE_CREATE = re.compile(
+    rf"\b(?:"
+    rf"{PROVIDER_DRAFT_CREATE_NOMINAL}\s+"
+    rf"(?:is|remains?)\s+(?:(?:now|currently|presently)\s+)?"
+    rf"(?:available|enabled|supported|provided|offered|exposed|included|possible)|"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|an?\s+|the\s+){{0,5}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\s+"
+    rf"(?:can|may)\s+be\s+(?:created|prepared|authored|generated|produced)|"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|an?\s+|the\s+){{0,5}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\s+(?:is|are|remains?)\s+"
+    rf"(?:created|prepared|authored|generated|produced)|"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|an?\s+|the\s+){{0,5}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\s+(?:is|are|remains?)\s+"
+    rf"(?:allowed|authorized|permitted)\s+to\s+be\s+"
+    rf"(?:created|prepared|authored|generated|produced)|"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|an?\s+|the\s+){{0,5}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\s+(?:is|are|remains?)\s+"
+    rf"(?:creatable|preparable|authorable)"
+    rf")\s+(?:at|by|from|in|on|through|via|with)\s+(?:the\s+)?"
+    rf"Hosted\s+(?:Stele\s+)?MCP\b|"
+    rf"\b(?:through|via)\s+(?:the\s+)?Hosted\s+(?:Stele\s+)?MCP\s*,?\s*"
+    rf"(?:clients?|users?|providers?|agents?)\s+(?:can|may)\s+"
+    rf"(?:create|prepare|author|generate|produce)\s+"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|an?\s+|the\s+){{0,5}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\b|"
+    rf"\b(?:clients?|users?|providers?|agents?)\s+(?:have|hold)\s+"
+    rf"(?:(?:the|an?)\s+)?(?:authorization|permission)\s+to\s+"
+    rf"(?:create|prepare|author|generate|produce)\s+"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|an?\s+|the\s+){{0,5}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\s+"
+    rf"(?:at|by|from|in|on|through|via|with)\s+(?:the\s+)?"
+    rf"Hosted\s+(?:Stele\s+)?MCP\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+HOSTED_PROVIDER_DRAFT_REVERSE_AUTHORITY = re.compile(
+    r"\b(?:"
+    r"(?:(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+    r"provider[- ]listing\s+drafts?\s+(?:access|management|listing|reading|"
+    r"retrieval|loading|viewing|inspection|querying|updates?|editing|deletion|"
+    r"publication|writing)|"
+    r"(?:access|management|listing|reading|retrieval|loading|viewing|inspection|"
+    r"querying|updates?|editing|deletion|publication|writing)\s+(?:of|for|to)\s+"
+    r"(?:(?:the|an?)\s+)?(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+    r"provider[- ]listing\s+drafts?)\s+(?:is|remains?)\s+"
+    r"(?:(?:now|currently|presently)\s+)?(?:available|enabled|supported|provided|"
+    r"offered|exposed|included)|"
+    r"(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+    r"provider[- ]listing\s+drafts?\s+(?:can|may)\s+be\s+"
+    r"(?:accessed|managed|listed|read|fetched|retrieved|loaded|viewed|inspected|"
+    r"queried|updated|edited|deleted|published|written)|"
+    r"(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+    r"provider[- ]listing\s+drafts?\s+(?:is|are|remains?)\s+"
+    r"(?:accessible|manageable|listable|readable|fetchable|retrievable|viewable|"
+    r"inspectable|queryable|updatable|editable|deletable|publishable|writable)"
+    r")\s+(?:at|by|from|in|on|through|via|with)\s+(?:the\s+)?"
+    r"Hosted\s+(?:Stele\s+)?MCP\b|"
+    r"\b(?:through|via)\s+(?:the\s+)?Hosted\s+(?:Stele\s+)?MCP\s*,?\s*"
+    r"(?:clients?|users?|providers?|agents?)\s+(?:can|may)\s+"
+    r"(?:access|manage|list|read|fetch|retrieve|load|view|inspect|query|update|"
+    r"edit|delete|publish|write)\s+(?:(?:the|an?)\s+)?(?:existing\s+)?"
+    r"(?:private\s+|wallet-owned\s+){0,3}provider[- ]listing\s+drafts?\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+HOSTED_PROVIDER_DRAFT_NAMED_TOOL_CLAIM = re.compile(
+    r"\b(?:exposes?|has|offers?|provides?|includes?|lists?|supports?|enables?)\s+"
+    r"(?:the\s+)?`?(?P<name>stele_"
+    r"(?=[a-z0-9_]*(?:provider|listing))"
+    r"(?=[a-z0-9_]*draft)[a-z0-9_]+)\b`?",
+    re.IGNORECASE,
+)
+
+HOSTED_PROVIDER_DRAFT_NAMED_TOOL_REVERSE = re.compile(
+    r"\b`?(?P<name>stele_(?=[a-z0-9_]*(?:provider|listing))"
+    r"(?=[a-z0-9_]*draft)[a-z0-9_]+)\b`?"
+    r"(?:(?![.!?;]).){0,120}?\b(?:"
+    r"(?:is|remains?)\s+(?:(?:now|currently|still)\s+)?"
+    r"(?:available|enabled|exposed|listed|live|present|callable|invokable|usable)|"
+    r"(?:can|may)\s+be\s+(?:invoked|called|used|run|executed|accessed)"
+    r")\s+(?:at|by|from|in|on|through|via|with)\s+"
+    r"(?:the\s+)?Hosted\s+(?:Stele\s+)?MCP\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+PROVIDER_DRAFT_NAMED_TOOL_AVAILABILITY = re.compile(
+    rf"(?:"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,160}}?\b(?:"
+    rf"exists?|(?:is|remains?)\s+(?:(?:now|currently|still|always|generally)\s+)?"
+    rf"(?:available|enabled|exposed|listed|live|present|callable|invokable|usable)|"
+    rf"(?:can|may)\s+(?:always\s+)?be\s+"
+    rf"(?:invoked|called|used|run|executed|accessed))\b|"
+    rf"\b(?:clients?|users?|agents?|callers?|integrations?)\b"
+    rf"(?:(?![.!?;]).){{0,80}}?\b(?:can|may|are\s+(?:able|allowed|permitted)\s+to)\s+"
+    rf"(?:invoke|call|use|run|execute|access)\s+(?:the\s+)?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}"
+    rf"|\b(?:invocation|use|execution|access)\s+of\s+(?:the\s+)?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,100}}?\b"
+    rf"(?:is|remains?)\s+(?:(?:now|currently)\s+)?"
+    rf"(?:allowed|available|enabled|permitted|supported)\b"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+PROVIDER_DRAFT_NAMED_TOOL_INVOCATION = re.compile(
+    r"\b(?:clients?|users?|agents?|callers?|integrations?)\b"
+    r"(?:(?![.!?;]).){0,80}?\b(?:can|may|are\s+(?:able|allowed|permitted)\s+to)\s+"
+    r"(?:invoke|call|use|run|execute|access)\s+(?:the\s+)?`?"
+    r"(?P<name>stele_(?=[a-z0-9_]*(?:provider|listing))"
+    r"(?=[a-z0-9_]*draft)[a-z0-9_]+)\b`?"
+    r"(?:(?![.!?;]).){0,100}?\b(?:Hosted\s+(?:Stele\s+)?MCP\b)?",
+    re.IGNORECASE | re.DOTALL,
+)
+
+PROVIDER_DRAFT_TOOL_LIST_BYPASS = re.compile(
+    rf"(?:"
+    rf"\b(?:even\s+(?:if|when)|whether\s+or\s+not|regardless\s+of)\b"
+    rf"(?:(?![.!?;]).){{0,180}}?\b(?:absent|missing|not\s+(?:listed|present)|"
+    rf"does\s+not\s+appear)\b(?:(?![.!?;]).){{0,100}}?\b{AUTHENTICATED_TOOLS_LIST}\b|"
+    rf"\bwithout\b(?:(?![.!?;]).){{0,120}}?\b(?:seeing|finding|receiving|having)\b"
+    rf"(?:(?![.!?;]).){{0,100}}?\b{AUTHENTICATED_TOOLS_LIST}\b|"
+    rf"\b(?:absent|missing|not\s+(?:listed|present)|does\s+not\s+appear)\b"
+    rf"(?:(?![.!?;]).){{0,100}}?\b(?:in|from|on)\s+{AUTHENTICATED_TOOLS_LIST}\b"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+# A lexical membership verb is not enough to establish the release gate: its
+# predicate must be positive. Keep this check ahead of every accepted gate
+# form so "does not include" and similar relations fail closed.
+PROVIDER_DRAFT_TOOL_NEGATIVE_LIST_GATE = re.compile(
+    rf"(?:"
+    rf"{AUTHENTICATED_TOOLS_LIST}(?:(?![.!?;]).){{0,100}}?\b(?:"
+    rf"(?:does\s+not|doesn['’]t|cannot|can['’]t|is\s+unable\s+to|"
+    rf"is\s+(?:barred|prohibited)\s+from|"
+    rf"fails?\s+to|refuses?\s+to|never)\s+"
+    rf"(?:contains?|includ(?:e|es|ing)|lists?|return(?:s|ing)?|shows?)|"
+    rf"lacks?|withholds?|returns?\s+anything\s+except|excludes?|omits?)\b"
+    rf"(?:(?![.!?;]).){{0,100}}?{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}|"
+    rf"{AUTHENTICATED_TOOLS_LIST}(?:(?![.!?;]).){{0,100}}?\bcontains?\s+"
+    rf"every\s+tool\s+except\s+{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}|"
+    rf"{AUTHENTICATED_TOOLS_LIST}(?:(?![.!?;]).){{0,100}}?\bincludes?\s+"
+    rf"every\s+name\s+other\s+than\s+{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}|"
+    rf"\bno\s+{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}\s+appears?\s+in\s+"
+    rf"{AUTHENTICATED_TOOLS_LIST}|"
+    rf"{AUTHENTICATED_TOOLS_LIST}(?:(?![.!?;]).){{0,100}}?\b(?:cannot|"
+    rf"can['’]t|is\s+unable\s+to|does\s+not|doesn['’]t|never)\s+include\s+"
+    rf"(?:that|the)\s+exact\s+name\b|"
+    rf"{AUTHENTICATED_TOOLS_LIST}(?:(?![.!?;]).){{0,100}}?\b(?:"
+    rf"absent|missing)\b(?:(?![.!?;]).){{0,100}}?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+PROVIDER_DRAFT_TOOL_AFFIRMATIVE_ABSENCE_DENIAL_GATE = re.compile(
+    rf"{AUTHENTICATED_TOOLS_LIST}(?:(?![.!?;]).){{0,100}}?\b(?:"
+    rf"(?:does\s+not|doesn['’]t|cannot|can['’]t|never)\s+(?:exclude|omit)s?|"
+    rf"is\s+required\s+not\s+to\s+(?:exclude|omit)|"
+    rf"(?:fails?|refuses?)\s+to\s+(?:exclude|omit)|"
+    rf"(?:does\s+not|doesn['’]t|cannot|can['’]t|never)\s+fails?\s+to\s+"
+    rf"(?:contain|include|list|return|show))\b"
+    rf"(?:(?![.!?;]).){{0,100}}?{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}",
+    re.IGNORECASE | re.DOTALL,
+)
+PROVIDER_DRAFT_TOOL_AFFIRMATIVE_ABSENCE_DENIAL_PREDICATE = re.compile(
+    r"\b(?:"
+    r"(?:does\s+not|doesn['’]t|cannot|can['’]t|never)\s+(?:exclude|omit)s?|"
+    r"is\s+required\s+not\s+to\s+(?:exclude|omit)|"
+    r"(?:fails?|refuses?)\s+to\s+(?:exclude|omit)|"
+    r"(?:does\s+not|doesn['’]t|cannot|can['’]t|never)\s+fails?\s+to\s+"
+    r"(?:contain|include|list|return|show))\b",
+    re.IGNORECASE,
+)
+
+PROVIDER_DRAFT_TOOL_POSITIVE_LIST_GATE = re.compile(
+    rf"(?=[^.!?;]{{0,320}}{CANONICAL_PROVIDER_DRAFT_TOOL_GATE})"
+    rf"(?=[^.!?;]{{0,320}}{AUTHENTICATED_TOOLS_LIST})"
+    rf"(?=[^.!?;]{{0,320}}\b(?:if|when|whenever|only\s+when|provided\s+that|"
+    rf"as\s+long\s+as|so\s+long\s+as|once|after)\b)"
+    rf"(?=[^.!?;]{{0,320}}\b(?:appears?|present|listed|returned|included|shown|"
+    rf"contains?|includes?|lists?|returns?|shows?)\b)"
+    rf"[^.!?;]{{1,340}}",
+    re.IGNORECASE,
+)
+PROVIDER_DRAFT_TOOL_REQUIRED_PRESENCE_GATE = re.compile(
+    rf"(?:"
+    rf"\b(?:the\s+)?presence\s+of\s+{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}\s+"
+    rf"(?:in|on)\s+{AUTHENTICATED_TOOLS_LIST}\s+(?:is|remains?)\s+required\s+before|"
+    rf"\b{AUTHENTICATED_TOOLS_LIST}\s+(?:must|required\s+to)\s+"
+    rf"(?:contain|include|list|return|show)\s+{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}\s+before"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+PROVIDER_DRAFT_TOOL_UNLESS_ABSENT_GATE = re.compile(
+    rf"(?:"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}(?:(?![.!?;]).){{0,180}}?\bunless\b|"
+    rf"\bunless\b(?:(?![.!?;]).){{0,180}}?{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}"
+    rf")(?:(?![.!?;]).){{0,200}}?\b(?:absent|missing|"
+    rf"not\s+(?:listed|present)|does\s+not\s+appear)\b"
+    rf"(?:(?![.!?;]).){{0,100}}?\b(?:in|from|on)\s+{AUTHENTICATED_TOOLS_LIST}\b",
+    re.IGNORECASE | re.DOTALL,
+)
+PROVIDER_DRAFT_TOOL_WHEN_LISTED_GATE = re.compile(
+    rf"\bwhen\s+listed\b(?:(?![.!?;]).){{0,180}}?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}",
+    re.IGNORECASE | re.DOTALL,
+)
+
+EXACT_PROVIDER_DRAFT_TOOL_CREATE = re.compile(
+    rf"(?:"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,120}}?\b"
+    rf"(?:creates?|prepares?|authors?|generates?|produces?)\s+"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|exactly\s+one\s+|"
+    rf"an?\s+|the\s+){{0,7}}(?:provider[- ]listing|provider)[- ]drafts?\b|"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|an?\s+|the\s+){{0,5}}"
+    rf"(?:provider[- ]listing|provider)[- ]drafts?\s+(?:is|are)\s+"
+    rf"(?:created|prepared|authored|generated|produced)\s+"
+    rf"(?:by|through|via|with)\s+(?:the\s+)?{CANONICAL_PROVIDER_DRAFT_TOOL}"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+EXACT_PROVIDER_DRAFT_TOOL_AUTHORITY = re.compile(
+    rf"(?:"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,120}}?\b"
+    rf"(?:access(?:es|ed|ing)?|manag(?:e|es|ed|ing)|list(?:s|ed|ing)?|"
+    rf"read(?:s|ing)?|fetch(?:es|ed|ing)?|retriev(?:e|es|ed|ing)|"
+    rf"load(?:s|ed|ing)?|view(?:s|ed|ing)?|inspect(?:s|ed|ing)?|"
+    rf"quer(?:y|ies|ied|ying)|updat(?:e|es|ed|ing)|edit(?:s|ed|ing)?|"
+    rf"delet(?:e|es|ed|ing)|publish(?:es|ed|ing)?|writ(?:e|es|ten|ing))\s+"
+    rf"(?:(?:the|an?)\s+)?(?:existing\s+)?(?:private\s+|wallet-owned\s+){{0,3}}"
+    rf"provider[- ]listing\s+drafts?\b|"
+    rf"(?:existing\s+)?(?:private\s+|wallet-owned\s+){{0,3}}"
+    rf"provider[- ]listing\s+drafts?\s+(?:can|may)\s+be\s+"
+    rf"(?:accessed|managed|listed|read|fetched|retrieved|loaded|viewed|inspected|"
+    rf"queried|updated|edited|deleted|published|written)\s+"
+    rf"(?:by|through|via|with)\s+(?:the\s+)?{CANONICAL_PROVIDER_DRAFT_TOOL}"
+    rf"|{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,120}}?\b"
+    rf"(?:provides?|offers?|supports?|enables?|exposes?|includes?|has|allows?|permits?)\s+"
+    rf"(?:(?:the|an?)\s+)?(?:existing\s+)?"
+    rf"(?:private\s+|wallet-owned\s+){{0,3}}provider[- ]listing\s+drafts?\s+"
+    rf"(?:access|management|listing|reading|retrieval|loading|viewing|inspection|"
+    rf"querying|updates?|editing|deletion|publication|writing)\b"
+    rf"|{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,120}}?\b"
+    rf"(?:provides?|offers?|supports?|enables?|exposes?|includes?|has|allows?|permits?)\s+"
+    rf"(?:(?:the|an?)\s+)?(?:access|management|listing|reading|retrieval|loading|"
+    rf"viewing|inspection|querying|updates?|editing|deletion|publication|writing)\s+"
+    rf"(?:of|for|to)\s+(?:(?:the|an?)\s+)?(?:existing\s+)?"
+    rf"(?:private\s+|wallet-owned\s+){{0,3}}provider[- ]listing\s+drafts?\b"
+    rf"|(?:existing\s+)?(?:private\s+|wallet-owned\s+){{0,3}}"
+    rf"provider[- ]listing\s+drafts?\s+(?:access|management|listing|reading|"
+    rf"retrieval|loading|viewing|inspection|querying|updates?|editing|deletion|"
+    rf"publication|writing)\s+(?:is|remains?)\s+"
+    rf"(?:(?:now|currently)\s+)?(?:available|enabled|supported|provided|offered|"
+    rf"exposed|included)\s+(?:by|through|via|with)\s+(?:the\s+)?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+EXACT_PROVIDER_DRAFT_TOOL_ANAPHOR = re.compile(
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,180}}?[.!?;]\s*"
+    rf"(?P<claim>(?:when\s+listed\s*,\s*)?"
+    rf"(?:it|this\s+tool|that\s+tool|the\s+tool)\s+"
+    rf"(?:(?:can|does|may|now|currently)\s+)?(?P<action>"
+    rf"creates?|prepares?|authors?|generates?|produces?|"
+    rf"access(?:es)?|manages?|lists?|reads?|fetches?|retrieves?|loads?|views?|"
+    rf"inspects?|queries|updates?|edits?|deletes?|publishes?|writes?|"
+    rf"signs?|broadcasts?|submits?|settles?|executes?|authorizes?|approves?)\b"
+    rf"(?:(?![.!?;]).){{0,140}}?\b(?P<target>"
+    rf"(?:private\s+|wallet-owned\s+|unpublished\s+|new\s+|existing\s+|an?\s+|"
+    rf"the\s+){{0,6}}(?:provider[- ]listing|provider)[- ]drafts?|"
+    rf"transactions?|payments?|settlements?|transfers?|funds?|wallet\s+payloads?"
+    rf")\b)",
+    re.IGNORECASE | re.DOTALL,
+)
+
+HOSTED_PROVIDER_DRAFT_UNCONDITIONAL = {
+    "hosted MCP claims provider-listing draft authority": re.compile(
+        r"\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?]).){0,180}?\b(?:"
+        r"(?:can|does|will|may|now|currently)\s+(?!not\b)(?:create|prepare)|"
+        r"(?<!not\s)(?:creates|prepares)"
+        r")\s+(?:private\s+|wallet-owned\s+|unpublished\s+){0,4}"
+        r"provider[- ]listing\s+drafts?\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    "hosted provider-draft tool availability is not tools/list-conditional": re.compile(
+        r"(?:\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?]).){0,180}?\b"
+        r"(?:exposes?|has|offers?|provides?|includes?|lists?)\s+"
+        r"(?:the\s+)?`?stele_create_provider_listing_draft`?\b|"
+        r"\b`?stele_create_provider_listing_draft`?\b(?:(?![.!?]).){0,120}?\b"
+        r"(?:is|remains?)\s+(?!not\b)(?:available|enabled|exposed|listed|live|present)\b)",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
+PROVIDER_DRAFT_CREATE_AFFIRMATIVE_CONTRADICTIONS = {
+    "provider-draft creation claims a non-unit result": re.compile(
+        r"\b(?:`?stele_create_provider_listing_draft`?(?:\s+tool|\s+operation)?|"
+        r"(?:each\s+)?successful\s+(?:provider[- ]draft\s+)?operation)\b"
+        r"(?:(?![.!?]).){0,180}?\b(?:creates?|produces?|writes?)\s+"
+        r"(?:zero|two|three|four|multiple|several|many|more\s+than\s+one|"
+        r"at\s+least\s+two|one\s+or\s+more)\s+(?:new\s+)?"
+        r"(?:private\s+|wallet-owned\s+|unpublished\s+){0,4}"
+        r"provider[- ]listing\s+drafts?\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    "idempotent provider-draft replay claims duplicate creation": re.compile(
+        r"\bidempotent\s+(?:replay|retry)\b(?:(?![.!?]).){0,160}?\b"
+        r"(?:creates?|produces?|writes?|returns?)\s+(?:(?:an?|the)\s+)?"
+        r"(?:new|another|additional|different|second)\s+"
+        r"(?:private\s+|wallet-owned\s+|unpublished\s+){0,4}"
+        r"(?:provider[- ]listing\s+)?draft\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+}
+
+PROVIDER_DRAFT_CREATE_SEMANTICS = {
+    "idempotent provider-draft replay denies same-draft return": re.compile(
+        r"\bidempotent\s+(?:replay|retry)\b(?:(?![.!?]).){0,160}?\b"
+        r"(?:does\s+not|doesn['’]t|cannot|never|"
+        r"(?<!not\s)(?<!never\s)(?<!cannot\s)fails?\s+to)\s+return\s+"
+        r"(?:the\s+)?same\s+(?:provider[- ]listing\s+)?draft\b",
         re.IGNORECASE | re.DOTALL,
     ),
 }
@@ -2080,6 +2584,41 @@ TRANSACTION_OBJECT = (
     rf"seed\s+phrases?|signing\s+authority|wallet\s+payloads?|payloads?)\b"
     rf"{CAPABILITY_META_SUFFIX}"
 )
+
+EXACT_PROVIDER_DRAFT_TOOL_TRANSACTION = re.compile(
+    rf"(?:"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,120}}?\b"
+    rf"{TRANSACTION_ACTION}\b(?:(?![.!?;]).){{0,100}}?\b{TRANSACTION_OBJECT}|"
+    rf"{TRANSACTION_OBJECT}\s+(?:can|may)\s+be\s+"
+    rf"(?:created|built|constructed|prepared|generated|originated|initiated|"
+    rf"handled|controlled|managed|processed|signed|broadcast|submitted|settled|"
+    rf"executed|authorized|approved|moved|sent|relayed|forwarded)\s+"
+    rf"(?:by|through|via|with)\s+(?:the\s+)?{CANONICAL_PROVIDER_DRAFT_TOOL}"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+EXACT_PROVIDER_DRAFT_TOOL_TRANSACTION_NOMINAL = re.compile(
+    rf"(?:"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,120}}?\b"
+    rf"(?:provides?|offers?|supports?|enables?|exposes?|includes?|has|holds?|"
+    rf"allows?|permits?)\s+"
+    rf"(?:(?:the|an?)\s+)?(?:transaction\s+)?(?:signer|signing\s+(?:authority|"
+    rf"capability|service|tooling)|signing|broadcast|submission|settlement|"
+    rf"broadcast\s+(?:capability|service|tooling)|"
+    rf"transaction\s+(?:creation|preparation|signing|broadcast|submission|"
+    rf"settlement|execution|authorization)\s+(?:capability|service|tooling))\b|"
+    rf"\b(?:transaction\s+(?:creation|preparation|generation|origination|"
+    rf"initiation|handling|control|management|processing|signing|broadcast|"
+    rf"submission|settlement|execution|authorization|approval)|"
+    rf"(?:signing|broadcast|submission|settlement|execution|authorization)\s+of\s+"
+    rf"transactions?)\s+(?:is|remains?)\s+"
+    rf"(?:(?:now|currently|presently)\s+)?(?:available|enabled|supported|provided|"
+    rf"offered|exposed|included|possible)\s+(?:by|from|through|via|with)\s+(?:the\s+)?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
 TRANSACTION_ABSENCE_TARGET = (
     rf"(?:signing\s+(?:authority|capabilit(?:y|ies)|tools?|endpoints?|tooling)|"
     rf"(?:transaction|signing|broadcast|submission|settlement|payment|"
@@ -2305,8 +2844,16 @@ NONCURRENT_GATE_EVENT = (
     r"(?:activation|release|review|version|phase|build)"
 )
 CLAIM_NONCURRENT = re.compile(
-    r"\b(?:future|retired|former|previous|legacy|historical|prototype|"
-    r"previously|formerly)\b|"
+    r"\b(?:future|retired|former|previous|legacy|historical|historically|"
+    r"archived|deprecated|decommissioned|prototype|previously|formerly)\b|"
+    r"\b(?:in|during|as\s+of)\s+(?!2026\b)\d{4}\b|"
+    r"\b(?:starting|beginning)\s+in\s+(?!2026\b)\d{4}\b|"
+    r"\bscheduled\s+for\s+(?!2026\b)\d{4}\b|"
+    r"\buntil\s+(?:19\d{2}|20(?:0\d|1\d|2[0-5]))\b|"
+    r"\bthrough\s+(?:19\d{2}|20(?:0\d|1\d|2[0-5]))\b|"
+    r"\b(?:from\s+(?:19|20)\d{2}\s+(?:to|through|until|[-–—])\s+|"
+    r"between\s+(?:19|20)\d{2}\s+and\s+)(?:19|20)\d{2}\b|"
+    r"\bonce\s+(?:had|exposed|offered|provided|listed|reported|showed)\b|"
     r"\b(?:will|could|would|may|might)\b|"
     r"\b(?:next|upcoming|later|subsequent)\s+"
     r"(?:release|version|phase|build)\b|"
@@ -2346,6 +2893,11 @@ CLAIM_ARCHIVED_ATTRIBUTION_PREFIX = re.compile(
 )
 INTRODUCTORY_NONCURRENT_SCOPE = re.compile(
     r"^\s*(?:only\s+)?(?:"
+    r"(?:in|during|as\s+of)\s+(?!2026\b)\d{4}\b|"
+    r"(?:starting|beginning)\s+in\s+(?!2026\b)\d{4}\b|"
+    r"scheduled\s+for\s+(?!2026\b)\d{4}\b|"
+    r"until\s+(?:19\d{2}|20(?:0\d|1\d|2[0-5]))\b|"
+    r"through\s+(?:19\d{2}|20(?:0\d|1\d|2[0-5]))\b|"
     r"(?:in|for|during|at)\b"
     r"(?:(?![,;.!?]).){0,100}\b(?:future|next|upcoming|later|subsequent|"
     r"retired|former|legacy|historical|prototype)\b|"
@@ -2353,7 +2905,7 @@ INTRODUCTORY_NONCURRENT_SCOPE = re.compile(
     r"(?:release|version|phase|build)\b|"
     r"(?:when|once)\b(?:(?![,;.!?]).){0,100}\b"
     r"(?:future|activation|release)\b|"
-    r"after\b(?:(?![,;.!?]).){0,100}\b"
+    r"(?:after|upon)\b(?:(?![,;.!?]).){0,100}\b"
     r"(?:future|retired|former|legacy|historical|prototype|activation|release|review)\b"
     r")(?:(?![,;.!?]).){0,60},\s*$",
     re.IGNORECASE | re.DOTALL,
@@ -2370,13 +2922,20 @@ CLAIM_NONCURRENT_SUFFIX = re.compile(
     r"(?:retired|former|legacy|historical)\s+(?:prototype|release|version|build)|"
     r"prototype|future)\b|"
     r"(?:when|once)\s+(?:(?:an?|the)\s+)?"
-    r"(?:future|next|upcoming|later|subsequent)\s+(?:release|version|phase|build)\b"
+    r"(?:future|next|upcoming|later|subsequent)\s+(?:release|version|phase|build)\b|"
+    r"(?:in|during|as\s+of)\s+(?!2026\b)\d{4}\b|"
+    r"(?:until|through)\s+(?:19\d{2}|20(?:0\d|1\d|2[0-5]))\b|"
+    r"before\s+2026\b|"
+    r"from\s+(?:19|20)\d{2}\s+(?:to|through|until|[-–—])\s+"
+    r"(?:19|20)\d{2}\b|"
+    r"between\s+(?:19|20)\d{2}\s+and\s+(?:19|20)\d{2}\b"
     r")",
     re.IGNORECASE,
 )
 CLAIM_DENIAL = re.compile(
     r"\b(?:no|not|never|cannot|neither|nor|lack(?:s|ing)?|refuses?|blocks?|bars?|"
-    r"fails?|rejects?|forbids?|prevents?|denies?|unable|incapable|"
+    r"fails?|rejects?|forbids?|prevents?|den(?:y|ies|ied|ying)|"
+    r"disavow(?:s|ed|ing)?|unable|incapable|"
     r"unavailable|gated|off|empty|"
     r"false|invalid|incorrect|wrong|misleading|obsolete|avoids?|unsafe|untrue|"
     r"deprecated|disabled|inactive|closed|blocked)\b|"
@@ -2748,6 +3307,135 @@ def claim_is_noncurrent(text: str, offset: int, end: int | None = None) -> bool:
     )
 
 
+def provider_capability_claim_is_noncurrent(
+    text: str, offset: int, end: int | None = None
+) -> bool:
+    """Treat permission/current-time modals as live while retaining time gates."""
+
+    relation_end = end if end is not None else offset + 1
+    sentence_start, _ = claim_scope_bounds(text, offset)
+    assertion_start, assertion_end = claim_assertion_bounds(
+        text, offset, relation_end
+    )
+    prefix = claim_relation_scope(text, offset, relation_end)
+    prefix = PARENTHETICAL_TEMPORAL.sub(" ", prefix)
+    prefix = RELATIVE_TEMPORAL.sub(" ", prefix)
+    assertion = text[assertion_start:assertion_end]
+    permission_modals = (
+        r"\b(?:may|could|would|will|might)\b"
+        if re.search(r"\b(?:now|currently|today|presently)\b", assertion, re.IGNORECASE)
+        else r"\bmay\b"
+    )
+    prefix = re.sub(permission_modals, " ", prefix, flags=re.IGNORECASE)
+    introduction = text[sentence_start:assertion_start]
+    return bool(
+        CLAIM_NONCURRENT.search(prefix)
+        or CLAIM_HYPOTHETICAL_PREFIX.search(prefix)
+        or CLAIM_DOCUMENTARY_PREFIX.search(prefix)
+        or CLAIM_DOCUMENTARY_PREFIX.match(introduction)
+        or CLAIM_ARCHIVED_DOCUMENTATION_PREFIX.search(prefix)
+        or CLAIM_ARCHIVED_DOCUMENTATION_PREFIX.match(introduction)
+        or CLAIM_ARCHIVED_ATTRIBUTION_PREFIX.search(prefix)
+        or CLAIM_ARCHIVED_ATTRIBUTION_PREFIX.match(introduction)
+        or INTRODUCTORY_NONCURRENT_SCOPE.match(introduction)
+        or CLAIM_NONCURRENT_SUFFIX.match(text[relation_end:assertion_end])
+        or claim_is_quoted_nonassertion(text, offset, relation_end)
+    )
+
+
+def provider_capability_claim_is_current_semantic(
+    text: str, offset: int, end: int | None = None
+) -> bool:
+    return not provider_capability_claim_is_noncurrent(
+        text, offset, end
+    ) and not claim_is_explicitly_rejected(text, offset, end)
+
+
+def provider_capability_claim_is_current_affirmative(
+    text: str, offset: int, end: int | None = None
+) -> bool:
+    return not provider_capability_claim_is_noncurrent(
+        text, offset, end
+    ) and not claim_is_denied(text, offset, end)
+
+
+def provider_draft_claim_is_tools_list_gated(
+    text: str, offset: int, end: int | None = None
+) -> bool:
+    """Require an exact-name positive ``tools/list`` condition for hosted create."""
+
+    relation_end = end if end is not None else offset + 1
+    # Markdown source wraps prose across physical lines. Bound the logical
+    # sentence by punctuation/row separators so a harmless line wrap cannot
+    # split the exact tool name from its tools/list condition.
+    prior_boundaries = [text.rfind(marker, 0, offset) for marker in (".", "!", "?", ";", "|")]
+    paragraph_start = text.rfind("\n\n", 0, offset)
+    prior_boundaries.append(paragraph_start + 1 if paragraph_start >= 0 else -1)
+    sentence_start = max(prior_boundaries) + 1
+    following = [
+        position
+        for marker in (".", "!", "?", ";", "|")
+        if (position := text.find(marker, offset)) >= 0
+    ]
+    paragraph_end = text.find("\n\n", offset)
+    if paragraph_end >= 0:
+        following.append(paragraph_end)
+    sentence_end = min(following, default=len(text))
+    sentence = text[sentence_start:sentence_end]
+    affirmative_absence_denials = [
+        match
+        for match in PROVIDER_DRAFT_TOOL_AFFIRMATIVE_ABSENCE_DENIAL_PREDICATE.finditer(
+            sentence
+        )
+        if re.search(
+            AUTHENTICATED_TOOLS_LIST,
+            sentence[max(0, match.start() - 140) : match.start()],
+            re.IGNORECASE,
+        )
+        and re.search(
+            CANONICAL_PROVIDER_DRAFT_TOOL_GATE,
+            sentence[match.end() : match.end() + 140],
+            re.IGNORECASE,
+        )
+    ]
+    negative_gate_scope = list(sentence)
+    for match in affirmative_absence_denials:
+        negative_gate_scope[match.start() : match.end()] = " " * (
+            match.end() - match.start()
+        )
+    if PROVIDER_DRAFT_TOOL_NEGATIVE_LIST_GATE.search("".join(negative_gate_scope)):
+        return False
+    if affirmative_absence_denials:
+        return True
+    if PROVIDER_DRAFT_TOOL_UNLESS_ABSENT_GATE.search(sentence):
+        return True
+    if PROVIDER_DRAFT_TOOL_REQUIRED_PRESENCE_GATE.search(sentence):
+        return True
+    if PROVIDER_DRAFT_TOOL_LIST_BYPASS.search(sentence):
+        return False
+    if PROVIDER_DRAFT_TOOL_POSITIVE_LIST_GATE.search(sentence):
+        return True
+    if PROVIDER_DRAFT_TOOL_WHEN_LISTED_GATE.search(sentence):
+        return True
+
+    # Permit a concise anaphoric "when listed" immediately after the exact
+    # positive gate, but never let a generic tools/list authority anchor mask
+    # an unconditional capability claim.
+    assertion = text[sentence_start : min(sentence_end, relation_end + 220)]
+    if not re.search(r"\bwhen\s+listed\b", assertion, re.IGNORECASE):
+        return False
+    prior = text[max(0, sentence_start - 360) : sentence_start]
+    return bool(
+        PROVIDER_DRAFT_TOOL_POSITIVE_LIST_GATE.search(prior)
+        or (
+            re.search(CANONICAL_PROVIDER_DRAFT_TOOL_GATE, prior, re.IGNORECASE)
+            and re.search(AUTHENTICATED_TOOLS_LIST, prior, re.IGNORECASE)
+            and re.search(r"\bonly\s+when\b", prior, re.IGNORECASE)
+            and not PROVIDER_DRAFT_TOOL_LIST_BYPASS.search(prior)
+        )
+    )
+
+
 def claim_is_denied(text: str, offset: int, end: int | None = None) -> bool:
     if claim_is_explicitly_rejected(text, offset, end):
         return True
@@ -2860,6 +3548,11 @@ def typed_tool_counts(text: str, start: int, end: int) -> list[TypedToolCount]:
     atoms: list[TypedToolCount] = []
     for match in TOOL_TYPED_COUNT.finditer(text, start, end):
         if TOOL_COUNT_META_DESCRIPTOR.search(match.group(0)):
+            continue
+        # In "a tool count of three", ``a tool`` is the unit being counted,
+        # not a one-tool inventory. The relation-level count parser handles
+        # the value after ``count of``.
+        if re.match(r"\s+count\s+(?:of|is|=|:)", text[match.end() :], re.I):
             continue
         qualifier = " ".join(
             (
@@ -3690,10 +4383,958 @@ def provider_studio_url_violations(text: str) -> list[int]:
     return sorted(set(violations))
 
 
+TRANSITION_HOSTED_CREATE_RELATIONS = (
+    re.compile(
+        r"\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?;]).){0,160}?\b(?:"
+        r"implements?|facilitates?|features?)\s+"
+        r"provider[- ]listing\s+draft\s+creation\b|"
+        r"\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?;]).){0,100}?\bhas\s+"
+        r"(?:(?:an?|the)\s+)?provider[- ]listing\s+draft\s+composer\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        r"(?:"
+        r"\bHosted\s+(?:Stele\s+)?MCP\b"
+        r"[\s#>*|:\d.)—–-]{1,180}"
+        r"provider[- ]listing\s+draft\s+creation\b"
+        r"(?:(?![.!?;]).){0,80}?\b(?:is\s+)?"
+        r"(?:available|enabled|live|supported)\b|"
+        r"\bHosted\s+(?:Stele\s+)?MCP\b\s*\|\s*"
+        r"provider[- ]listing\s+draft\s+creation\s*\|"
+        r")",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        r"\bprovider[- ]listing\s+draft(?:ing|\s+creation)\b"
+        r"(?:(?![.!?;]).){0,100}?\b(?:is\s+)?(?:available|enabled|live|"
+        r"operates?|runs?|works?)\s+(?:at|in|on|through|using|via)\s+"
+        r"(?:the\s+)?Hosted\s+(?:Stele\s+)?MCP\b|"
+        r"\bprovider[- ]listing\s+drafts?\b(?:(?![.!?;]).){0,80}?\b"
+        r"(?:is|are)\s+(?:created|generated|prepared|produced)\s+"
+        r"(?:at|by|through|using|via|with)\s+(?:the\s+)?Hosted\s+"
+        r"(?:Stele\s+)?MCP\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+)
+
+TRANSITION_HOSTED_CREATE_ANAPHOR = re.compile(
+    r"\b(?:(?:actually|currently|in\s+fact|now|presently|today)\s+)?"
+    r"(?:it|this\s+(?:MCP|service)|that\s+(?:MCP|service)|the\s+"
+    r"(?:hosted\s+)?(?:MCP|service))\s+(?:implements?|facilitates?|features?|"
+    r"provides?|offers?|supports?|enables?)\s+(?:(?:the|an?)\s+)?"
+    r"provider[- ]listing\s+draft\s+creation\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_NAMED_TOOL_INVOCATION = re.compile(
+    rf"\b(?:clients?|users?|agents?|callers?|integrations?)\b"
+    rf"(?:(?![.!?;]).){{0,80}}?\b(?:invoke|invokes|call|calls|use|uses|run|runs|"
+    rf"execute|executes|access|accesses)\s+(?:the\s+)?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}\b"
+    rf"(?:(?![.!?;]).){{0,100}}?(?:\bthrough\s+(?:the\s+)?Hosted\s+"
+    rf"(?:Stele\s+)?MCP\b)?",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_NAMED_TOOL_NOMINAL_INVOCATION = re.compile(
+    rf"\b(?:invocation|use|execution|access)\s+of\s+(?:the\s+)?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}\b"
+    rf"(?:(?![.!?;]).){{0,100}}?\b(?:occurs?|happens?|runs?)\s+"
+    rf"(?:at|by|from|in|on|through|via|with)\s+(?:the\s+)?"
+    rf"Hosted\s+(?:Stele\s+)?MCP\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_NEGATIVE_GATE_HOSTED_CREATE = re.compile(
+    rf"{AUTHENTICATED_TOOLS_LIST}(?:(?![.!?;]).){{0,100}}?\b(?:"
+    rf"(?:does\s+not|doesn['’]t|fails?\s+to|refuses?\s+to|never)\s+"
+    rf"(?:contains?|includes?|lists?|returns?|shows?)|"
+    rf"is\s+(?:barred|prohibited)\s+from\s+(?:including|returning)|"
+    rf"contains?\s+every\s+tool\s+except|"
+    rf"includes?\s+every\s+name\s+other\s+than|"
+    rf"excludes?|omits?)\b"
+    rf"(?:(?![.!?;]).){{0,100}}?{CANONICAL_PROVIDER_DRAFT_TOOL_GATE}"
+    rf"(?:(?![.!?;]).){{0,180}}?\bHosted\s+(?:Stele\s+)?MCP\b"
+    rf"(?:(?![.!?;]).){{0,100}}?\b(?:implements?|facilitates?|features?|"
+    rf"provides?|offers?|supports?|enables?)\s+"
+    rf"(?:(?:the|an?)\s+)?provider[- ]listing\s+draft\s+creation\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_ANAPHORIC_TOOL_BYPASS = re.compile(
+    r"\b(?:it|this\s+tool|that\s+tool|the\s+tool)\b"
+    r"(?:(?![.!?;]).){0,60}?\b(?:exists?|remains?\s+)?"
+    r"(?:available|callable|enabled|invokable|present|usable|exists?)\b"
+    r"(?:(?![.!?;]).){0,120}?\b(?:"
+    r"without\s+(?:authenticated\s+)?tools/list|"
+    r"(?:even\s+(?:if|when)|when|regardless\s+of)\b"
+    r"(?:(?![.!?;]).){0,120}?\b(?:authenticated\s+)?tools/list\b"
+    r"(?:(?![.!?;]).){0,100}?\b(?:is\s+)?(?:absent|missing)|"
+    r"(?:even\s+(?:if|when)|when|regardless\s+of)\b"
+    r"(?:(?![.!?;]).){0,120}?\b(?:authenticated\s+)?tools/list\b"
+    r"(?:(?![.!?;]).){0,100}?\b(?:excludes?|omits?|does\s+not\s+"
+    r"(?:contain|include|list|return|show))\b"
+    r")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_NONCANONICAL_PROVIDER_TOOL = re.compile(
+    r"\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?;]).){0,140}?\b"
+    r"(?:exposes?|has|includes?|lists?|offers?|provides?|supports?)\s+"
+    r"(?:the\s+)?`?(?P<name>stele[-_ ]create[-_ ]provider[-_ ]listing[-_ ]draft)\b`?",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_EXACT_TOOL_AUTHORITY = re.compile(
+    rf"(?:"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,100}}?\b(?:"
+    rf"opens?|revises?|replaces?|removes?|erases?|returns?)\s+"
+    rf"(?:(?:an?|the)\s+)?existing\s+provider[- ]listing\s+draft\b|"
+    rf"\ban\s+existing\s+provider[- ]listing\s+draft\b"
+    rf"(?:(?![.!?;]).){{0,80}}?\b(?:gets?|is|was)\s+(?:deleted|opened|"
+    rf"revised|replaced|removed|erased|returned)\s+"
+    rf"(?:by|through|using|via|with)\s+(?:the\s+)?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_ANAPHORIC_TOOL_AUTHORITY = re.compile(
+    r"\b(?:it|(?:the\s+)?same\s+tool|this\s+(?:tool|MCP|service)|"
+    r"that\s+(?:tool|MCP|service)|"
+    r"the\s+(?:tool|hosted\s+service|service|MCP))\b"
+    r"(?:(?![.!?;]).){0,60}?\b(?:access(?:es)?|controls?|deletes?|erases?|"
+    r"maintains?|manages?|opens?|owns?|revises?|replaces?|removes?|returns?)\s+"
+    r"(?:(?:an?|the)\s+)?(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+    r"(?:(?:provider[- ]listing\s+)?drafts?|them)\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_EXACT_TOOL_TRANSACTION = re.compile(
+    rf"(?:"
+    rf"\btransactions?\b(?:(?![.!?;]).){{0,80}}?\b(?:is|are)\s+"
+    rf"(?:signed|submitted|broadcast|settled|executed)\s+"
+    rf"(?:by|through|using|via|with)\s+(?:the\s+)?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}|"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}(?:(?![.!?;]).){{0,80}}?\b(?:"
+    rf"is\s+(?:(?:an?|the)\s+)?(?:transaction\s+)?(?:signer|broadcaster)|"
+    rf"has\s+custody\s+of\s+(?:the\s+)?(?:private\s+)?keys?|"
+    rf"holds?\s+(?:the\s+)?(?:private\s+)?keys?)\b"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_ANAPHORIC_TOOL_TRANSACTION = re.compile(
+    r"\b(?:it|this\s+tool|that\s+tool|the\s+tool)\b"
+    r"(?:(?![.!?;]).){0,60}?\b(?:has\s+custody\s+of|holds?)\s+"
+    r"(?:the\s+)?(?:private\s+)?keys?\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_ANAPHORIC_TOOL_TRANSACTION_ACTION = re.compile(
+    r"\b(?:it|(?:the\s+)?same\s+tool|this\s+(?:tool|MCP|service)|"
+    r"that\s+(?:tool|MCP|service)|"
+    r"the\s+(?:tool|hosted\s+service|service|MCP))\b"
+    r"(?:(?![.!?;]).){0,60}?\b(?:signs?|broadcasts?|submits?|settles?|"
+    r"executes?|authorizes?|approves?)\s+(?:(?:an?|the)\s+)?"
+    r"(?:transactions?|payments?|settlements?|transfers?|them)\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_TOOL_TRANSACTION_DOUBLE_NEGATIVE = re.compile(
+    rf"(?:"
+    rf"\b(?:it|this\s+tool|that\s+tool|the\s+tool)\b"
+    rf"(?:(?![.!?;]).){{0,60}}?\b(?:never|cannot|can['’]t|does\s+not|"
+    rf"doesn['’]t)\s+fail\s+to\s+(?:sign|broadcast|submit|settle|execute|"
+    rf"authorize|approve)\s+(?:(?:an?|the)\s+)?transactions?\b|"
+    rf"\btransactions?\b(?:(?![.!?;]).){{0,60}}?\b(?:cannot|can['’]t|never)\s+"
+    rf"fail\s+to\s+be\s+(?:signed|broadcast|submitted|settled|executed)\s+"
+    rf"(?:by|through|using|via|with)\s+(?:the\s+)?"
+    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_NONUNIT_COUNT = (
+    r"(?:no|zero|two|three|four|five|six|seven|eight|nine|ten|\d+|multiple|"
+    r"several|many|more\s+than\s+one|at\s+least\s+two)"
+)
+TRANSITION_PROVIDER_NONUNIT_RESULT = re.compile(
+    rf"(?:"
+    rf"\b(?:each\s+)?successful\s+(?:create\s+)?(?:operation|call)\b"
+    rf"(?:(?![.!?;]).){{0,120}}?\b(?:creates?|produces?|writes?|yields?)\s+"
+    rf"{TRANSITION_NONUNIT_COUNT}\s+(?:new\s+)?provider[- ]listing\s+drafts?\b|"
+    rf"\b{TRANSITION_NONUNIT_COUNT}\s+(?:new\s+)?provider[- ]listing\s+drafts?\b"
+    rf"(?:(?![.!?;]).){{0,100}}?\b(?:is|are)\s+(?:created|produced|written|yielded)\s+"
+    rf"(?:by\s+)?each\s+successful\s+(?:create\s+)?(?:operation|call)\b|"
+    rf"\b(?:the\s+operation|it|each\s+call)\b(?:(?![.!?;]).){{0,60}}?\b"
+    rf"(?:also\s+)?(?:creates?|produces?|writes?|yields?)\s+"
+    rf"{TRANSITION_NONUNIT_COUNT}\s+(?:new\s+)?provider[- ]listing\s+drafts?\b|"
+    rf"\ba\s+second\s+(?:provider[- ]listing\s+)?draft\s+"
+    rf"(?:is|gets?)\s+created\s+(?:too|also)\b"
+    rf")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_PROVIDER_EXACT_ONE_RESULT = re.compile(
+    r"\b(?:each|no)\s+successful\s+(?:create\s+)?(?:operation|call)\b"
+    r"(?:(?![.!?;]).){0,120}?\b(?:creates?|produces?|writes?|yields?)\s+"
+    r"exactly\s+one\s+(?:new\s+)?provider[- ]listing\s+draft\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_REPLAY_DUPLICATE = re.compile(
+    r"\b(?:an?\s+)?(?:idempotent\s+)?(?:replay|retry)\b"
+    r"(?:(?![.!?;]).){0,160}?\b(?:creat(?:e|es|ing)|produc(?:e|es|ing)|"
+    r"writ(?:e|es|ing)|returns?|yields?)\s+"
+    r"(?:(?:an?|the)\s+)?(?:new|fresh|another|additional|different|distinct|"
+    r"duplicate|second)\s+"
+    r"(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:a\s+(?:replay|retry)\s+with|reusing|reuse\s+of)\s+(?:the\s+)?"
+    r"(?:same|unchanged)\s+idempotency\s+key\b(?:(?![.!?;]).){0,140}?\b"
+    r"(?:creates?|produces?|"
+    r"writes?|returns?|yields?)\s+(?:(?:an?|the)\s+)?(?:new|another|additional|"
+    r"different|distinct|duplicate|fresh|second)\s+"
+    r"(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:on\s+)?(?:an?\s+)?retry\b(?:(?![.!?;]).){0,100}?\b"
+    r"(?:(?:an?|the)\s+)?(?:new|fresh|another|additional|different|distinct|"
+    r"duplicate|second)\s+(?:provider[- ]listing\s+)?draft\s+"
+    r"(?:is|gets?)\s+(?:created|produced|written|returned|yielded)\b|"
+    r"\b(?:on\s+)?(?:an?\s+)?retry\b(?:(?![.!?;]).){0,100}?\b(?:results?\s+in\s+"
+    r"(?:(?:an?|the)\s+)?(?:new|fresh|another|additional|different|distinct|"
+    r"duplicate|second)\s+(?:provider[- ]listing\s+)?draft|"
+    r"(?:(?:an?|the)\s+)?(?:new|fresh|another|additional|different|distinct|"
+    r"duplicate|second)\s+(?:provider[- ]listing\s+)?draft\s+emerges?)\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_REPLAY_SAME_DRAFT_DENIAL = re.compile(
+    r"(?:"
+    r"\b(?:an?\s+)?idempotent\s+(?:replay|retry)\b"
+    r"(?:(?![.!?;]).){0,160}?\b(?:does\s+not|doesn['’]t|cannot|never|"
+    r"(?<!not\s)(?<!never\s)(?<!cannot\s)fails?\s+to|"
+    r"is\s+not\s+guaranteed\s+to)\s+return\s+"
+    r"(?:(?:the|that)\s+)?same\s+(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:it|the\s+operation|the\s+tool)\b(?:(?![.!?;]).){0,80}?\b"
+    r"(?:does\s+not|doesn['’]t|cannot|never|"
+    r"(?<!not\s)(?<!never\s)(?<!cannot\s)fails?\s+to)\s+return\s+"
+    r"(?:(?:the|that)\s+)?same\s+(?:provider[- ]listing\s+)?draft\b"
+    r"(?:(?![.!?;]).){0,80}?\bon\s+an?\s+idempotent\s+(?:replay|retry)\b"
+    r")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_REPLAY_DUPLICATE_DOUBLE_NEGATIVE = re.compile(
+    r"\b(?:an?\s+)?idempotent\s+(?:replay|retry)\b"
+    r"(?:(?![.!?;]).){0,120}?\b(?:"
+    r"(?:cannot|can['’]t|never|does\s+not|doesn['’]t|is\s+unable\s+to)\s+"
+    r"avoid\s+(?:creating|producing|writing|returning|yielding)|"
+    r"cannot\s+help\s+but\s+(?:create|produce|write|return|yield)|"
+    r"cannot\s+fail\s+to\s+(?:create|produce|write|return|yield))\s+"
+    r"(?:(?:an?|the)\s+)?(?:new|fresh|another|additional|different|distinct|"
+    r"duplicate|second)\s+"
+    r"(?:provider[- ]listing\s+)?draft\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_REPLAY_SAME_DRAFT_SEMANTIC_DENIAL = re.compile(
+    r"(?:"
+    r"\bno\s+(?:idempotent\s+)?(?:replay|retry)\b(?:(?![.!?;]).){0,100}?\b"
+    r"returns?\s+(?:(?:the|that)\s+)?(?:same|original)\s+"
+    r"(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:an?\s+)?idempotent\s+(?:replay|retry)\b"
+    r"(?:(?![.!?;]).){0,100}?\b(?:(?:does\s+not|doesn['’]t|"
+    r"is\s+unable\s+to)\s+return|is\s+(?:incapable\s+of|not\s+capable\s+of)\s+"
+    r"returning)\s+"
+    r"(?:(?:the|that)\s+)?(?:same|original)\s+"
+    r"(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:an?\s+)?idempotent\s+(?:replay|retry)\b"
+    r"(?:(?![.!?;]).){0,100}?\breturns?\s+(?:(?:an?|the)\s+)?draft\s+"
+    r"other\s+than\s+(?:(?:the|that)\s+)?(?:same|original)\s+"
+    r"(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:an?\s+)?idempotent\s+(?:replay|retry)\b"
+    r"(?:(?![.!?;]).){0,100}?\bavoids?\s+returning\s+"
+    r"(?:(?:the|that)\s+)?(?:same|original)\s+(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:an?\s+)?idempotent\s+(?:replay|retry)\b"
+    r"(?:(?![.!?;]).){0,100}?\b(?<!never\s)returns?\s+anything\s+except\s+"
+    r"(?:(?:the|that)\s+)?(?:same|original)\s+(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:an?\s+)?idempotent\s+(?:replay|retry)\b"
+    r"(?:(?![.!?;]).){0,100}?\bdoes\s+anything\s+but\s+return\s+"
+    r"(?:(?:the|that)\s+)?(?:same|original)\s+(?:provider[- ]listing\s+)?draft\b|"
+    r"\bit\s+is\s+(?:false|untrue)\s+that\s+(?:an?\s+)?idempotent\s+"
+    r"(?:replay|retry)\b(?:(?![.!?;]).){0,100}?\breturns?\s+"
+    r"(?:(?:the|that)\s+)?(?:same|original)\s+(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:an?\s+)?replay\s+with\s+(?:the\s+)?same\s+idempotency\s+key\b"
+    r"(?:(?![.!?;]).){0,100}?\breturns?\s+neither\s+(?:the\s+)?same\s+nor\s+"
+    r"(?:the\s+)?original\s+(?:provider[- ]listing\s+)?draft\b"
+    r")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_REPLAY_NEW_DRAFT_RELATION = re.compile(
+    r"(?:"
+    r"\b(?:the\s+)?same\s+idempotency\s+key\b(?:(?![.!?;]).){0,100}?\b"
+    r"(?:leads?|results?)\s+to\s+(?:(?:an?|the)\s+)?(?:new|fresh|another|"
+    r"additional|different|distinct|duplicate|novel|second)\s+"
+    r"(?:provider[- ]listing\s+)?draft\b|"
+    r"\bretrying\s+(?:the\s+)?unchanged\s+(?:request|operation|call)\b"
+    r"(?:(?![.!?;]).){0,100}?\b(?:creates?|produces?|returns?|writes?|yields?)\s+"
+    r"(?:(?:an?|the)\s+)?(?:new|fresh|another|additional|different|distinct|"
+    r"duplicate|novel|second)\s+(?:provider[- ]listing\s+)?draft\b|"
+    r"\b(?:an?\s+)?unchanged\s+(?:replay|retry)\b(?:(?![.!?;]).){0,100}?\b"
+    r"(?:creates?|produces?|returns?|writes?|yields?)\s+(?:(?:an?|the)\s+)?"
+    r"(?:new|fresh|another|additional|different|distinct|duplicate|novel|second)\s+"
+    r"(?:provider[- ]listing\s+)?draft\b"
+    r")",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_PROVIDER_RESULT_NOT_UNIT_LIMIT = re.compile(
+    r"\beach\s+successful\s+(?:create\s+)?(?:operation|call)\b"
+    r"(?:(?![.!?;]).){0,100}?\b(?:is\s+not|isn['’]t|cannot\s+be|can['’]t\s+be)\s+"
+    r"(?:limited|restricted)\s+to\s+(?:(?:exactly\s+)?one|(?:an?\s+)?single)\s+"
+    r"(?:new\s+)?"
+    r"provider[- ]listing\s+draft\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_MCP_COUNT_RELATIONS = (
+    re.compile(
+        rf"\b(?:an?\s+)?(?P<count>{TOOL_COUNT_TOKEN})\s+(?:of\s+)?tools?\s+"
+        rf"(?:comprise|comprises|constitute|constitutes|compose|composes|"
+        rf"make|makes)\s+(?:up\s+)?(?:the\s+)?(?P<kind>Hosted|local)\s+"
+        rf"(?:Stele\s+)?MCP(?:\s+inventory)?\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b(?:the\s+)?(?:tool\s+count|number\s+of\s+tools)\s+"
+        rf"(?:for|in)\s+(?P<kind>Hosted|local)\s+(?:Stele\s+)?MCP\s+"
+        rf"(?:is\s+(?P<negated>not\s+)?|isn['’]t\s+|=\s*|:\s*)"
+        rf"(?P<count>{TOOL_COUNT_TOKEN})\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b(?P<kind>Hosted|local)\s+(?:Stele\s+)?MCP\b"
+        rf"(?:(?![.!?;]).){{0,80}}?\b(?:has|does\s+not\s+have|"
+        rf"doesn['’]t\s+have)\s+(?:an?\s+)?tool\s+count\s+of\s+"
+        rf"(?P<count>{TOOL_COUNT_TOKEN})\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        rf"\b(?P<kind>Hosted|local)\s+(?:Stele\s+)?MCP\b\s+"
+        rf"(?:is\s+(?P<negated>not\s+|anything\s+but\s+|by\s+no\s+means\s+)?|"
+        rf"isn['’]t\s+)"
+        rf"(?:an?\s+)?(?P<count>{TOOL_COUNT_TOKEN})[- ]tool\s+service\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b(?:the\s+)?(?:tool\s+count|number\s+of\s+tools)\s+"
+        rf"(?:for|in)\s+(?P<kind>Hosted|local)\s+(?:Stele\s+)?MCP\s+"
+        rf"(?P<negated>differs?\s+from)\s+(?P<count>{TOOL_COUNT_TOKEN})\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b(?P<kind>Hosted|local)\s+(?:Stele\s+)?MCP\b"
+        rf"(?:(?![.!?;]).){{0,80}}?\bdoes\s+not\s+lack\s+"
+        rf"(?:an?\s+)?tool\s+count\s+of\s+(?P<count>{TOOL_COUNT_TOKEN})\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        rf"\b(?P<kind>Hosted|local)\s+(?:Stele\s+)?MCP\b"
+        rf"(?:(?![.!?;]).){{0,80}}?\bdoes\s+not\s+expose\s+"
+        rf"(?:precisely|exactly)\s+(?P<count>{TOOL_COUNT_TOKEN})\s+tools?\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        rf"\b(?:exactly|precisely)\s+(?P<count>{TOOL_COUNT_TOKEN})\s+tools?\s+"
+        rf"do\s+not\s+(?:comprise|constitute|compose|make\s+up)\s+(?:the\s+)?"
+        rf"(?P<kind>Hosted|local)\s+(?:Stele\s+)?MCP(?:\s+inventory)?\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b(?P<kind>Hosted|local)\s+(?:Stele\s+)?MCP\b\s+(?:"
+        rf"cannot\s+be\s+described\s+as|is\s+not\s+describable\s+as|"
+        rf"is\s+in\s+no\s+way)\s+(?:an?\s+)?(?P<count>{TOOL_COUNT_TOKEN})[- ]tool\s+"
+        rf"service\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b(?:the\s+)?(?P<kind>Hosted|local)\s+(?:Stele\s+)?MCP\s+"
+        rf"(?:tool\s+count|inventory)\s+(?:is|contains?)\s+"
+        rf"(?P<negated>anything\s+(?:except|other\s+than))\s+"
+        rf"(?:exactly\s+)?(?P<count>{TOOL_COUNT_TOKEN})(?:\s+tools?)?\b",
+        re.IGNORECASE,
+    ),
+)
+
+TRANSITION_LOCAL_EXACT_THREE_RANGE = re.compile(
+    r"\blocal\s+(?:Stele\s+)?MCP\b(?:(?![.!?;]).){0,80}?\bhas\s+"
+    r"no\s+more\s+and\s+no\s+fewer\s+than\s+three\s+tools?\b",
+    re.IGNORECASE | re.DOTALL,
+)
+TRANSITION_LOCAL_EXACT_THREE_DOUBLE_DENIAL = re.compile(
+    r"\b(?:false|untrue|incorrect|wrong)\s+that\s+local\s+(?:Stele\s+)?MCP\b"
+    r"(?:(?![.!?;]).){0,80}?\b(?:does\s+not|doesn['’]t|cannot|can['’]t|never)\s+"
+    r"(?:expose|have|include|provide|offer|list)\s+(?:exactly|precisely)\s+"
+    r"three\s+tools?\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_LOCAL_THIRD_TOOL_DENIAL = re.compile(
+    r"\blocal\s+(?:Stele\s+)?MCP\b(?:(?![.!?;]).){0,100}?\b(?:"
+    r"has\s+no|lacks?\s+(?:(?:an?|the)\s+)?|does\s+not\s+have)\s+"
+    r"(?:additional\s+)?third\s+tool\b|"
+    r"\bno\s+(?:additional\s+)?third\s+tool\b(?:(?![.!?;]).){0,100}?\b"
+    r"(?:is\s+)?(?:available|exposed|offered|provided|listed|present)\s+"
+    r"(?:at|in|on|through|from)\s+(?:the\s+)?local\s+(?:Stele\s+)?MCP\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_HOSTED_DRAFT_AUTHORITY = re.compile(
+    r"\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?;|]|\n\n).){0,120}?\b(?:"
+    r"access(?:es)?|controls?|deletes?|erases?|maintains?|manages?|opens?|owns?|"
+    r"revises?|replaces?|removes?|returns?)\s+(?:(?:an?|the)\s+)?"
+    r"(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+    r"provider[- ]listing\s+drafts?\b|"
+    r"\bHosted\s+(?:Stele\s+)?MCP\b(?:(?![.!?;|]|\n\n).){0,120}?\b"
+    r"(?:is|acts\s+as|serves\s+as)\s+(?:(?:an?|the)\s+)?custodian\s+of\s+"
+    r"(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+    r"provider[- ]listing\s+drafts?\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_COORDINATED_TOOL_AUTHORITY = re.compile(
+    r"\b(?:it|this\s+(?:tool|MCP|service)|that\s+(?:tool|MCP|service)|"
+    r"the\s+(?:tool|hosted\s+service|service|MCP))\b"
+    r"(?:(?![.!?]).){0,140}?\b(?:yet|nevertheless|instead|while)\b"
+    r"(?:(?![.!?]).){0,80}?\b(?:access(?:es|ing)?|control(?:s|ling)?|"
+    r"delet(?:e|es|ing)|eras(?:e|es|ing)|maintain(?:s|ing)?|manag(?:e|es|ing)|"
+    r"open(?:s|ing)?|own(?:s|ing)?|revis(?:e|es|ing)|replac(?:e|es|ing)|"
+    r"remov(?:e|es|ing)|return(?:s|ing)?)\s+(?:(?:an?|the)\s+)?"
+    r"(?:existing\s+)?(?:private\s+|wallet-owned\s+){0,3}"
+    r"(?:provider[- ]listing\s+)?drafts?\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+TRANSITION_OTHER_ACTOR = re.compile(
+    r"\b(?:Browser\s+Wallet|Provider\s+Studio|Studio|Desktop\s+Wallet|"
+    r"Mobile\s+Wallet|public\s+web|web\s+app|local\s+(?:Stele\s+)?MCP|"
+    r"(?:browser\s+extension|hardware|provider|self[- ]custodial|user)\s+wallet|"
+    r"(?:external|hardware|separate)\s+signer|"
+    r"(?:another|different|external|separate|unrelated)\s+"
+    r"(?:actor|API|application|client|process|server|service|surface|system|"
+    r"tool|wallet|worker))\b",
+    re.IGNORECASE,
+)
+TRANSITION_ATX_HEADING = re.compile(
+    r"(?m)^\s*#{1,6}\s+(?P<title>[^\n]+?)\s*#*\s*$"
+)
+TRANSITION_SETEXT_HEADING = re.compile(
+    r"(?m)^(?P<title>[^\n]{1,160})\n\s*(?:=+|-+)\s*$"
+)
+TRANSITION_HTML_HEADING = re.compile(
+    r"<h[1-6]\b[^>]*>(?P<title>.*?)</h[1-6]\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+TRANSITION_HEADING_TAG = re.compile(r"<[^>]+>")
+TRANSITION_OWNER_CONTINUATION_HEADING = re.compile(
+    r"\b(?:draft\s+ownership|ownership\s+of\s+drafts?)\b",
+    re.IGNORECASE,
+)
+TRANSITION_MCP_META_CLAIM = re.compile(
+    r"(?:"
+    r"\bHosted\s+(?:Stele\s+)?MCP\s+(?:documentation|docs?|example|fixture|"
+    r"mockup|sample|simulation|test)\b|"
+    r"\b(?:(?:integration|regression|system|unit)\s+)?test\s+for\s+Hosted\s+"
+    r"(?:Stele\s+)?MCP\b|"
+    r"\b(?:documentation|docs?|example|fixture|mockup|sample|simulation|test)\s+"
+    r"(?:about|for|of)\s+Hosted\s+(?:Stele\s+)?MCP\b"
+    r")",
+    re.IGNORECASE,
+)
+TRANSITION_DOCUMENTARY_ATTRIBUTION = re.compile(
+    r"(?:^|[.!?;]\s*)(?:(?:the|an?)\s+)?(?:archived\s+)?"
+    r"(?:(?:invalid|rejected|false)\s+)?(?:audit|documentation|docs?|example|fixture|"
+    r"harness|manual|mockup|reference|sample|simulation|"
+    r"(?:integration|regression|security|system|unit)?\s*(?:harness|manual|test)|"
+    r"warning)\b"
+    r"(?:(?![.!?;]).){0,100}?\b(?:asserts?|claims?|contains?|depicts?|describes?|"
+    r"documents?|illustrates?|marks?|quotes?|records?|rejects?|says?|shows?|uses?|"
+    r"warns?)\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def transition_scope_is_meta(prose: str, offset: int) -> bool:
+    scope = claim_scope(prose, offset)
+    return bool(
+        TRANSITION_MCP_META_CLAIM.search(scope)
+        or TRANSITION_DOCUMENTARY_ATTRIBUTION.search(scope)
+    )
+
+
+def transition_contract_contradictions(prose: str) -> list[tuple[int, str]]:
+    """Evaluate the hosted transition as actor/relation/polarity contracts."""
+
+    contradictions: list[tuple[int, str]] = []
+
+    def owner_events(fragment: str) -> list[tuple[int, str]]:
+        events: list[tuple[int, str]] = []
+        events.extend(
+            (match.end(), "tool")
+            for match in re.finditer(
+                CANONICAL_PROVIDER_DRAFT_TOOL, fragment, re.IGNORECASE
+            )
+        )
+        events.extend(
+            (match.end(), "hosted")
+            for match in re.finditer(
+                r"\bHosted\s+(?:Stele\s+)?MCP\b", fragment, re.IGNORECASE
+            )
+        )
+        events.extend(
+            (match.end(), "other")
+            for match in TRANSITION_OTHER_ACTOR.finditer(fragment)
+        )
+        events.extend(
+            (match.end(), "meta")
+            for match in TRANSITION_MCP_META_CLAIM.finditer(fragment)
+        )
+        events.extend(
+            (match.end(), "meta")
+            for match in TRANSITION_DOCUMENTARY_ATTRIBUTION.finditer(fragment)
+        )
+
+        def record_heading(match: re.Match[str]) -> None:
+            title = TRANSITION_HEADING_TAG.sub(" ", match.group("title"))
+            owner = (
+                "meta"
+                if TRANSITION_MCP_META_CLAIM.search(title)
+                or re.search(
+                    r"\b(?:documentation|docs?|example|fixture|harness|manual|"
+                    r"mockup|reference|sample|simulation|test|warning)\b",
+                    title,
+                    re.IGNORECASE,
+                )
+                else "tool"
+                if re.search(
+                    rf"{CANONICAL_PROVIDER_DRAFT_TOOL}|\bSame\s+tool\b",
+                    title,
+                    re.IGNORECASE,
+                )
+                else "hosted"
+                if re.search(
+                    r"\bHosted\s+(?:Stele\s+)?MCP\b", title, re.IGNORECASE
+                )
+                else "other"
+                if TRANSITION_OTHER_ACTOR.search(title)
+                else None
+                if TRANSITION_OWNER_CONTINUATION_HEADING.search(title)
+                else "other"
+            )
+            if owner is not None:
+                events.append((match.end(), owner))
+
+        for heading_pattern in (
+            TRANSITION_ATX_HEADING,
+            TRANSITION_SETEXT_HEADING,
+            TRANSITION_HTML_HEADING,
+        ):
+            for heading in heading_pattern.finditer(fragment):
+                record_heading(heading)
+        return events
+
+    def transition_owner_before(offset: int, distance: int = 700) -> str | None:
+        prior = prose[max(0, offset - distance) : offset]
+        events = owner_events(prior)
+        priority = {None: 0, "hosted": 1, "tool": 1, "other": 2, "meta": 3}
+        return max(
+            events,
+            default=(0, None),
+            key=lambda event: (event[0], priority[event[1]]),
+        )[1]
+
+    def has_nearby_exact_tool(offset: int) -> bool:
+        return transition_owner_before(offset) in {"hosted", "tool"}
+
+    def transition_claim_is_meta(claim: re.Match[str]) -> bool:
+        return transition_scope_is_meta(prose, claim.start())
+
+    def relation_is_current_affirmative(claim: re.Match[str]) -> bool:
+        fragment = claim.group(0)
+        return provider_capability_claim_is_current_affirmative(
+            fragment, 0, len(fragment)
+        )
+
+    def relation_is_current_semantic(claim: re.Match[str]) -> bool:
+        fragment = claim.group(0)
+        return provider_capability_claim_is_current_semantic(
+            fragment, 0, len(fragment)
+        )
+
+    def has_nearby_provider_create_context(offset: int, distance: int = 520) -> bool:
+        prior = prose[max(0, offset - distance) : offset]
+        contexts = [
+            *re.finditer(CANONICAL_PROVIDER_DRAFT_TOOL, prior, re.IGNORECASE),
+            *re.finditer(
+                r"\bexactly\s+one\b(?:(?![.!?;]).){0,120}?\b"
+                r"provider[- ]listing\s+draft\b",
+                prior,
+                re.IGNORECASE | re.DOTALL,
+            ),
+        ]
+        if not contexts:
+            return False
+        context_end = max(match.end() for match in contexts)
+        later_owners = owner_events(prior[context_end:])
+        if not later_owners:
+            return True
+        priority = {"hosted": 1, "tool": 1, "other": 2, "meta": 3}
+        return max(
+            later_owners, key=lambda event: (event[0], priority[event[1]])
+        )[1] in {
+            "hosted",
+            "tool",
+        }
+
+    for pattern in TRANSITION_HOSTED_CREATE_RELATIONS:
+        for claim in pattern.finditer(prose):
+            if transition_claim_is_meta(claim) or TRANSITION_OTHER_ACTOR.search(
+                claim.group(0)
+            ):
+                continue
+            if relation_is_current_affirmative(
+                claim
+            ) and not provider_draft_claim_is_tools_list_gated(
+                prose, claim.start(), claim.end()
+            ):
+                contradictions.append(
+                    (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+                )
+
+    for claim in TRANSITION_HOSTED_CREATE_ANAPHOR.finditer(prose):
+        if transition_owner_before(claim.start()) not in {"hosted", "tool"}:
+            continue
+        if relation_is_current_affirmative(claim) and not provider_draft_claim_is_tools_list_gated(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in TRANSITION_NAMED_TOOL_INVOCATION.finditer(prose):
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ) and not provider_draft_claim_is_tools_list_gated(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in TRANSITION_NAMED_TOOL_NOMINAL_INVOCATION.finditer(prose):
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ) and not provider_draft_claim_is_tools_list_gated(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in TRANSITION_NEGATIVE_GATE_HOSTED_CREATE.finditer(prose):
+        if PROVIDER_DRAFT_TOOL_AFFIRMATIVE_ABSENCE_DENIAL_GATE.search(
+            claim.group(0)
+        ):
+            continue
+        if provider_capability_claim_is_current_semantic(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in TRANSITION_ANAPHORIC_TOOL_BYPASS.finditer(prose):
+        availability_relation = re.split(
+            r"\b(?:even\s+(?:if|when)|when|without|regardless\s+of)\b",
+            claim.group(0),
+            maxsplit=1,
+            flags=re.IGNORECASE,
+        )[0]
+        if CLAIM_DENIAL.search(availability_relation):
+            continue
+        if has_nearby_exact_tool(
+            claim.start()
+        ) and relation_is_current_semantic(claim):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in TRANSITION_NONCANONICAL_PROVIDER_TOOL.finditer(prose):
+        if transition_claim_is_meta(claim):
+            continue
+        if claim.group("name") == CANONICAL_PROVIDER_DRAFT_TOOL_NAME:
+            continue
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_LOOKALIKE_ERROR)
+            )
+
+    for claim in TRANSITION_EXACT_TOOL_AUTHORITY.finditer(prose):
+        if transition_claim_is_meta(claim):
+            continue
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), "hosted MCP claims provider-listing draft authority")
+            )
+    for claim in TRANSITION_ANAPHORIC_TOOL_AUTHORITY.finditer(prose):
+        if transition_claim_is_meta(claim):
+            continue
+        if has_nearby_exact_tool(
+            claim.start()
+        ) and relation_is_current_affirmative(claim):
+            contradictions.append(
+                (claim.start(), "hosted MCP claims provider-listing draft authority")
+            )
+
+    for claim in TRANSITION_HOSTED_DRAFT_AUTHORITY.finditer(prose):
+        if transition_claim_is_meta(claim) or TRANSITION_OTHER_ACTOR.search(
+            claim.group(0)
+        ):
+            continue
+        if relation_is_current_affirmative(claim):
+            contradictions.append(
+                (claim.start(), "hosted MCP claims provider-listing draft authority")
+            )
+
+    for claim in TRANSITION_COORDINATED_TOOL_AUTHORITY.finditer(prose):
+        if transition_claim_is_meta(claim):
+            continue
+        if has_nearby_exact_tool(claim.start()) and relation_is_current_semantic(
+            claim
+        ):
+            contradictions.append(
+                (claim.start(), "hosted MCP claims provider-listing draft authority")
+            )
+
+    for claim in TRANSITION_EXACT_TOOL_TRANSACTION.finditer(prose):
+        if transition_claim_is_meta(claim):
+            continue
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), "hosted Stele MCP claims transaction capability")
+            )
+    for claim in TRANSITION_ANAPHORIC_TOOL_TRANSACTION.finditer(prose):
+        if transition_claim_is_meta(claim):
+            continue
+        if has_nearby_exact_tool(
+            claim.start()
+        ) and relation_is_current_affirmative(claim):
+            contradictions.append(
+                (claim.start(), "hosted Stele MCP claims transaction capability")
+            )
+
+    for claim in TRANSITION_ANAPHORIC_TOOL_TRANSACTION_ACTION.finditer(prose):
+        if transition_claim_is_meta(claim):
+            continue
+        if has_nearby_exact_tool(claim.start()) and relation_is_current_affirmative(
+            claim
+        ):
+            contradictions.append(
+                (claim.start(), "hosted Stele MCP claims transaction capability")
+            )
+
+    for claim in TRANSITION_TOOL_TRANSACTION_DOUBLE_NEGATIVE.finditer(prose):
+        if transition_claim_is_meta(claim):
+            continue
+        anaphoric = re.match(
+            r"\s*(?:it|this\s+tool|that\s+tool|the\s+tool)",
+            claim.group(0),
+            re.IGNORECASE,
+        )
+        if anaphoric and not has_nearby_exact_tool(claim.start()):
+            continue
+        if relation_is_current_semantic(claim):
+            contradictions.append(
+                (claim.start(), "hosted Stele MCP claims transaction capability")
+            )
+
+    for claim in TRANSITION_PROVIDER_NONUNIT_RESULT.finditer(prose):
+        anaphoric = re.match(
+            r"\s*(?:the\s+operation|it|each\s+call|a\s+second\s+draft)",
+            claim.group(0),
+            re.IGNORECASE,
+        )
+        if anaphoric and not has_nearby_provider_create_context(claim.start()):
+            continue
+        zero_result = bool(
+            re.search(
+                r"\b(?:no|zero)\s+(?:new\s+)?provider[- ]listing\s+drafts?\b",
+                claim.group(0),
+                re.IGNORECASE,
+            )
+        )
+        current = (
+            provider_capability_claim_is_current_semantic(
+                prose, claim.start(), claim.end()
+            )
+            if zero_result
+            else provider_capability_claim_is_current_affirmative(
+                prose, claim.start(), claim.end()
+            )
+        )
+        if current:
+            contradictions.append(
+                (claim.start(), "provider-draft creation claims a non-unit result")
+            )
+
+    for claim in TRANSITION_PROVIDER_EXACT_ONE_RESULT.finditer(prose):
+        fragment = claim.group(0)
+        if relation_is_current_semantic(claim) and claim_is_denied(
+            fragment, 0, len(fragment)
+        ):
+            contradictions.append(
+                (claim.start(), "provider-draft creation claims a non-unit result")
+            )
+
+    for claim in TRANSITION_PROVIDER_RESULT_NOT_UNIT_LIMIT.finditer(prose):
+        if relation_is_current_semantic(claim):
+            contradictions.append(
+                (claim.start(), "provider-draft creation claims a non-unit result")
+            )
+
+    for claim in TRANSITION_REPLAY_DUPLICATE.finditer(prose):
+        containing_heading = next(
+            (
+                heading
+                for heading_pattern in (
+                    TRANSITION_ATX_HEADING,
+                    TRANSITION_SETEXT_HEADING,
+                    TRANSITION_HTML_HEADING,
+                )
+                for heading in heading_pattern.finditer(prose)
+                if heading.start() <= claim.start() < heading.end()
+            ),
+            None,
+        )
+        if containing_heading is not None:
+            nested_claim = TRANSITION_REPLAY_DUPLICATE.search(
+                prose, containing_heading.end(), claim.end()
+            )
+            if nested_claim is None:
+                continue
+            claim = nested_claim
+        explicit_idempotency = bool(
+            re.search(
+                r"\bidempotent\b|\b(?:same|unchanged)\s+idempotency\s+key\b",
+                claim.group(0),
+                re.IGNORECASE,
+            )
+        )
+        self_anchored = explicit_idempotency or bool(
+            re.search(r"\bprovider[- ]listing\s+draft\b", claim.group(0), re.I)
+        )
+        if not explicit_idempotency and transition_owner_before(claim.start()) in {
+            "other",
+            "meta",
+        }:
+            continue
+        if not self_anchored and not has_nearby_provider_create_context(claim.end()):
+            continue
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (
+                    claim.start(),
+                    "idempotent provider-draft replay claims duplicate creation",
+                )
+            )
+
+    for claim in TRANSITION_REPLAY_DUPLICATE_DOUBLE_NEGATIVE.finditer(prose):
+        if relation_is_current_semantic(claim):
+            contradictions.append(
+                (
+                    claim.start(),
+                    "idempotent provider-draft replay claims duplicate creation",
+                )
+            )
+
+    for claim in TRANSITION_REPLAY_NEW_DRAFT_RELATION.finditer(prose):
+        if relation_is_current_affirmative(claim):
+            contradictions.append(
+                (
+                    claim.start(),
+                    "idempotent provider-draft replay claims duplicate creation",
+                )
+            )
+
+    for claim in TRANSITION_REPLAY_SAME_DRAFT_DENIAL.finditer(prose):
+        generic_target = not re.search(
+            r"provider[- ]listing", claim.group(0), re.IGNORECASE
+        )
+        if generic_target and not has_nearby_provider_create_context(claim.start()):
+            continue
+        if provider_capability_claim_is_current_semantic(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (
+                    claim.start(),
+                    "idempotent provider-draft replay denies same-draft return",
+                )
+            )
+
+    for claim in TRANSITION_REPLAY_SAME_DRAFT_SEMANTIC_DENIAL.finditer(prose):
+        if claim_is_noncurrent(prose, claim.start(), claim.end()) or transition_claim_is_meta(
+            claim
+        ):
+            continue
+        contradictions.append(
+            (
+                claim.start(),
+                "idempotent provider-draft replay denies same-draft return",
+            )
+        )
+
+    for pattern in TRANSITION_MCP_COUNT_RELATIONS:
+        for claim in pattern.finditer(prose):
+            if not claim_is_current_semantic(prose, claim.start(), claim.end()):
+                continue
+            kind = claim.group("kind").casefold()
+            actual = count_value(claim.group("count"))
+            denied = bool(claim.groupdict().get("negated")) or claim_is_denied(
+                prose, claim.start(), claim.end()
+            )
+            if kind == "hosted":
+                contradictions.append((claim.start(), HOSTED_DYNAMIC_INVENTORY_ERROR))
+            elif (denied and actual == 3) or (not denied and actual != 3):
+                label = (
+                    "local Stele MCP denies its required 3-tool surface"
+                    if denied
+                    else f"local Stele MCP claims {actual} tools; expected exactly 3"
+                )
+                contradictions.append((claim.start(), label))
+
+    for claim in TRANSITION_LOCAL_THIRD_TOOL_DENIAL.finditer(prose):
+        if claim_is_current_semantic(prose, claim.start(), claim.end()):
+            contradictions.append(
+                (claim.start(), "local Stele MCP denies its required 3-tool surface")
+            )
+
+    return contradictions
+
+
 def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
     """Return every present-tense claim that conflicts with the release snapshot."""
     prose = status_prose(text)
-    contradictions: list[tuple[int, str]] = []
+    contradictions: list[tuple[int, str]] = transition_contract_contradictions(prose)
 
     def record_tool_count(
         kind: str,
@@ -3701,6 +5342,10 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
         count_token: str,
         qualifier_token: str | None,
     ) -> None:
+        if kind == "local" and TRANSITION_LOCAL_EXACT_THREE_RANGE.search(
+            claim_scope(prose, claim.start())
+        ):
+            return
         # A typed zero such as "zero transaction tools" describes the absence
         # of a forbidden subtype, not the size of the complete MCP surface.
         typed_count_prefix = prose[max(0, claim.start() - 32) : claim.start()]
@@ -3711,13 +5356,17 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
             re.IGNORECASE,
         ):
             return
-        if claim_is_noncurrent(
-            prose, claim.start(), claim.end()
-        ) or claim_is_denied(
+        if claim_is_noncurrent(prose, claim.start(), claim.end()):
+            return
+        if kind == "hosted":
+            if claim_is_current_semantic(prose, claim.start(), claim.end()):
+                contradictions.append((claim.start(), HOSTED_DYNAMIC_INVENTORY_ERROR))
+            return
+        if claim_is_denied(
             prose, claim.start(), claim.end()
         ) or count_claim_is_denied(prose, claim.start()):
             return
-        expected = 2 if kind == "hosted" else 3
+        expected = 3
         actual = count_value(count_token)
         qualifier = (qualifier_token or "").casefold()
         inexact = qualifier in {
@@ -3739,14 +5388,22 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
             )
 
     def record_typed_tool_count(kind: str, claim: TypedToolCount) -> None:
+        if kind == "local" and TRANSITION_LOCAL_EXACT_THREE_RANGE.search(
+            claim_scope(prose, claim.start)
+        ):
+            return
         semantic_no_qualifier = claim.qualifier in {
             "no fewer than",
             "no less than",
             "no more than",
         }
-        if claim_is_noncurrent(
-            prose, claim.start, claim.end
-        ) or (
+        if claim_is_noncurrent(prose, claim.start, claim.end):
+            return
+        if kind == "hosted":
+            if claim_is_current_semantic(prose, claim.start, claim.end):
+                contradictions.append((claim.start, HOSTED_DYNAMIC_INVENTORY_ERROR))
+            return
+        if (
             not semantic_no_qualifier
             and claim_is_denied(prose, claim.start, claim.end)
         ) or (
@@ -3754,7 +5411,7 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
             and count_claim_is_denied(prose, claim.start)
         ):
             return
-        expected = 2 if kind == "hosted" else 3
+        expected = 3
         if claim.value != expected or not claim.exact:
             qualified = f"{claim.qualifier} " if claim.qualifier else ""
             contradictions.append(
@@ -3774,6 +5431,8 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
         if claim_start <= surface.end():
             return True
         between = prose[surface.end() : claim_start]
+        if MCP_META_OBJECT_AFTER_SURFACE.match(between):
+            return False
         if re.fullmatch(r"\s*\|\s*", between):
             return claim_is_current_semantic(prose, surface.start(), surface.end())
         if EXPLICITLY_DISTINCT_WALLET_SUBJECT.search(between):
@@ -3830,10 +5489,14 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
                 claim.group("count"),
                 claim.group("qualifier"),
             )
-        expected_count = 2 if kind == "hosted" else 3
+        expected_count = 3
         for claim in NEGATED_TOOL_COUNT_AFTER_SURFACE.finditer(
             prose, surface.end(), segment_end
         ):
+            if kind == "local" and TRANSITION_LOCAL_EXACT_THREE_DOUBLE_DENIAL.search(
+                claim_scope(prose, claim.start())
+            ):
+                continue
             if UNRELATED_TOOL_COUNT_SUBJECT.search(
                 prose[surface.end() : claim.end()]
             ):
@@ -3843,9 +5506,11 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
                 or claim.group("count_diff")
                 or claim.group("count_verb")
             )
-            if count_value(count_token) == expected_count and claim_is_current_semantic(
-                prose, claim.start(), claim.end()
-            ):
+            if not claim_is_current_semantic(prose, claim.start(), claim.end()):
+                continue
+            if kind == "hosted":
+                contradictions.append((claim.start(), HOSTED_DYNAMIC_INVENTORY_ERROR))
+            elif count_value(count_token) == expected_count:
                 contradictions.append(
                     (
                         claim.start(),
@@ -3865,18 +5530,69 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
             exception = TOOL_ABSENCE_EXCEPTION_SUFFIX.match(
                 prose[claim.end() : assertion_end]
             )
-            if exception and count_value(exception.group("count")) == expected_count:
+            if (
+                kind == "local"
+                and exception
+                and count_value(exception.group("count")) == expected_count
+            ):
                 continue
             if claim_is_current_semantic(prose, claim.start(), claim.end()):
-                contradictions.append(
-                    (
-                        claim.start(),
-                        f"{kind} Stele MCP denies its required {expected_count}-tool surface",
-                    )
+                label = (
+                    HOSTED_DYNAMIC_INVENTORY_ERROR
+                    if kind == "hosted"
+                    else f"{kind} Stele MCP denies its required {expected_count}-tool surface"
                 )
+                contradictions.append((claim.start(), label))
+
+        if kind == "hosted":
+            for claim in HOSTED_ORDINAL_TOOL_ABSENCE_AFTER_SURFACE.finditer(
+                prose, surface.end(), segment_end
+            ):
+                if UNRELATED_TOOL_COUNT_SUBJECT.search(
+                    prose[surface.end() : claim.end()]
+                ):
+                    continue
+                if not mcp_claim_is_attributed(surface, claim.start()):
+                    continue
+                if claim_is_current_semantic(prose, claim.start(), claim.end()):
+                    contradictions.append(
+                        (claim.start(), HOSTED_DYNAMIC_INVENTORY_ERROR)
+                    )
 
         if kind == "hosted":
             segment = prose[surface.start() : segment_end]
+            for claim in HOSTED_PROVIDER_DRAFT_CREATE_CAPABILITY.finditer(segment):
+                offset = surface.start() + claim.start()
+                claim_end = surface.start() + claim.end()
+                if not mcp_claim_is_attributed(surface, offset):
+                    continue
+                if provider_capability_claim_is_current_affirmative(
+                    prose, offset, claim_end
+                ) and not provider_draft_claim_is_tools_list_gated(
+                    prose, offset, claim_end
+                ):
+                    contradictions.append(
+                        (offset, HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+                    )
+            for claim in HOSTED_PROVIDER_DRAFT_NAMED_TOOL_CLAIM.finditer(segment):
+                offset = surface.start() + claim.start()
+                claim_end = surface.start() + claim.end()
+                if not mcp_claim_is_attributed(surface, offset):
+                    continue
+                if not provider_capability_claim_is_current_affirmative(
+                    prose, offset, claim_end
+                ):
+                    continue
+                if claim.group("name") != CANONICAL_PROVIDER_DRAFT_TOOL_NAME:
+                    contradictions.append(
+                        (offset, HOSTED_PROVIDER_DRAFT_LOOKALIKE_ERROR)
+                    )
+                elif not provider_draft_claim_is_tools_list_gated(
+                    prose, offset, claim_end
+                ):
+                    contradictions.append(
+                        (offset, HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+                    )
             for claim in MCP_NAMED_CAPABILITY_CLAIM.finditer(segment):
                 offset = surface.start() + claim.start()
                 if not mcp_claim_is_attributed(surface, offset):
@@ -3891,8 +5607,8 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
                     contradictions.append(
                         (
                             offset,
-                            f"hosted Stele MCP claims {len(items)} named capabilities; "
-                            "expected exactly 2",
+                            f"hosted Stele MCP presents {len(items)} unconditional named "
+                            "capabilities; authenticated tools/list is authoritative",
                         )
                     )
             for claim in TRANSACTION_TOOL_COUNT.finditer(segment):
@@ -3968,7 +5684,7 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
                     offset = surface.start() + match.start()
                     if not mcp_claim_is_attributed(surface, offset):
                         continue
-                    if claim_is_current_affirmative(
+                    if provider_capability_claim_is_current_affirmative(
                         prose, offset, surface.start() + match.end()
                     ):
                         contradictions.append((offset, label))
@@ -3993,6 +5709,147 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
             claim.group("count"),
             claim.group("qualifier"),
         )
+
+    for claim in HOSTED_REVERSE_TOOL_ABSENCE.finditer(prose):
+        if claim_is_current_semantic(prose, claim.start(), claim.end()):
+            contradictions.append((claim.start(), HOSTED_DYNAMIC_INVENTORY_ERROR))
+
+    for claim in HOSTED_PROVIDER_DRAFT_REVERSE_CREATE.finditer(prose):
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ) and not provider_draft_claim_is_tools_list_gated(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in HOSTED_PROVIDER_DRAFT_REVERSE_AUTHORITY.finditer(prose):
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), "hosted MCP claims provider-listing draft authority")
+            )
+
+    for claim in HOSTED_PROVIDER_DRAFT_NAMED_TOOL_REVERSE.finditer(prose):
+        if not provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ):
+            continue
+        if claim.group("name") != CANONICAL_PROVIDER_DRAFT_TOOL_NAME:
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_LOOKALIKE_ERROR)
+            )
+        elif not provider_draft_claim_is_tools_list_gated(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in PROVIDER_DRAFT_NAMED_TOOL_AVAILABILITY.finditer(prose):
+        current = (
+            provider_capability_claim_is_current_semantic(
+                prose, claim.start(), claim.end()
+            )
+            if PROVIDER_DRAFT_TOOL_LIST_BYPASS.search(
+                claim_scope(prose, claim.start())
+            )
+            else provider_capability_claim_is_current_affirmative(
+                prose, claim.start(), claim.end()
+            )
+        )
+        if current and not provider_draft_claim_is_tools_list_gated(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in PROVIDER_DRAFT_NAMED_TOOL_INVOCATION.finditer(prose):
+        if not provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ):
+            continue
+        if claim.group("name") != CANONICAL_PROVIDER_DRAFT_TOOL_NAME:
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_LOOKALIKE_ERROR)
+            )
+        elif not provider_draft_claim_is_tools_list_gated(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in EXACT_PROVIDER_DRAFT_TOOL_CREATE.finditer(prose):
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ) and not provider_draft_claim_is_tools_list_gated(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+            )
+
+    for claim in EXACT_PROVIDER_DRAFT_TOOL_AUTHORITY.finditer(prose):
+        if provider_capability_claim_is_current_affirmative(
+            prose, claim.start(), claim.end()
+        ):
+            contradictions.append(
+                (claim.start(), "hosted MCP claims provider-listing draft authority")
+            )
+
+    for pattern in (
+        EXACT_PROVIDER_DRAFT_TOOL_TRANSACTION,
+        EXACT_PROVIDER_DRAFT_TOOL_TRANSACTION_NOMINAL,
+    ):
+        for claim in pattern.finditer(prose):
+            if provider_capability_claim_is_current_affirmative(
+                prose, claim.start(), claim.end()
+            ):
+                contradictions.append(
+                    (claim.start(), "hosted Stele MCP claims transaction capability")
+                )
+
+    for match in EXACT_PROVIDER_DRAFT_TOOL_ANAPHOR.finditer(prose):
+        claim_start = match.start("claim")
+        claim_end = match.end("claim")
+        if transition_scope_is_meta(prose, claim_start):
+            continue
+        if not provider_capability_claim_is_current_affirmative(
+            prose, claim_start, claim_end
+        ):
+            continue
+        action = match.group("action").casefold()
+        target = match.group("target").casefold()
+        if "draft" in target and action.startswith(
+            ("creat", "prepar", "author", "generat", "produc")
+        ):
+            if not provider_draft_claim_is_tools_list_gated(
+                prose, claim_start, claim_end
+            ):
+                contradictions.append(
+                    (claim_start, HOSTED_PROVIDER_DRAFT_CONDITIONAL_ERROR)
+                )
+        elif "draft" in target:
+            contradictions.append(
+                (claim_start, "hosted MCP claims provider-listing draft authority")
+            )
+        else:
+            contradictions.append(
+                (claim_start, "hosted Stele MCP claims transaction capability")
+            )
+
+    for label, pattern in HOSTED_PROVIDER_DRAFT_UNCONDITIONAL.items():
+        for claim in pattern.finditer(prose):
+            if provider_capability_claim_is_current_affirmative(
+                prose, claim.start(), claim.end()
+            ) and not provider_draft_claim_is_tools_list_gated(
+                prose, claim.start(), claim.end()
+            ):
+                contradictions.append((claim.start(), label))
 
     for claim in typed_tool_counts(prose, 0, len(prose)):
         surface = MCP_AFTER_TYPED_COUNT.match(prose[claim.end : claim.end + 100])
@@ -4147,6 +6004,8 @@ def stele_status_contradictions(text: str) -> list[tuple[int, str]]:
         (BOOKING_DRAFT_WITHOUT_LISTING, "affirmative"),
         (BOOKING_DRAFT_PREREQUISITE_CONTRADICTIONS, "semantic"),
         (PROVIDER_DRAFT_BOUNDARY, "affirmative"),
+        (PROVIDER_DRAFT_CREATE_AFFIRMATIVE_CONTRADICTIONS, "affirmative"),
+        (PROVIDER_DRAFT_CREATE_SEMANTICS, "semantic"),
         (IDENTITY_OVERCLAIMS, "affirmative"),
         (IDENTITY_REVERSE_OVERCLAIMS, "affirmative"),
         (IDENTITY_NAMED_OVERCLAIMS, "affirmative"),
@@ -4238,6 +6097,27 @@ def main() -> int:
         for offset, label in stele_status_contradictions(visible_source):
             line = visible_source.count("\n", 0, offset) + 1
             failures.append(f"{path.relative_to(ROOT)}:{line}: {label}")
+        for match in HOSTED_FIXED_INVENTORY_CLAIM.finditer(visible_source):
+            if TRANSACTION_TOOL_DESCRIPTOR.search(match.group(0)):
+                continue
+            if UNRELATED_TOOL_COUNT_SUBJECT.search(match.group(0)):
+                continue
+            assertion_start, _ = claim_assertion_bounds(
+                visible_source, match.start(), match.end()
+            )
+            prefix = visible_source[assertion_start : match.start()]
+            if MCP_META_OBJECT_PREFIX.search(prefix) or TOOL_COUNT_META_CONTEXT.search(
+                prefix
+            ):
+                continue
+            if claim_is_current_affirmative(
+                visible_source, match.start(), match.end()
+            ):
+                line = visible_source.count("\n", 0, match.start()) + 1
+                failures.append(
+                    f"{path.relative_to(ROOT)}:{line}: hosted Stele MCP presents a fixed "
+                    "tool inventory; authenticated tools/list is authoritative"
+                )
         folded = folded_prose(visible_source)
         for phrase in STELE_STATUS_REQUIRED:
             if phrase.casefold() not in folded:
