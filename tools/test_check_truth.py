@@ -168,11 +168,11 @@ FIFTH_REVIEW_CONTRADICTIONS = (
     ),
     (
         "Hosted Stele MCP exposes a pair of tools plus status.",
-        "hosted Stele MCP claims more than exactly two tools",
+        "hosted Stele MCP presents an unconditional third capability",
     ),
     (
         "Hosted Stele MCP exposes catalog search, booking-draft preparation, and status.",
-        "hosted Stele MCP claims more than exactly two tools",
+        "hosted Stele MCP presents an unconditional third capability",
     ),
     (
         "Local Stele MCP adds a signing tool to its three read/status tools.",
@@ -204,7 +204,7 @@ FIFTH_REVIEW_TRUTHFUL_CONTROLS = (
     "Hosted Stele MCP neither signs nor broadcasts transactions.",
     "Wallet authentication fails to establish legal identity.",
     "Wallet authentication rejects claims of legal identity.",
-    "Hosted Stele MCP exposes exactly two tools, not three tools.",
+    "Authenticated tools/list is the inventory authority for Hosted Stele MCP.",
     "A future Hosted Stele MCP may expose three tools only after a separate release.",
     "The retired Hosted Stele MCP exposed three tools.",
     "Stele has zero published services, not one published service.",
@@ -292,11 +292,11 @@ SIXTH_REVIEW_CONTRADICTIONS = (
     ),
     (
         "Hosted Stele MCP previously exposed two tools and now exposes three tools.",
-        "hosted Stele MCP claims 3 tools; expected exactly 2",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "Hosted Stele MCP has no third capability and exposes a pair of tools plus status.",
-        "hosted Stele MCP claims more than exactly two tools",
+        "hosted Stele MCP presents an unconditional third capability",
     ),
     (
         "Local Stele MCP has no transaction tool and adds a signing tool.",
@@ -344,7 +344,7 @@ SIXTH_REVIEW_CONTRADICTIONS = (
     ),
     (
         "Hosted Stele MCP provides status in addition to its two OAuth-protected tools.",
-        "hosted Stele MCP claims more than exactly two tools",
+        "hosted Stele MCP presents an unconditional third capability",
     ),
 )
 
@@ -355,7 +355,7 @@ SIXTH_REVIEW_TRUTHFUL_CONTROLS = (
     "The retired public web cannot create any drafts.",
     "The false claim that Hosted Stele MCP holds private keys must be removed.",
     "The claim that Hosted Stele MCP exposes three tools is false.",
-    "Hosted Stele MCP exposes exactly two tools rather than three tools.",
+    "Authenticated tools/list is authoritative for the Hosted Stele MCP inventory.",
     "The assertion that Stele has one published service is false.",
     "Avoid [Provider Studio](https://evil.example/studio); use the canonical destination.",
     "The [Provider Studio](https://evil.example/studio) link is invalid.",
@@ -469,7 +469,7 @@ PREDICATE_ATTRIBUTION_FRESH_CONTRADICTIONS = (
     ),
     (
         "Hosted Stele MCP previously reported two tools; it now exposes three tools.",
-        "hosted Stele MCP claims 3 tools; expected exactly 2",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "The false alarm was cleared, and Hosted Stele MCP holds private keys.",
@@ -558,7 +558,7 @@ NEGATION_PARITY_FRESH_CONTRADICTIONS = (
     ),
     (
         "Hosted Stele MCP does not lack a third tool.",
-        "hosted Stele MCP claims more than exactly two tools",
+        "hosted Stele MCP presents an unconditional third capability",
     ),
     (
         "Stele does not have zero published services.",
@@ -576,7 +576,7 @@ NEGATION_PARITY_FRESH_TRUTHFUL_CONTROLS = (
     "Provider publication is unavailable now.",
     "Mainnet is off.",
     "The public catalog is empty.",
-    "Hosted Stele MCP exposes exactly two tools rather than three tools.",
+    "Authenticated tools/list is authoritative for the Hosted Stele MCP inventory.",
     "Stele has zero published services.",
 )
 
@@ -646,19 +646,19 @@ TYPED_COUNT_FRESH_CONTRADICTIONS = (
     ),
     (
         "Hosted Stele MCP exposes two OAuth-protected tools plus status.",
-        "hosted Stele MCP claims more than exactly two tools",
+        "hosted Stele MCP presents an unconditional third capability",
     ),
     (
         "Hosted Stele MCP has a third status capability alongside its two tools.",
-        "hosted Stele MCP claims more than exactly two tools",
+        "hosted Stele MCP presents an unconditional third capability",
     ),
     (
         "Hosted Stele MCP tool count is three.",
-        "hosted Stele MCP claims 3 tools; expected exactly 2",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "There are three tools in Hosted Stele MCP.",
-        "hosted Stele MCP claims 3 tools; expected exactly 2",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "Local Stele MCP tool count is four.",
@@ -670,15 +670,15 @@ TYPED_COUNT_FRESH_CONTRADICTIONS = (
     ),
     (
         "Hosted Stele MCP exposes three endpoints.",
-        "hosted Stele MCP claims 3 tools; expected exactly 2",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "Hosted Stele MCP exposes\nthree endpoints.",
-        "hosted Stele MCP claims 3 tools; expected exactly 2",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "Hosted Stele MCP tool count is not two.",
-        "hosted Stele MCP denies its required 2-tool surface",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "Local Stele MCP tool count is not three.",
@@ -686,7 +686,7 @@ TYPED_COUNT_FRESH_CONTRADICTIONS = (
     ),
     (
         "Hosted Stele MCP has no tools.",
-        "hosted Stele MCP denies its required 2-tool surface",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "Local Stele MCP has no tools.",
@@ -694,11 +694,63 @@ TYPED_COUNT_FRESH_CONTRADICTIONS = (
     ),
     (
         "Hosted Stele MCP lacks tools.",
-        "hosted Stele MCP denies its required 2-tool surface",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "Hosted Stele MCP has no tools beyond imagination.",
-        "hosted Stele MCP denies its required 2-tool surface",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "There are exactly two tools in Hosted Stele MCP.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Hosted Stele MCP lacks tools other than its two OAuth-protected tools.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Hosted Stele MCP inventory consists of exactly two tools.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Exactly two tools are available through Hosted Stele MCP.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Hosted Stele MCP tool count is not three.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Hosted Stele MCP does not expose three tools.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Hosted Stele MCP has no third tool.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Hosted Stele MCP does not have a third tool.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Hosted Stele MCP is without a third tool.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Two tools are not available through Hosted Stele MCP.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Exactly two tools are unavailable through Hosted Stele MCP.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "No third tool exists in Hosted Stele MCP.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "No tools are available through Hosted Stele MCP.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
     ),
     (
         "Local Stele MCP lacks tools other than four tools.",
@@ -710,29 +762,25 @@ TYPED_COUNT_FRESH_TRUTHFUL_CONTROLS = (
     "Zero listings are published in the public catalog.",
     "No listing is live in the public catalog.",
     "The public catalog has no entries.",
-    "Hosted Stele MCP exposes two endpoints.",
-    "Hosted Stele MCP tool count is two.",
     "Local Stele MCP tool count is three.",
-    "There are two tools in Hosted Stele MCP.",
     "There are three tools in Local Stele MCP.",
     "In a future release there are three tools in Hosted Stele MCP.",
     "The claim that there are three tools in Hosted Stele MCP is false.",
-    "Hosted Stele MCP has no third status capability alongside its two tools.",
-    "Hosted Stele MCP exposes exactly two tools. Another API exposes three tools.",
-    "Hosted Stele MCP exposes exactly two tools; another API exposes three tools.",
-    "Hosted Stele MCP exposes exactly two tools and another API exposes three tools.",
-    "Hosted Stele MCP exposes exactly two tools, while the website exposes three tools.",
-    "Hosted Stele MCP exposes exactly two tools.\nAnother API exposes three tools.",
-    "Hosted Stele MCP tool count is not three.",
+    "Hosted Stele MCP uses authenticated tools/list as its inventory authority.",
+    "Authenticated tools/list, not a static total, defines the Hosted Stele MCP inventory.",
+    "Hosted Stele MCP serves catalog search. Another API exposes three tools.",
+    "Hosted Stele MCP serves booking-draft preparation; another API exposes three tools.",
+    "Hosted Stele MCP serves catalog search and another API exposes three tools.",
+    "Hosted Stele MCP serves catalog search, while the website exposes three tools.",
+    "Hosted Stele MCP serves catalog search.\nAnother API exposes three tools.",
     "Local Stele MCP tool count is not two.",
-    "Hosted Stele MCP has no third tool.",
     "The claim that Hosted Stele MCP tool count is not two is false.",
+    "In 2024, no third tool existed in Hosted Stele MCP.",
+    "The claim that no third tool exists in Hosted Stele MCP is false.",
     "A future Hosted Stele MCP may have no tools before release.",
-    "Hosted Stele MCP exposes exactly two tools. Another API has no tools.",
-    "Hosted Stele MCP exposes exactly two tools. Another API tool count is not two.",
-    "Hosted Stele MCP exposes exactly two tools. Another API tool count: not two.",
-    "Hosted Stele MCP has no tools beyond the two OAuth-protected tools.",
-    "Hosted Stele MCP lacks tools other than its two OAuth-protected tools.",
+    "Hosted Stele MCP serves catalog search. Another API has no tools.",
+    "Hosted Stele MCP serves catalog search. Another API tool count is not two.",
+    "Hosted Stele MCP serves catalog search. Another API tool count: not two.",
 )
 
 GATED_STATE_FRESH_CONTRADICTIONS = (
@@ -1198,7 +1246,6 @@ INDEPENDENT_REREVIEW_VARIATION_TRUTHFUL_CONTROLS = (
     "A pair of listings does not exist within the public catalog.",
     "Hosted Stele MCP has zero signing tools.",
     "Hosted Stele MCP has no transaction tools.",
-    "Hosted Stele MCP exposes exactly two OAuth-protected tools and zero transaction tools.",
     "There are zero listings in the public catalog.",
     "Transaction signing is generally unavailable.",
     "Use [Provider Studio][].\n"
@@ -1220,6 +1267,274 @@ INDEPENDENT_REREVIEW_VARIATION_TRUTHFUL_CONTROLS = (
     "Hosted Stele MCP has a restriction and a transaction tool warning.",
     "Two listings are hypothetical examples, while zero listings are present in the public catalog.",
     "A pair of listings appears in the public catalog documentation as a hypothetical example.",
+)
+
+
+CONDITIONAL_AUTHORITY_REREVIEW_CONTRADICTIONS = (
+    (
+        "stele_create_provider_listing_draft exists even when its exact name is absent from authenticated tools/list.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP provides provider-listing draft creation.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Provider-listing draft creation is available through Hosted Stele MCP.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP provides existing provider-listing draft deletion.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "stele_create_provider_listing_draft reads an existing provider-listing draft.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "stele_create_provider_listing_draft deletes an existing provider-listing draft.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "stele_create_provider_listing_draft publishes an existing provider-listing draft.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "stele_create_provider_listing_draft signs a transaction.",
+        "hosted Stele MCP claims transaction capability",
+    ),
+    (
+        "stele_create_provider_listing_draft broadcasts a transaction.",
+        "hosted Stele MCP claims transaction capability",
+    ),
+    (
+        "Clients may invoke stele_create_provider_listing_draft without seeing it in authenticated tools/list.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP exposes stele_create_provider_draft.",
+        "hosted MCP exposes a noncanonical provider-draft tool name",
+    ),
+    (
+        "Hosted Stele MCP offers provider-listing draft creation.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP supports creation of provider-listing drafts.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP enables clients to create provider-listing drafts.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP is keyless. It provides provider-listing draft creation.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Provider-listing draft creation is supported via Hosted Stele MCP.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Provider-listing drafts may be created through Hosted Stele MCP.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP offers deletion of existing provider-listing drafts.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "Existing provider-listing draft deletion is provided by Hosted Stele MCP.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "Existing provider-listing drafts may be read through Hosted Stele MCP.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "stele_create_provider_listing_draft may delete an existing provider-listing draft.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "stele_create_provider_listing_draft creates a provider-listing draft.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "A provider-listing draft is created by stele_create_provider_listing_draft.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "stele_create_provider_listing_draft is available now.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Users can invoke stele_create_provider_listing_draft.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "When authenticated tools/list includes stele_create_provider_listing_draft, the tool is available. It deletes an existing provider-listing draft.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "When authenticated tools/list includes stele_create_provider_listing_draft, it is available. The tool signs a transaction.",
+        "hosted Stele MCP claims transaction capability",
+    ),
+    (
+        "A transaction may be signed by stele_create_provider_listing_draft.",
+        "hosted Stele MCP claims transaction capability",
+    ),
+    (
+        "Transaction broadcast is available through stele_create_provider_listing_draft.",
+        "hosted Stele MCP claims transaction capability",
+    ),
+    (
+        "Hosted Stele MCP is keyless. It exposes stele_create_provider_draft.",
+        "hosted MCP exposes a noncanonical provider-draft tool name",
+    ),
+    (
+        "stele_create_provider_draft is available through Hosted Stele MCP.",
+        "hosted MCP exposes a noncanonical provider-draft tool name",
+    ),
+    (
+        "When authenticated tools/list includes stele_create_provider_draft, Hosted Stele MCP exposes stele_create_provider_draft.",
+        "hosted MCP exposes a noncanonical provider-draft tool name",
+    ),
+    (
+        "Hosted Stele MCP creates a new provider-listing draft.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "A new provider-listing draft is created by Hosted Stele MCP.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Provider-listing draft creation is possible through Hosted Stele MCP.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP is keyless. It creates a new provider-listing draft.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP is permitted to create provider-listing drafts.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP could create provider-listing drafts today.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "stele_create_provider_listing_draft permits deletion of an existing provider-listing draft.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "Transaction signing is possible through stele_create_provider_listing_draft.",
+        "hosted Stele MCP claims transaction capability",
+    ),
+    (
+        "Clients can invoke stele_create_provider_draft through Hosted Stele MCP.",
+        "hosted MCP exposes a noncanonical provider-draft tool name",
+    ),
+    (
+        "When authenticated tools/list includes stele_create_listing_draft, Hosted Stele MCP exposes stele_create_listing_draft for provider-listing draft creation.",
+        "hosted MCP exposes a noncanonical provider-draft tool name",
+    ),
+    (
+        "Hosted Stele MCP supports deleting existing provider-listing drafts.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "stele_create_provider_listing_draft supports transaction signing.",
+        "hosted Stele MCP claims transaction capability",
+    ),
+    (
+        "Hosted Stele MCP is authorized to create provider-listing drafts.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Provider-listing drafts are allowed to be created through Hosted Stele MCP.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Hosted Stele MCP is keyless. Its API authors provider-listing drafts.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "stele_create_provider_draft can be invoked through Hosted Stele MCP.",
+        "hosted MCP exposes a noncanonical provider-draft tool name",
+    ),
+    (
+        "When authenticated tools/list includes STELE_CREATE_PROVIDER_LISTING_DRAFT, Hosted Stele MCP exposes STELE_CREATE_PROVIDER_LISTING_DRAFT.",
+        "hosted MCP exposes a noncanonical provider-draft tool name",
+    ),
+    (
+        "Existing provider-listing drafts are readable through Hosted Stele MCP.",
+        "hosted MCP claims provider-listing draft authority",
+    ),
+    (
+        "stele_create_provider_listing_draft permits transaction signing.",
+        "hosted Stele MCP claims transaction capability",
+    ),
+    (
+        "In 2026, Hosted Stele MCP exposes exactly two tools.",
+        "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
+    ),
+    (
+        "Hosted Stele MCP has permission to create provider-listing drafts.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "Users have permission to create provider-listing drafts through Hosted Stele MCP.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+    (
+        "When authenticated tools/list includes STELE_CREATE_PROVIDER_LISTING_DRAFT, Hosted Stele MCP provides provider-listing draft creation.",
+        "hosted provider-draft tool availability is not tools/list-conditional",
+    ),
+)
+
+CONDITIONAL_AUTHORITY_REREVIEW_TRUTHFUL_CONTROLS = (
+    "stele_create_provider_listing_draft exists only when that exact name appears in authenticated tools/list.",
+    "When authenticated tools/list includes stele_create_provider_listing_draft, Hosted Stele MCP provides provider-listing draft creation.",
+    "Hosted Stele MCP provides provider-listing draft creation only when authenticated tools/list includes stele_create_provider_listing_draft.",
+    "After authenticated tools/list returns stele_create_provider_listing_draft, Hosted Stele MCP supports provider-listing draft creation.",
+    "Clients may invoke stele_create_provider_listing_draft unless its exact name is absent from authenticated tools/list.",
+    "When listed, stele_create_provider_listing_draft creates exactly one new private wallet-owned unpublished provider-listing draft.",
+    "When authenticated tools/list includes stele_create_provider_listing_draft, it is available. When listed, the tool creates exactly one new private wallet-owned unpublished provider-listing draft.",
+    "Hosted Stele MCP does not provide provider-listing draft creation.",
+    "Provider-listing draft creation is unavailable through Hosted Stele MCP.",
+    "Hosted Stele MCP does not provide deletion of existing provider-listing drafts.",
+    "stele_create_provider_listing_draft cannot read, delete, or publish an existing provider-listing draft.",
+    "stele_create_provider_listing_draft does not sign or broadcast a transaction.",
+    "Clients cannot invoke stele_create_provider_listing_draft unless it appears in authenticated tools/list.",
+    "Hosted Stele MCP does not expose stele_create_provider_draft.",
+    "A future Hosted Stele MCP may provide provider-listing draft creation after release.",
+    "In 2025, Hosted Stele MCP provided provider-listing draft creation.",
+    "The retired Hosted Stele MCP provided provider-listing draft creation.",
+    "The archived Hosted Stele MCP exposed stele_create_provider_draft.",
+    "The claim “Hosted Stele MCP provides provider-listing draft creation” is false.",
+    "The warning rejects the claim “stele_create_provider_listing_draft signs a transaction.”",
+    "The integration test for Hosted Stele MCP exposes stele_create_provider_draft.",
+    "Hosted Stele MCP fixture exposes stele_create_provider_draft.",
+    "An idempotent replay never creates another draft.",
+    "An idempotent replay cannot create another draft.",
+    "Historically, Hosted Stele MCP exposed exactly two tools.",
+    "In 2025, Hosted Stele MCP exposed exactly two tools.",
+    "The archived Hosted Stele MCP exposed exactly two tools.",
+    "Whenever authenticated tools/list includes stele_create_provider_listing_draft, Hosted Stele MCP provides provider-listing draft creation.",
+    "The presence of stele_create_provider_listing_draft in authenticated tools/list is required before Hosted Stele MCP provides provider-listing draft creation.",
+    "Upon a future activation, Hosted Stele MCP provides provider-listing draft creation.",
+    "In 2027, Hosted Stele MCP provides provider-listing draft creation.",
+    "As of 2025, Hosted Stele MCP provides provider-listing draft creation.",
+    "We deny that Hosted Stele MCP provides provider-listing draft creation.",
+    "A regression fixture says Hosted Stele MCP exposes stele_create_provider_draft.",
+    "Hosted Stele MCP provides provider-listing draft creation so long as authenticated tools/list includes stele_create_provider_listing_draft.",
+    "Starting in 2027, Hosted Stele MCP exposes stele_create_provider_draft.",
+    "Until 2025, Hosted Stele MCP provides provider-listing draft creation.",
+    "Through 2025, Hosted Stele MCP provides provider-listing draft creation.",
+    "Scheduled for 2027, Hosted Stele MCP exposes stele_create_provider_draft.",
+    "We disavow the claim that Hosted Stele MCP exposes stele_create_provider_draft.",
+    "A unit test asserts Hosted Stele MCP exposes stele_create_provider_draft.",
 )
 
 
@@ -1548,9 +1863,15 @@ class SteleDeploymentTruthTests(unittest.TestCase):
 > Booking-approval drafts are separate. The web can inspect an existing valid non-economic
 > booking-approval draft, but it does not create booking-approval drafts.
 > The public web exposes no booking, payment, settlement, or other economic controls.
-> Hosted Stele MCP exposes exactly two OAuth-protected tools, including booking-draft preparation.
-> It does not create or access provider-listing drafts. Hosted booking-draft preparation is unavailable
-> without a published listing.
+> Hosted Stele MCP is keyless and OAuth-protected. Its authenticated tools/list response is the
+> authoritative inventory for that session. Its baseline tools provide public catalog search and
+> booking-draft preparation. Hosted booking-draft preparation is unavailable without a published listing.
+> The gated stele_create_provider_listing_draft tool exists only when that exact name appears in
+> authenticated tools/list. When listed, each successful stele_create_provider_listing_draft operation
+> creates exactly one new private wallet-owned unpublished provider-listing draft. An idempotent replay
+> returns the same draft without creating another. The tool cannot list, read, update, delete, or publish
+> an existing draft.
+> Hosted MCP does not sign, submit, broadcast, or settle transactions.
 > The isolated local Stele MCP exposes exactly three read/status tools and no transaction tool.
 > Economic writes, transaction
 > signing, and mainnet remain off.
@@ -1578,6 +1899,55 @@ class SteleDeploymentTruthTests(unittest.TestCase):
             "or transactable."
         )
         self.assertEqual([], check_truth.stele_status_contradictions(current))
+
+    def test_hosted_provider_tool_conditional_create_only_boundary_is_allowed(self) -> None:
+        current = (
+            "Hosted Stele MCP is keyless. Its authenticated tools/list response is authoritative. "
+            "The gated stele_create_provider_listing_draft tool exists only when that exact name "
+            "appears in authenticated tools/list. When listed, each successful "
+            "stele_create_provider_listing_draft operation creates exactly one new private "
+            "wallet-owned unpublished provider-listing draft. An idempotent replay returns the "
+            "same draft without creating another. The tool cannot list, read, update, delete, or "
+            "publish an existing draft. Hosted MCP does not sign, submit, broadcast, or settle "
+            "transactions."
+        )
+        self.assertEqual([], check_truth.stele_status_contradictions(current))
+
+    def test_hosted_provider_tool_unconditional_or_existing_draft_authority_is_rejected(self) -> None:
+        samples = (
+            (
+                "Hosted Stele MCP exposes stele_create_provider_listing_draft.",
+                "hosted provider-draft tool availability is not tools/list-conditional",
+            ),
+            (
+                "stele_create_provider_listing_draft is available now.",
+                "hosted provider-draft tool availability is not tools/list-conditional",
+            ),
+            (
+                "Hosted Stele MCP lists provider-listing drafts.",
+                "hosted MCP claims provider-listing draft authority",
+            ),
+            (
+                "Hosted Stele MCP publishes provider-listing drafts.",
+                "hosted MCP claims provider-listing draft authority",
+            ),
+            (
+                "Each successful stele_create_provider_listing_draft operation creates two "
+                "new private wallet-owned unpublished provider-listing drafts.",
+                "provider-draft creation claims a non-unit result",
+            ),
+            (
+                "An idempotent replay creates another provider-listing draft.",
+                "idempotent provider-draft replay claims duplicate creation",
+            ),
+            (
+                "An idempotent replay does not return the same draft.",
+                "idempotent provider-draft replay denies same-draft return",
+            ),
+        )
+        for sample, expected in samples:
+            with self.subTest(sample=sample):
+                self.assert_contradiction(sample, expected)
 
     def assert_contradiction(self, text: str, expected: str) -> None:
         labels = {label for _, label in check_truth.stele_status_contradictions(text)}
@@ -1734,6 +2104,16 @@ class SteleDeploymentTruthTests(unittest.TestCase):
 
     def test_independent_rereview_variation_controls_are_allowed(self) -> None:
         for sample in INDEPENDENT_REREVIEW_VARIATION_TRUTHFUL_CONTROLS:
+            with self.subTest(sample=sample):
+                self.assertEqual([], check_truth.stele_status_contradictions(sample))
+
+    def test_conditional_authority_rereview_corpus_is_rejected(self) -> None:
+        for sample, expected in CONDITIONAL_AUTHORITY_REREVIEW_CONTRADICTIONS:
+            with self.subTest(sample=sample):
+                self.assert_contradiction(sample, expected)
+
+    def test_conditional_authority_rereview_controls_are_allowed(self) -> None:
+        for sample in CONDITIONAL_AUTHORITY_REREVIEW_TRUTHFUL_CONTROLS:
             with self.subTest(sample=sample):
                 self.assertEqual([], check_truth.stele_status_contradictions(sample))
 
@@ -2130,6 +2510,18 @@ class SteleDeploymentTruthTests(unittest.TestCase):
             "Hosted Stele MCP, despite archived documentation, exposes four tools.",
             "Local Stele MCP supplies one pair of read tools.",
             "Four endpoints are available through Hosted Stele MCP.",
+            "Hosted Stele MCP supplies one pair of OAuth tools.",
+            "Hosted Stele MCP has one lookup tool and one drafting endpoint.",
+            "Hosted Stele MCP exposes exactly two tools. The SDK fixture exposes six tools.",
+            "Hosted Stele MCP exposes two tools, whereas another service offers four endpoints.",
+            "Hosted Stele MCP exposes two tools. A test harness exposes seven endpoints.",
+            "There are exactly two tools in Hosted Stele MCP.",
+            "Hosted Stele MCP lacks tools other than its two OAuth-protected tools.",
+            "Hosted Stele MCP inventory consists of exactly two tools.",
+            "Exactly two tools are available through Hosted Stele MCP.",
+            "Hosted Stele MCP tool count is not three.",
+            "Hosted Stele MCP does not expose three tools.",
+            "Hosted Stele MCP has no third tool.",
         )
         for sample in contradictions:
             with self.subTest(sample=sample):
@@ -2138,17 +2530,16 @@ class SteleDeploymentTruthTests(unittest.TestCase):
                     for _, label in check_truth.stele_status_contradictions(sample)
                 }
                 self.assertTrue(
-                    any("expected exactly" in label for label in labels),
+                    any(
+                        "expected exactly 3" in label
+                        or "authenticated tools/list is authoritative" in label
+                        for label in labels
+                    ),
                     msg=f"expected typed-count rejection for {sample!r}",
                 )
 
         controls = (
-            "Hosted Stele MCP supplies one pair of OAuth tools.",
-            "Hosted Stele MCP has one lookup tool and one drafting endpoint.",
-            "Hosted Stele MCP exposes exactly two tools. The SDK fixture exposes six tools.",
             "Hosted Stele MCP documents an SDK fixture with five tools.",
-            "Hosted Stele MCP exposes two tools, whereas another service offers four endpoints.",
-            "Hosted Stele MCP exposes two tools. A test harness exposes seven endpoints.",
             "The false claim that four endpoints are in Hosted Stele MCP must be rejected.",
             "Four tools are in Hosted Stele MCP documentation.",
             "Four tools are in Hosted Stele MCP test fixtures.",
@@ -2258,15 +2649,26 @@ class SteleDeploymentTruthTests(unittest.TestCase):
     def test_round_two_rendered_anchor_and_commonmark_link_holdout(self) -> None:
         hidden = """
 <!--
-exactly two OAuth-protected tools
+authenticated tools/list response is the authoritative inventory for that session
+stele_create_provider_listing_draft
 authentication proves only current control of the selected wallet address
 [Provider Studio](https://stele.monolythium.com/studio)
 -->
 """
         searchable = check_truth.folded_prose(hidden)
-        self.assertNotIn("exactly two oauth-protected tools", searchable)
+        self.assertNotIn("authenticated tools/list response", searchable)
+        self.assertNotIn("stele_create_provider_listing_draft", searchable)
         self.assertNotIn("authentication proves only current control", searchable)
         self.assertFalse(check_truth.has_canonical_provider_studio_link(hidden))
+
+        inline = check_truth.folded_prose(
+            "Use `stele_create_provider_listing_draft` only when listed."
+        )
+        fenced = check_truth.folded_prose(
+            "```text\nstele_create_provider_listing_draft\n```"
+        )
+        self.assertIn("stele_create_provider_listing_draft", inline)
+        self.assertNotIn("stele_create_provider_listing_draft", fenced)
 
         contradictions = (
             "Open [Provider Studio].\n\n[Provider Studio]: https://evil.example/studio",
@@ -2463,14 +2865,19 @@ authentication proves only current control of the selected wallet address
             ("4", 4),
         )
         for surface, kind, expected_count in (
-            ("Hosted Stele MCP", "hosted", 2),
+            ("Hosted Stele MCP", "hosted", None),
             ("Local Stele MCP", "local", 3),
         ):
             for count_phrase, actual in count_forms:
                 sample = f"{surface} exposes {count_phrase} tools."
                 with self.subTest(sample=sample):
                     contradictions = check_truth.stele_status_contradictions(sample)
-                    if actual == expected_count:
+                    if kind == "hosted":
+                        self.assertIn(
+                            check_truth.HOSTED_DYNAMIC_INVENTORY_ERROR,
+                            {label for _, label in contradictions},
+                        )
+                    elif actual == expected_count:
                         self.assertEqual([], contradictions)
                     else:
                         self.assertIn(
@@ -3177,7 +3584,7 @@ authentication proves only current control of the selected wallet address
                         for _, label in check_truth.stele_status_contradictions(sample)
                     }
                     self.assertTrue(
-                        any("expected exactly 2" in label for label in labels),
+                        any("authenticated tools/list is authoritative" in label for label in labels),
                         msg=f"expected bounded tool-count rejection for {sample!r}",
                     )
 
@@ -3210,7 +3617,9 @@ authentication proves only current control of the selected wallet address
         labels = {
             label for _, label in check_truth.stele_status_contradictions(sample)
         }
-        self.assertTrue(any("expected exactly 2" in label for label in labels))
+        self.assertTrue(
+            any("authenticated tools/list is authoritative" in label for label in labels)
+        )
 
         for test_kind in ("integration", "unit", "conformance"):
             for descriptor in ("mock", "fixture", "sample", "synthetic"):
@@ -3319,7 +3728,7 @@ authentication proves only current control of the selected wallet address
             (
                 "Hosted Stele MCP exposes public catalog search, bounded "
                 "booking-draft preparation, and service health.",
-                "hosted Stele MCP claims 3 named capabilities; expected exactly 2",
+                "hosted Stele MCP presents 3 unconditional named capabilities; authenticated tools/list is authoritative",
             ),
             (
                 "The public catalog lists a GPU rental service and an indexing service.",
@@ -3342,7 +3751,7 @@ authentication proves only current control of the selected wallet address
             (
                 "Hosted Stele MCP includes service search, booking draft preparation, "
                 "and diagnostic export.",
-                "hosted Stele MCP claims 3 named capabilities; expected exactly 2",
+                "hosted Stele MCP presents 3 unconditional named capabilities; authenticated tools/list is authoritative",
             ),
             (
                 "The Stele catalog features GPU compute and vector indexing services.",
@@ -3392,7 +3801,7 @@ authentication proves only current control of the selected wallet address
             (
                 "Hosted Stele MCP exposes public catalog search, bounded "
                 "booking-draft preparation, and service health.",
-                "hosted Stele MCP claims 3 named capabilities; expected exactly 2",
+                "hosted Stele MCP presents 3 unconditional named capabilities; authenticated tools/list is authoritative",
             ),
             (
                 "The public catalog lists a GPU rental service and an indexing service.",
@@ -4157,6 +4566,19 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
                 result, stdout, stderr = self.run_append_check(sample)
                 self.assertEqual(0, result, msg=stderr or stdout)
 
+    def test_main_rejects_conditional_authority_rereview_corpus(self) -> None:
+        for sample, expected in CONDITIONAL_AUTHORITY_REREVIEW_CONTRADICTIONS:
+            with self.subTest(sample=sample):
+                result, stdout, stderr = self.run_append_check(sample)
+                self.assertEqual(1, result, msg=stdout)
+                self.assertIn(expected, stderr)
+
+    def test_main_allows_conditional_authority_rereview_controls(self) -> None:
+        for sample in CONDITIONAL_AUTHORITY_REREVIEW_TRUTHFUL_CONTROLS:
+            with self.subTest(sample=sample):
+                result, stdout, stderr = self.run_append_check(sample)
+                self.assertEqual(0, result, msg=stderr or stdout)
+
     def test_main_rejects_release_audit_exact_corpus(self) -> None:
         for sample, expected in RELEASE_AUDIT_EXACT_CONTRADICTIONS:
             with self.subTest(sample=sample):
@@ -4170,12 +4592,13 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
                 result, stdout, stderr = self.run_append_check(sample)
                 self.assertEqual(0, result, msg=stderr or stdout)
 
-    def test_main_rejects_wrong_hosted_tool_count_when_correct_anchor_remains(self) -> None:
+    def test_main_rejects_fixed_hosted_tool_count_when_authority_anchor_remains(self) -> None:
         self.run_mutation(
             "2026/may/monolythium-whitepaper-v5.0.md",
-            "| Hosted Stele MCP | Exactly two keyless, OAuth-protected tools",
-            "| Hosted Stele MCP | Exactly four keyless, OAuth-protected tools",
-            "hosted Stele MCP claims exactly 4 tools; expected exactly 2",
+            "| Hosted Stele MCP | Keyless and OAuth-protected; authenticated `tools/list` is the authoritative inventory;",
+            "| Hosted Stele MCP | Keyless and OAuth-protected; authenticated `tools/list` is the authoritative inventory; "
+            "Hosted Stele MCP exposes exactly four tools;",
+            "hosted Stele MCP presents a fixed tool inventory; authenticated tools/list is authoritative",
         )
 
     def test_main_rejects_wrong_local_tool_count_when_correct_anchor_remains(self) -> None:
@@ -4238,8 +4661,8 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
     def test_main_rejects_booking_draft_preparation_without_a_listing(self) -> None:
         self.run_mutation(
             "README.md",
-            "Hosted booking-draft preparation is unavailable without a published listing.",
-            "Hosted booking-draft preparation is unavailable without a published listing. "
+            "hosted booking-draft preparation is unavailable without a published listing.",
+            "hosted booking-draft preparation is unavailable without a published listing. "
             "Booking-draft preparation is available without a published listing.",
             "booking-draft preparation claims no listing prerequisite",
         )
@@ -4272,8 +4695,8 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
     def test_main_rejects_hosted_mcp_provider_listing_drafts(self) -> None:
         self.run_mutation(
             "README.md",
-            "does not create or access provider-listing drafts.",
-            "does not create or access provider-listing drafts. "
+            "exists only when that exact name appears in authenticated `tools/list`.",
+            "exists only when that exact name appears in authenticated `tools/list`. "
             "Hosted Stele MCP creates provider-listing drafts.",
             "hosted MCP claims provider-listing draft authority",
         )
@@ -4886,10 +5309,28 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
     def test_main_rejects_required_anchors_present_only_in_html_comments(self) -> None:
         mutations = (
             (
-                "Hosted Stele MCP exposes exactly two OAuth-protected tools",
-                "Hosted Stele MCP exposes its released OAuth tools "
-                "<!-- exactly two OAuth-protected tools -->",
-                "missing Stele status anchor 'exactly two OAuth-protected tools'",
+                "Its authenticated `tools/list` response is the authoritative inventory for that session.",
+                "Its inventory is deployment-specific. "
+                "<!-- authenticated tools/list response is the authoritative inventory for that session -->",
+                "missing Stele status anchor 'authenticated tools/list response is the authoritative inventory for that session'",
+            ),
+            (
+                "The gated `stele_create_provider_listing_draft` tool exists only when that exact name appears in authenticated `tools/list`.",
+                "The gated provider-draft tool is deployment-specific. "
+                "<!-- stele_create_provider_listing_draft exists only when that exact name appears in authenticated tools/list -->",
+                "missing Stele status anchor 'exists only when that exact name appears in authenticated tools/list'",
+            ),
+            (
+                "When listed, each successful `stele_create_provider_listing_draft` operation creates exactly one new private wallet-owned unpublished provider-listing draft.",
+                "When listed, the tool creates a private draft. "
+                "<!-- each successful stele_create_provider_listing_draft operation creates exactly one new private wallet-owned unpublished provider-listing draft -->",
+                "missing Stele status anchor 'each successful stele_create_provider_listing_draft operation creates exactly one new private wallet-owned unpublished provider-listing draft'",
+            ),
+            (
+                "An idempotent replay returns the same draft without creating another.",
+                "A retry is implementation-defined. "
+                "<!-- an idempotent replay returns the same draft without creating another -->",
+                "missing Stele status anchor 'an idempotent replay returns the same draft without creating another'",
             ),
             (
                 "authentication proves only current control of the selected wallet address",
@@ -4912,7 +5353,10 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
 
     def test_main_round_two_fresh_representative_holdout(self) -> None:
         contradictions = (
-            ("Hosted Stele MCP has two tools and a third endpoint.", "expected exactly 2"),
+            (
+                "Hosted Stele MCP has two tools and a third endpoint.",
+                "authenticated tools/list is authoritative",
+            ),
             (
                 "Hosted Stele MCP acts in its capacity as operator. The operator signer signs transactions.",
                 "hosted Stele MCP claims transaction capability",
@@ -4971,7 +5415,7 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
         result, stdout, stderr = self.run_append_check("\n\n".join(contradictions))
         self.assertEqual(1, result, msg=stdout)
         for expected in (
-            "expected exactly 2",
+            "authenticated tools/list is authoritative",
             "hosted Stele MCP claims transaction capability",
             "expected zero",
             "non-canonical Provider Studio URL",
@@ -5006,7 +5450,7 @@ class SteleTruthMainBlackBoxTests(unittest.TestCase):
         result, stdout, stderr = self.run_append_check("\n\n".join(contradictions))
         self.assertEqual(1, result, msg=stdout)
         for expected in (
-            "expected exactly 2",
+            "authenticated tools/list is authoritative",
             "expected zero",
             "hosted Stele MCP claims transaction capability",
             "non-canonical Provider Studio URL",

@@ -547,10 +547,14 @@ edition will re-scope the surrounding narrative. What changed relative to v5.1, 
     non-economic booking-approval draft, but
     it does not create booking-approval drafts. Inspection is read-only and non-economic: the public web
     exposes no booking, payment, settlement, or other economic controls. Hosted Stele MCP is keyless and
-    exposes exactly two
-    OAuth-protected tools: public catalog search and bounded, non-economic booking-draft preparation. It
-    does not create or access provider-listing drafts, and hosted booking-draft preparation is unavailable
-    without a published listing. A separately installed local Stele MCP exposes exactly three read/status
+    OAuth-protected. Its authenticated <code>tools/list</code> response is the authoritative inventory for that
+    session. Its baseline tools provide public catalog search and bounded, non-economic booking-draft
+    preparation; hosted booking-draft preparation is unavailable without a published listing. The gated
+    <code>stele_create_provider_listing_draft</code> tool exists only when that exact name appears in authenticated
+    <code>tools/list</code>. When listed, each successful <code>stele_create_provider_listing_draft</code> operation creates exactly
+    one new private wallet-owned unpublished provider-listing draft. An idempotent replay returns the same
+    draft without creating another. The tool cannot list, read, update, delete, or publish an existing draft.
+    Hosted MCP does not sign, submit, broadcast, or settle transactions. A separately installed local Stele MCP exposes exactly three read/status
     tools and no transaction tool. Economic writes, transaction signing, and mainnet remain off. The
     current product line retires embedded Stele, but legacy or unreconciled desktop builds may retain a
     gated historical surface until their separately reviewed removal and migration are released. E2EE
@@ -1755,8 +1759,8 @@ revert(code, data)
 </tr>
 <tr>
 <td>Hosted Stele MCP</td>
-<td>Exactly two keyless, OAuth-protected tools: public catalog search and bounded non-economic booking-draft preparation; hosted booking-draft preparation is unavailable without a published listing; hosted MCP does not create or access provider-listing drafts</td>
-<td>Status as a third MCP tool; wallet custody, signing, broadcast, settlement, or autonomous spending</td>
+<td>Keyless and OAuth-protected; authenticated <code>tools/list</code> is the authoritative inventory; baseline public catalog search and bounded non-economic booking-draft preparation; hosted booking-draft preparation is unavailable without a published listing; <code>stele_create_provider_listing_draft</code> exists only when that exact name appears in authenticated <code>tools/list</code>; when listed, each successful operation creates exactly one new private wallet-owned unpublished provider-listing draft, while an idempotent replay returns the same draft without creating another; no existing-draft list, read, update, delete, or publish operation; no signing, submission, broadcast, or settlement</td>
+<td>Any future economic or transaction capability requires a separately reviewed release and explicit user authority</td>
 </tr>
 <tr>
 <td>Isolated local Stele MCP</td>
@@ -1775,7 +1779,7 @@ revert(code, data)
 </tr>
 </tbody>
 </table>
-<p>The two draft classes are independent. A provider-listing draft is a durable server-side, wallet-owned candidate service record created in Provider Studio; it can exist while the catalog is empty and has no publication or transaction action. Here, <em>private</em> means access-controlled to the authenticated wallet and absent from the public catalog, not local-only storage or end-to-end encryption. A booking-approval draft is a separate, short-lived, non-economic review record prepared through hosted MCP for an existing published listing. Provider Studio does not create it, hosted MCP does not create or access provider-listing drafts, and the review surface cannot publish a listing or make a transaction.</p>
+<p>The two draft classes are independent. A provider-listing draft is a durable server-side, wallet-owned candidate service record created in Provider Studio; it can exist while the catalog is empty and has no publication or transaction action. Here, <em>private</em> means access-controlled to the authenticated wallet and absent from the public catalog, not local-only storage or end-to-end encryption. A booking-approval draft is a separate, short-lived, non-economic review record prepared through hosted MCP for an existing published listing. Provider Studio does not create it. For hosted MCP, authenticated <code>tools/list</code> is authoritative: <code>stele_create_provider_listing_draft</code> exists only when that exact name appears there. When listed, each successful <code>stele_create_provider_listing_draft</code> operation creates exactly one new private wallet-owned unpublished provider-listing draft; an idempotent replay returns the same draft without creating another. The tool cannot list, read, update, delete, or publish an existing provider-listing draft. Neither draft review nor creation can make a transaction.</p>
 <p>The live deployment establishes only public-preview and private-drafting availability: zero published services means it does not evidence a provider market or on-chain listing registry. Hosted booking-draft preparation is unavailable without a published listing; with zero published services, no valid booking-approval draft can currently be prepared. Catalog records, provider-listing drafts, and booking-approval drafts do not prove on-chain listings, availability, price, escrow, reputation, or settlement. E2EE rooms, provider publication, economic writes, transaction signing, and mainnet remain off until their independent release gates are satisfied. No hosted component may hold wallet secrets or convert either draft class into a transaction.</p>
 <hr>
 <h2 id="19-privacy-cordon">19. Privacy Cordon</h2>

@@ -19,12 +19,13 @@ python tools/build.py
 
 The build first runs `tools/check_truth.py`, which fails closed if public copy regresses to presenting
 the target agent-commerce suite, spending-policy/USDC agent-payment routes, Stele-in-desktop, current
-economic fees, a third hosted MCP tool, or a transaction-capable MCP as shipped. It also rejects stale
+economic fees, a fixed hosted MCP inventory, or a transaction-capable MCP as shipped. It also rejects stale
 Stele hostname-reservation or unavailable-deployment language. Every public status surface must preserve
 the dated live-preview and a visible canonical
 `https://stele.monolythium.com/studio` product link, zero-service
-catalog, Browser Wallet v0.4.5 prerelease label, address-control-only authentication boundary, exact
-hosted and local MCP tool counts, and the economic-write, transaction-signing, provider-publication, and
+catalog, Browser Wallet v0.4.5 prerelease label, address-control-only authentication boundary,
+authenticated-`tools/list` hosted inventory authority, exact local MCP tool count, and the economic-write,
+transaction-signing, provider-publication, and
 mainnet-off gates. A Studio destination that is external, relative, scheme-relative, schemeless,
 uses the wrong scheme or an alternate route, or adds a literal/encoded suffix, query, or fragment
 fails the gate; only the exact canonical HTTPS Studio destination is accepted. Required status anchors
@@ -34,13 +35,23 @@ reference definitions alone cannot satisfy them.
 The Stele draft gate treats the two released record types separately. It requires the public web's
 wallet-authenticated Provider Studio at `https://stele.monolythium.com/studio` to be described as
 create/edit/preview/delete for durable, private
-wallet-owned provider-listing drafts that remain unpublished, off-catalog, MCP-inaccessible, and
-non-transactable. It separately requires hosted MCP booking-approval drafts to remain bounded to an
+wallet-owned provider-listing drafts that remain unpublished, off-catalog, and non-transactable. It separately
+requires hosted MCP booking-approval drafts to remain bounded to an
 existing published listing and read-only public-web inspection, with no booking, payment, settlement,
-or other economic controls. Correct anchors do not mask conflicting copy:
+or other economic controls. Hosted MCP must describe `stele_create_provider_listing_draft` as available only
+when that exact name appears in authenticated `tools/list`; when listed, each successful operation creates
+exactly one new private wallet-owned unpublished provider-listing draft, while an idempotent replay returns
+the same draft without creating another. Existing-draft list/read/update/delete/publish operations and
+signing, submission, broadcast, or settlement remain unavailable. The gate applies that boundary to direct,
+passive, nominal, permission-modal, and anaphoric claims: a bare creation/availability claim is not rescued by
+an unrelated `tools/list` anchor, and a noncanonical provider-draft tool lookalike is never accepted. Positive
+create-only wording must bind the exact canonical name to its authenticated `tools/list` condition; explicit
+denials and genuinely future, historical, documentary, or disavowed claims remain valid context. Correct
+anchors do not mask conflicting copy:
 generic claims that the web creates no drafts, claims that the web creates booking-approval drafts,
-hosted-MCP access to provider-listing drafts, hosted signing or broadcast, draft-class conflation,
-public-web publication or economic controls, nonzero inventory, wrong tool counts, a transaction-capable
+unconditional hosted provider-draft availability, hosted existing-draft access or mutation, hosted signing
+or broadcast, draft-class conflation, public-web publication or economic controls, nonzero inventory,
+fixed hosted or wrong local tool counts, a transaction-capable
 local MCP, identity overclaims, the retired economic-action-preview claim, or any enabled gated capability
 each fail the build.
 
@@ -50,7 +61,11 @@ the matched predicate, so an unrelated denial, history note, or future clause ca
 contradiction. It preserves explicit false-claim/warning copy and evaluates semantic negation parity,
 including double-negative activation claims, without rejecting ordinary single-negative controls.
 Tool, endpoint, inventory, and Studio-destination counts are typed assertions rather than nearby-token
-matches. Tool counts include aggregate atoms, ordinal additions, pair/trio/dozen units, symbolic
+matches. Every current hosted total/count assertion is rejected—affirmative or denied, actor-first or
+count-first—because deployments may transition between the baseline and gated create-only tool;
+authenticated `tools/list` is authoritative. Historical, test-fixture, and explicitly rejected claims
+remain reporting context rather than live inventory. Local tool counts include aggregate
+atoms, ordinal additions, pair/trio/dozen units, symbolic
 multiplication/addition, and exactness qualifiers. Studio links are resolved by the pinned Markdown
 renderer before inspection, so inline, full/collapsed/shortcut reference, multiline-label,
 entity-decoded, raw-HTML, and image links share publication semantics. Heading hierarchy, list ancestry,
@@ -73,7 +88,8 @@ controls.
 Named hosted-tool and catalog inventories are checked as grouped current assertions, including
 comma/coordination variants and shared item nouns. Hosted-MCP pronouns remain attributed across clause
 punctuation unless a different actor intervenes, and chained absence denials use full odd/even negation
-parity. Contextual Studio labels such as “delete their draft” bind to Provider Studio only when the same
+parity. Conditional provider-draft creation must bind the exact tool name to authenticated `tools/list`;
+existing-draft access and mutation remain rejected. Contextual Studio labels such as “delete their draft” bind to Provider Studio only when the same
 assertion identifies providers as the actor. Rejected multi-claim quotations, archived audit reports,
 retired Studio links, and fixtures that model an endpoint count remain reporting or test ownership—not
 live product assertions. Historical state is classified over the complete actor-local proposition,
